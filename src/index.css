@@ -1,0 +1,925 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #f0f2f5;
+  --card: #ffffff;
+  --text: #2c3e50;
+  --text-secondary: #7f8c8d;
+  --accent: #3498db;
+  --accent-hover: #2980b9;
+  --danger: #e74c3c;
+  --success: #27ae60;
+  --warn: #f39c12;
+  --border: #e0e0e0;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --radius: 8px;
+  --font-size: 14px;
+  --font-size-small: 12px;
+  --bottom-h: 56px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-size);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  height: 100vh;
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 12px 12px 0;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px 8px;
+  flex-shrink: 0;
+}
+
+.app-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ---------- View Tabs ---------- */
+.view-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 8px;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 3px;
+  box-shadow: var(--shadow);
+  flex-shrink: 0;
+}
+
+.view-tab {
+  flex: 1;
+  padding: 7px 0;
+  border: none;
+  border-radius: 6px;
+  font-size: var(--font-size);
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+
+.view-tab.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---------- Scrollable List ---------- */
+.todo-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+.scroll-spacer {
+  height: 8px;
+}
+
+/* ---------- Bottom Input ---------- */
+.bottom-input {
+  flex-shrink: 0;
+  background: var(--bg);
+  padding: 8px 0 10px;
+  border-top: 1px solid var(--border);
+}
+
+.bottom-input-inner {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  box-shadow: var(--shadow);
+}
+
+.bottom-input .input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.bottom-input .input-row input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-size: var(--font-size);
+  outline: none;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.bottom-input .input-row input:focus {
+  border-color: var(--accent);
+}
+
+.bottom-input .parsed-info {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.bottom-input .parsed-date input[type="date"] {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: var(--font-size-small);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.bottom-input .parsed-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.bottom-input .tag-input {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: var(--font-size-small);
+  width: 70px;
+  outline: none;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.bottom-input .tag-input:focus {
+  border-color: var(--accent);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 14px;
+  font-size: var(--font-size);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.btn:active { opacity: 0.8; }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+/* ---------- Tag Chip ---------- */
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: var(--font-size-small);
+  background: var(--accent);
+  color: #fff;
+}
+
+.tag-chip .tag-remove {
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.tag-chip .tag-remove:hover { opacity: 1; }
+
+.tag-chip.edit-mode {
+  background: #e8f4fd;
+  color: var(--accent);
+}
+
+/* ---------- Filter Bar ---------- */
+.filter-bar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 0 0 8px;
+  flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.filter-bar::-webkit-scrollbar { display: none; }
+
+.filter-chip {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filter-chip.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* ---------- Inline Editing ---------- */
+.inline-edit-text {
+  cursor: pointer;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 4px;
+  transition: background 0.15s;
+  display: inline-block;
+  word-break: break-word;
+}
+
+.inline-edit-text:hover {
+  background: #e8f4fd;
+}
+
+.inline-edit-input {
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: var(--font-size);
+  outline: none;
+  background: #fff;
+  color: var(--text);
+  width: 100%;
+  box-shadow: 0 0 0 2px rgba(52,152,219,0.15);
+}
+
+.inline-edit-input.date-edit {
+  font-size: var(--font-size-small);
+  width: auto;
+  min-width: 100px;
+  max-width: 140px;
+}
+
+.date-edit-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.calendar-btn {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 5px;
+  line-height: 1;
+  flex-shrink: 0;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-btn:active {
+  background: var(--accent);
+}
+
+.clickable {
+  cursor: pointer;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.clickable:hover {
+  background: #e8f4fd;
+}
+
+/* ---------- Tags Edit ---------- */
+.tags-edit {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.tags-edit .tag-input {
+  border: 1px dashed var(--accent);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: var(--font-size-small);
+  width: 70px;
+  outline: none;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+/* ---------- Todo List ---------- */
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.todo-item {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+  border-left: 3px solid var(--accent);
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.todo-item.completed {
+  border-left-color: var(--success);
+  opacity: 0.5;
+}
+
+.todo-item.cancelled {
+  border-left-color: var(--text-secondary);
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+.todo-item.overdue {
+  border-left-color: var(--danger);
+}
+
+.todo-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.todo-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.todo-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+
+.todo-meta .todo-tags {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.todo-date {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+}
+
+.todo-date.overdue-label {
+  color: var(--danger);
+  font-weight: 500;
+}
+
+.todo-tags {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.todo-tag {
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  background: #e8f4fd;
+  color: var(--accent);
+}
+
+.todo-tag.placeholder {
+  background: #f5f5f5;
+  color: #ccc;
+  border: 1px dashed var(--border);
+}
+
+/* ---------- Progress Section ---------- */
+.progress-section {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.progress-entry {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  padding: 1px 0;
+}
+
+.progress-entry.active {
+  color: var(--text);
+}
+
+.progress-entry.completed {
+  opacity: 0.5;
+}
+
+.progress-entry.cancelled {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+.progress-actions {
+  display: flex;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.p-action {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+
+.p-action:active { opacity: 0.7; }
+
+.p-action.done {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.p-action.cancel {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.p-action.undo {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.progress-status-tag {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: #f0f0f0;
+  color: var(--text-secondary);
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.progress-date {
+  font-size: 10px;
+  color: #bbb;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.p-action.del {
+  color: var(--text-secondary);
+  font-size: 9px;
+}
+
+.todo-progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.todo-progress-bar input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  outline: none;
+  background: var(--bg);
+  color: var(--text);
+  height: 24px;
+}
+
+.todo-progress-bar input:focus {
+  border-color: var(--accent);
+}
+
+.btn-mini {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: none;
+  font-size: var(--font-size-small);
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.btn-mini:active { opacity: 0.8; }
+
+.btn-mini-save {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-mini-cancel {
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.btn-add-progress {
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1px dashed var(--border);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* ---------- Progress Archive Collapse ---------- */
+.progress-archive { margin-top: 4px; }
+
+.archive-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.archive-toggle:hover { color: var(--accent); }
+
+.triangle {
+  display: inline-block;
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+.triangle.open { transform: rotate(90deg); }
+
+.progress-log { padding-left: 6px; }
+
+.progress-log.archived {
+  margin-top: 4px;
+  padding-left: 18px;
+  border-left: 2px solid var(--border);
+}
+
+/* ---------- Actions ---------- */
+.todo-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.btn-action {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.btn-action:active { opacity: 0.7; }
+
+.btn-action.done {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.btn-action.done:hover {
+  background: var(--success);
+  color: #fff;
+}
+
+.btn-action.cancel {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn-action.cancel:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn-action.undo {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.btn-action.delete {
+  color: var(--text-secondary);
+  border-color: var(--border);
+  font-size: 12px;
+}
+
+.btn-action.delete:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* ---------- Drag Handle ---------- */
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 36px;
+  flex-shrink: 0;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  background: rgba(52, 152, 219, 0.1);
+}
+
+.drag-handle-icon {
+  font-size: 16px;
+  color: var(--text-secondary);
+  letter-spacing: -1px;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+}
+
+.drag-handle:active .drag-handle-icon,
+.todo-item:hover .drag-handle-icon {
+  opacity: 0.8;
+}
+
+/* ---------- Drag & Drop ---------- */
+.todo-item.dragging {
+  opacity: 0.3;
+  transform: scale(0.96);
+}
+
+.drag-overlay .drag-floating {
+  transform: scale(1.02) rotate(0.5deg);
+  transition: none;
+}
+
+.drop-indicator {
+  height: 3px;
+  margin: 2px 0;
+  background: var(--accent);
+  border-radius: 2px;
+  animation: drop-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes drop-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ---------- Progress Multi-column ---------- */
+.progress-active-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.progress-active-row .progress-entry.active {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 3px 7px;
+  font-size: 11px;
+  flex: 1 1 calc(50% - 3px);
+  min-width: 0;
+}
+
+.progress-active-row .progress-entry.active .progress-text {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Batch Mode ---------- */
+.todo-item.batch-mode {
+  cursor: pointer;
+}
+
+.batch-check {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+.check-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--card);
+  font-size: 12px;
+  color: var(--accent);
+  transition: all 0.15s;
+}
+
+.check-circle.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.todo-item.selected {
+  border-left-color: var(--accent);
+  background: rgba(52, 152, 219, 0.05);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.drag-handle.disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* ---------- Batch Bar ---------- */
+.batch-bar {
+  flex-shrink: 0;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  padding: 8px 10px;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+}
+
+.batch-action-panel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.batch-action-back {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.batch-action-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.batch-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: var(--font-size);
+  outline: none;
+  background: var(--bg);
+}
+
+.batch-input:focus {
+  border-color: var(--accent);
+}
+
+.batch-count {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  margin-right: 8px;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+
+.batch-btn {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.batch-btn:active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.batch-btn.danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.batch-btn.danger:active {
+  background: var(--danger);
+  color: #fff;
+}
+
+.batch-cancel {
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+  padding: 4px;
+  margin-left: 8px;
+}
+
+/* ---------- Empty State ---------- */
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-secondary);
+}
+
+.empty-state .empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.3;
+}
+
+.empty-state p {
+  font-size: var(--font-size);
+  line-height: 1.6;
+}
