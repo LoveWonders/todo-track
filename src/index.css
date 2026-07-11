@@ -971,3 +971,116 @@ body {
   font-size: var(--font-size);
   line-height: 1.6;
 }
+
+/* ---------- Weekly Report ---------- */
+.weekly-report {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.weekly-header {
+  padding: 8px 4px 12px;
+  flex-shrink: 0;
+}
+
+.weekly-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.weekly-summary {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+  border-left: 3px solid var(--accent);
+}
+
+.weekly-summary p {
+  font-size: var(--font-size);
+  color: var(--text);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.weekly-summary p + p {
+  margin-top: 4px;
+}
+
+.weekly-section {
+  background: var(--card);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.weekly-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  border-bottom: 1px solid var(--border);
+}
+
+.weekly-section-title {
+  font-size: var(--font-size);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.weekly-section-count {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  background: var(--bg);
+  padding: 1px 8px;
+  border-radius: 10px;
+}
+
+.weekly-list {
+  list-style: none;
+  padding: 4px 0;
+  margin: 0;
+}
+
+.weekly-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.weekly-item:last-child {
+  border-bottom: none;
+}
+
+.weekly-item-title {
+  flex: 1;
+  font-size: var(--font-size);
+  color: var(--text);
+  word-break: break-word;
+}
+
+.weekly-item-tags {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.weekly-empty {
+  padding: 16px 12px;
+  text-align: center;
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+}
+
+.weekly-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
+}

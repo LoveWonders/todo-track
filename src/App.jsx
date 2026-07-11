@@ -3,6 +3,7 @@ import { useTodos } from './hooks/useTodos';
 import TodoInput from './components/TodoInput';
 import TodoItem from './components/TodoItem';
 import TagFilter from './components/TagFilter';
+import WeeklyReport from './components/WeeklyReport';
 import BatchBar from './components/BatchBar';
 
 export default function App() {
@@ -215,28 +216,38 @@ export default function App() {
         >
           归档 ({archivedTodos.length})
         </button>
+        <button
+          className={`view-tab ${view === 'weekly' ? 'active' : ''}`}
+          onClick={() => { setView('weekly'); exitBatch(); }}
+        >
+          周报
+        </button>
       </div>
 
-      {allTags.length > 0 && !dragId && !batchMode && (
+      {allTags.length > 0 && !dragId && !batchMode && view !== 'weekly' && (
         <TagFilter tags={allTags} activeTag={activeTag} onSelectTag={setActiveTag} />
       )}
 
-      <div className="todo-scroll">
-        <div className="todo-list">
-          {filteredTodos.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">&#x1F4CB;</div>
-              <p>{isArchive ? '暂无归档待办' : '暂无待办事项'}</p>
-              {!isArchive && <p style={{ fontSize: 12, marginTop: 8 }}>长按待办可拖动排序</p>}
-            </div>
-          ) : (
-            filteredTodos.map((todo) => renderItem(todo))
-          )}
+      {view === 'weekly' ? (
+        <WeeklyReport todos={todos} />
+      ) : (
+        <div className="todo-scroll">
+          <div className="todo-list">
+            {filteredTodos.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">&#x1F4CB;</div>
+                <p>{isArchive ? '暂无归档待办' : '暂无待办事项'}</p>
+                {!isArchive && <p style={{ fontSize: 12, marginTop: 8 }}>长按待办可拖动排序</p>}
+              </div>
+            ) : (
+              filteredTodos.map((todo) => renderItem(todo))
+            )}
+          </div>
+          <div className="scroll-spacer" />
         </div>
-        <div className="scroll-spacer" />
-      </div>
+      )}
 
-      {dragId && (
+      {view !== 'weekly' && dragId && (
         <div
           className="drag-overlay"
           style={{
@@ -256,19 +267,21 @@ export default function App() {
         </div>
       )}
 
-      {batchMode ? (
-        <BatchBar
-          count={selectedIds.size}
-          onCancel={exitBatch}
-          onDelete={batchDelete}
-          onComplete={batchComplete}
-          onCancelItems={batchCancel}
-          onSetDate={batchSetDate}
-          onSetTags={batchSetTags}
-          onAddProgress={batchAddProgress}
-        />
-      ) : (
-        <TodoInput onAdd={addTodo} />
+      {view !== 'weekly' && (
+        batchMode ? (
+          <BatchBar
+            count={selectedIds.size}
+            onCancel={exitBatch}
+            onDelete={batchDelete}
+            onComplete={batchComplete}
+            onCancelItems={batchCancel}
+            onSetDate={batchSetDate}
+            onSetTags={batchSetTags}
+            onAddProgress={batchAddProgress}
+          />
+        ) : (
+          <TodoInput onAdd={addTodo} />
+        )
       )}
     </div>
   );
