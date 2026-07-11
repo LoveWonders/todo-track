@@ -133,6 +133,14 @@ export default function BatchBar({ count, onCancel, onDelete, onComplete, onCanc
               <button className="btn-mini btn-mini-save" onClick={handleProgressSubmit}>添加</button>
             </div>
           )}
+
+          {activeAction === 'confirm_delete' && (
+            <div className="batch-action-row">
+              <span style={{ color: 'var(--danger)', fontWeight: 500, fontSize: 14 }}>确认删除 {count} 项待办？</span>
+              <button className="btn-mini btn-mini-save" onClick={() => { onDelete(); setActiveAction(null); }} style={{ background: 'var(--danger)' }}>确认删除</button>
+              <button className="btn-mini btn-mini-cancel" onClick={() => setActiveAction(null)}>取消</button>
+            </div>
+          )}
         </div>
       ) : (
         <>
@@ -143,7 +151,7 @@ export default function BatchBar({ count, onCancel, onDelete, onComplete, onCanc
             <button className="batch-btn date" onClick={() => { setInputText(''); setDateText(''); setActiveAction('date'); }}>时间</button>
             <button className="batch-btn tags" onClick={() => { setInputText(''); setActiveAction('tags'); }}>标签</button>
             <button className="batch-btn progress" onClick={() => { setInputText(''); setActiveAction('progress'); }}>进度</button>
-            <button className="batch-btn danger" onClick={onDelete}>删除</button>
+            <button className="batch-btn danger" onClick={() => setActiveAction('confirm_delete')}>删除</button>
           </div>
           <button className="batch-cancel" onClick={onCancel}>取消</button>
         </>

@@ -241,9 +241,46 @@ function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgres
   const [progressText, setProgressText] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [manageMode, setManageMode] = useState(false);
+  const [selectedPIds, setSelectedPIds] = useState(new Set());
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const activeProgress = (progress || []).filter(p => p.status === 'active');
   const archivedProgress = (progress || []).filter(p => p.status !== 'active');
+
+  const toggleSelect = (pid) => {
+    setSelectedPIds(prev => {
+      const next = new Set(prev);
+      if (next.has(pid)) next.delete(pid);
+      else next.add(pid);
+      return next;
+    });
+  };
+
+  const exitManage = () => {
+    setManageMode(false);
+    setSelectedPIds(new Set());
+    setConfirmDelete(false);
+  };
+
+  const handleBatchDelete = () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    selectedPIds.forEach(pid => onDeleteProgress(todoId, pid));
+    exitManage();
+  };
+
+  const handleBatchComplete = () => {
+    selectedPIds.forEach(pid => onToggleProgressStatus(todoId, pid, 'completed'));
+    exitManage();
+  };
+
+  const handleBatchCancel = () => {
+    selectedPIds.forEach(pid => onToggleProgressStatus(todoId, pid, 'cancelled'));
+    exitManage();
+  };
 
   const handleSubmit = () => {
     if (progressText.trim()) {
@@ -259,17 +296,27 @@ function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgres
     }
   };
 
+  const allCount = (progress || []).length;
+
   return (
     <div className="progress-section" onClick={inBatch ? e => e.stopPropagation() : undefined}>
       {activeProgress.length > 0 && (
         <div className="progress-active-row">
           {activeProgress.map(p => (
-            <div key={p.id} className="progress-entry active">
-              {!inBatch && (
+            <div
+              key={p.id}
+              className={`progress-entry active ${manageMode ? 'progress-manage' : ''} ${selectedPIds.has(p.id) ? 'progress-selected' : ''}`}
+              onClick={manageMode ? () => toggleSelect(p.id) : undefined}
+            >
+              {!inBatch && !manageMode && (
                 <span className="progress-actions">
                   <button className="p-action done" onClick={(e) => { e.stopPropagation(); onToggleProgressStatus(todoId, p.id, 'completed'); }} title="完成">&#x2713;</button>
                   <button className="p-action cancel" onClick={(e) => { e.stopPropagation(); onToggleProgressStatus(todoId, p.id, 'cancelled'); }} title="作废">&#x2717;</button>
-                  <button className="p-action del" onClick={(e) => { e.stopPropagation(); onDeleteProgress(todoId, p.id); }} title="删除">&#x1F5D1;</button>
+                </span>
+              )}
+              {manageMode && (
+                <span className={`progress-check-circle ${selectedPIds.has(p.id) ? 'checked' : ''}`}>
+                  {selectedPIds.has(p.id) ? '\u2713' : ''}
                 </span>
               )}
               <span className="progress-date">
@@ -283,22 +330,71 @@ function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgres
 
       {!inBatch && (
         <div className="todo-progress-bar">
-          {!showInput ? (
-            <button className="btn-mini btn-add-progress" onClick={() => setShowInput(true)}>
-              + 添加进度
-            </button>
+          {manageMode ? (
+            <div className="progress-manage-bar">
+              {confirmDelete ? (
+                <>
+                  <span style={{ color: 'var(--danger)', fontWeight: 500, fontSize: 12 }}>确认删除 {selectedPIds.size} 条进度？</span>
+                  <button className="btn-mini btn-mini-save" onClick={handleBatchDelete} style={{ background: 'var(--danger)', fontSize: 11 }}>确认删除</button>
+                  <button className="btn-mini btn-mini-cancel" onClick={() => setConfirmDelete(false)}>取消</button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className="btn-mini btn-mini-save"
+                    onClick={handleBatchComplete}
+                    disabled={selectedPIds.size === 0}
+                    style={{ opacity: selectedPIds.size === 0 ? 0.4 : 1, fontSize: 11, background: 'var(--success)' }}
+                  >
+                    完成 ({selectedPIds.size})
+                  </button>
+                  <button
+                    className="btn-mini btn-mini-save"
+                    onClick={handleBatchCancel}
+                    disabled={selectedPIds.size === 0}
+                    style={{ opacity: selectedPIds.size === 0 ? 0.4 : 1, fontSize: 11, background: 'var(--text-secondary)' }}
+                  >
+                    作废 ({selectedPIds.size})
+                  </button>
+                  <button
+                    className="btn-mini btn-mini-save"
+                    onClick={handleBatchDelete}
+                    disabled={selectedPIds.size === 0}
+                    style={{ opacity: selectedPIds.size === 0 ? 0.4 : 1, fontSize: 11, background: 'var(--danger)' }}
+                  >
+                    删除 ({selectedPIds.size})
+                  </button>
+                  <button className="btn-mini btn-mini-cancel" onClick={exitManage}>取消</button>
+                </>
+              )}
+            </div>
           ) : (
             <>
-              <input
-                type="text"
-                placeholder="输入工作进度..."
-                value={progressText}
-                onChange={e => setProgressText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                autoFocus
-              />
-              <button className="btn-mini btn-mini-save" onClick={handleSubmit}>保存</button>
-              <button className="btn-mini btn-mini-cancel" onClick={() => setShowInput(false)}>&times;</button>
+              {!showInput ? (
+                <>
+                  <button className="btn-mini btn-add-progress" onClick={() => setShowInput(true)}>
+                    + 添加进度
+                  </button>
+                  {allCount > 0 && (
+                    <button className="btn-mini btn-add-progress" onClick={() => { setManageMode(true); setConfirmDelete(false); }}>
+                      管理进度
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    placeholder="输入工作进度..."
+                    value={progressText}
+                    onChange={e => setProgressText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    autoFocus
+                  />
+                  <button className="btn-mini btn-mini-save" onClick={handleSubmit}>保存</button>
+                  <button className="btn-mini btn-mini-cancel" onClick={() => setShowInput(false)}>&times;</button>
+                </>
+              )}
             </>
           )}
         </div>
@@ -313,11 +409,19 @@ function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgres
           {showArchived && (
             <div className="progress-log archived">
               {archivedProgress.map(p => (
-                <div key={p.id} className={`progress-entry ${p.status}`}>
-                  {!inBatch && (
+                <div
+                  key={p.id}
+                  className={`progress-entry ${p.status} ${manageMode ? 'progress-manage' : ''} ${selectedPIds.has(p.id) ? 'progress-selected' : ''}`}
+                  onClick={manageMode ? () => toggleSelect(p.id) : undefined}
+                >
+                  {!inBatch && !manageMode && (
                     <span className="progress-actions">
                       <button className="p-action undo" onClick={(e) => { e.stopPropagation(); onToggleProgressStatus(todoId, p.id, p.status); }} title="恢复">&#x21A9;</button>
-                      <button className="p-action del" onClick={(e) => { e.stopPropagation(); onDeleteProgress(todoId, p.id); }} title="删除">&#x1F5D1;</button>
+                    </span>
+                  )}
+                  {manageMode && (
+                    <span className={`progress-check-circle ${selectedPIds.has(p.id) ? 'checked' : ''}`}>
+                      {selectedPIds.has(p.id) ? '\u2713' : ''}
                     </span>
                   )}
                   <span className="progress-status-tag">{p.status === 'completed' ? '已完成' : '已作废'}</span>
@@ -335,7 +439,7 @@ function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgres
   );
 }
 
-export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggleProgressStatus, onDeleteProgress, onUpdateTodo, onDeleteTodo, onDragStart, onBatchToggle, isDragging, isSelected, batchMode, isArchive }) {
+export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggleProgressStatus, onDeleteProgress, onUpdateTodo, onDragStart, onBatchToggle, isDragging, isSelected, batchMode, isArchive }) {
   const overdue = todo.status === 'active' && isOverdue(todo.dueDate);
   const statusClass = todo.status === 'completed' ? 'completed'
     : todo.status === 'cancelled' ? 'cancelled'
@@ -426,7 +530,6 @@ export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggle
           {!batchMode && todo.status !== 'active' && (
             <button className="btn-action undo" onClick={() => onToggleStatus(todo.id, todo.status)} title="恢复">&#x21A9;</button>
           )}
-          <button className="btn-action delete" onClick={(e) => { if (batchMode) e.stopPropagation(); onDeleteTodo(todo.id); }} title="删除">&#x1F5D1;</button>
         </div>
 
         <div

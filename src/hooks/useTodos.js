@@ -14,14 +14,14 @@ function loadTodos() {
       }
       return data;
     }
-  } catch (e) { /* ignore */ }
+  } catch { /* ignore */ }
   return [];
 }
 
 function saveTodos(todos) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
-  } catch (e) { /* ignore */ }
+  } catch { /* ignore */ }
 }
 
 export function useTodos() {
@@ -41,7 +41,7 @@ export function useTodos() {
       createdAt: new Date().toISOString(),
       progress: [],
     };
-    setTodos(prev => [todo, ...prev]);
+    setTodos(prev => [...prev, todo]);
   }, []);
 
   const updateTodo = useCallback((id, updates) => {

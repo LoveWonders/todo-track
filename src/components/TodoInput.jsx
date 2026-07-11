@@ -17,16 +17,13 @@ export default function TodoInput({ onAdd }) {
       const result = parseInput(text);
       if (result.dueDate) setDueDate(toDateString(result.dueDate));
       setTags(prev => {
-        const filtered = prev.filter(t => !t.startsWith('#'));
-        const keepTags = result.tags.length > 0
-          ? prev.filter(t => !result.tags.some(rt => t === rt))
-          : prev;
+        const keepTags = prev.filter(t => !t.startsWith('#'));
         const merged = [...new Set([...keepTags, ...result.tags])];
         return merged;
       });
     }, 400);
     return () => clearTimeout(timer);
-  }, [text]);
+  }, [text, tags.length]);
 
   const handleTextChange = (e) => {
     setText(e.target.value);
@@ -45,7 +42,7 @@ export default function TodoInput({ onAdd }) {
     setDueDate('');
     setTags([]);
     setTagInput('');
-    inputRef.current?.focus();
+    inputRef.current?.blur();
   };
 
   const handleKeyDown = (e) => {

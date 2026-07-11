@@ -5,7 +5,7 @@ function endOfMonth(year, month) {
 }
 
 const DATE_PATTERNS = [
-  { regex: /(\d{4})[年\-\/.](\d{1,2})[月\-\/.](\d{1,2})[日号]?/, handler: (m) => new Date(+m[1], +m[2] - 1, +m[3]) },
+  { regex: /(\d{4})[年\-.](\d{1,2})[月\-.](\d{1,2})[日号]?/, handler: (m) => new Date(+m[1], +m[2] - 1, +m[3]) },
   { regex: /(今天|tomorrow|明天|后天|大后天)/i, handler: (m) => {
     const map = { '今天': 0, 'tomorrow': 1, '明天': 1, '后天': 2, '大后天': 3 };
     const d = new Date(); d.setDate(d.getDate() + (map[m[1].toLowerCase()] || 0)); return d;
@@ -74,7 +74,7 @@ const DATE_PATTERNS = [
     d.setDate(+m[2]);
     return d;
   }},
-  { regex: /(\d{1,2})[月\-\/.](\d{1,2})[日号]?/, handler: (m) => {
+  { regex: /(\d{1,2})[月\-.](\d{1,2})[日号]?/, handler: (m) => {
     const now = new Date();
     const d = new Date(now.getFullYear(), +m[1] - 1, +m[2]);
     if (d < now) d.setFullYear(d.getFullYear() + 1);

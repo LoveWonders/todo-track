@@ -534,6 +534,54 @@ body {
   font-size: 9px;
 }
 
+.progress-entry.progress-manage {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 1px 4px;
+  margin: 0 -4px;
+  transition: background 0.15s;
+}
+
+.progress-entry.progress-manage:hover {
+  background: rgba(52, 152, 219, 0.06);
+}
+
+.progress-entry.progress-selected {
+  background: rgba(52, 152, 219, 0.08);
+  border-radius: 4px;
+}
+
+.progress-check-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  font-size: 10px;
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-right: 2px;
+  transition: all 0.15s;
+}
+
+.progress-check-circle.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.progress-manage-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.progress-manage-bar .btn-mini:disabled {
+  cursor: default;
+}
+
 .todo-progress-bar {
   display: flex;
   align-items: center;

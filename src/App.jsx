@@ -151,7 +151,7 @@ export default function App() {
     selectedIds.forEach(id => addProgress(id, text));
   };
 
-  const renderItem = (todo, index) => {
+  const renderItem = (todo) => {
     const isDragged = dragId === todo.id;
     const showInsertBefore = dragId && !isDragged && dropIdx === filteredTodos.findIndex(t => t.id === todo.id) && dropIdx < dragFromIdxRef.current;
     const showInsertAfter = dragId && !isDragged && (() => {
@@ -171,7 +171,6 @@ export default function App() {
             onToggleProgressStatus={toggleProgressStatus}
             onDeleteProgress={deleteProgress}
             onUpdateTodo={updateTodo}
-            onDeleteTodo={deleteTodo}
             onDragStart={handleDragStart}
             onBatchToggle={handleBatchToggle}
             isDragging={isDragged}
@@ -231,7 +230,7 @@ export default function App() {
               {!isArchive && <p style={{ fontSize: 12, marginTop: 8 }}>长按待办可拖动排序</p>}
             </div>
           ) : (
-            filteredTodos.map((todo, index) => renderItem(todo, index))
+            filteredTodos.map((todo) => renderItem(todo))
           )}
         </div>
         <div className="scroll-spacer" />
