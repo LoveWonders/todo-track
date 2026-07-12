@@ -124,9 +124,16 @@ export function useTodos() {
     ));
   }, []);
 
+  const updateCompletedAt = useCallback((id, dateString) => {
+    const isoString = new Date(dateString + 'T12:00:00').toISOString();
+    setTodos(prev => prev.map(t =>
+      t.id === id ? { ...t, status: 'completed', completedAt: isoString } : t
+    ));
+  }, []);
+
   const activeTodos = todos.filter(t => t.status === 'active');
   const archivedTodos = todos.filter(t => t.status !== 'active');
   const allTags = [...new Set(todos.flatMap(t => t.tags))].sort();
 
-  return { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, allTags };
+  return { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateCompletedAt, allTags };
 }

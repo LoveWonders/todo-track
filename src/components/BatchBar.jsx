@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { parseDateText } from '../utils/dateParser';
 
-export default function BatchBar({ count, onCancel, onDelete, onComplete, onCancelItems, onSetDate, onSetTags, onAddProgress }) {
+export default function BatchBar({ count, onCancel, onDelete, onComplete, onCancelItems, onSetDate, onSetTags, onAddProgress, onOpenCompleteDateModal }) {
   const [activeAction, setActiveAction] = useState(null);
   const [inputText, setInputText] = useState('');
   const [dateText, setDateText] = useState('');
@@ -151,6 +151,7 @@ export default function BatchBar({ count, onCancel, onDelete, onComplete, onCanc
             <button className="batch-btn date" onClick={() => { setInputText(''); setDateText(''); setActiveAction('date'); }}>时间</button>
             <button className="batch-btn tags" onClick={() => { setInputText(''); setActiveAction('tags'); }}>标签</button>
             <button className="batch-btn progress" onClick={() => { setInputText(''); setActiveAction('progress'); }}>进度</button>
+            <button className="batch-btn date" onClick={onOpenCompleteDateModal}>修改完成时间</button>
             <button className="batch-btn danger" onClick={() => setActiveAction('confirm_delete')}>删除</button>
           </div>
           <button className="batch-cancel" onClick={onCancel}>取消</button>

@@ -4,10 +4,11 @@ import TodoInput from './components/TodoInput';
 import TodoItem from './components/TodoItem';
 import TagFilter from './components/TagFilter';
 import WeeklyReport from './components/WeeklyReport';
+import CompleteDateModal from './components/CompleteDateModal';
 import BatchBar from './components/BatchBar';
 
 export default function App() {
-  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, allTags } = useTodos();
+  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateCompletedAt, allTags } = useTodos();
   const [activeTag, setActiveTag] = useState(null);
   const [view, setView] = useState('active');
   const [dragId, setDragId] = useState(null);
@@ -19,6 +20,7 @@ export default function App() {
   const throttleTimerRef = useRef(null);
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [showCompleteDateModal, setShowCompleteDateModal] = useState(false);
 
   const source = view === 'active' ? activeTodos : archivedTodos;
 
@@ -152,6 +154,11 @@ export default function App() {
     selectedIds.forEach(id => addProgress(id, text));
   };
 
+  const batchCompleteAt = (dateString) => {
+    selectedIds.forEach(id => updateCompletedAt(id, dateString));
+    exitBatch();
+  };
+
   const renderItem = (todo) => {
     const isDragged = dragId === todo.id;
     const showInsertBefore = dragId && !isDragged && dropIdx === filteredTodos.findIndex(t => t.id === todo.id) && dropIdx < dragFromIdxRef.current;
@@ -278,10 +285,19 @@ export default function App() {
             onSetDate={batchSetDate}
             onSetTags={batchSetTags}
             onAddProgress={batchAddProgress}
+            onOpenCompleteDateModal={() => setShowCompleteDateModal(true)}
           />
         ) : (
           <TodoInput onAdd={addTodo} />
         )
+      )}
+
+      {showCompleteDateModal && (
+        <CompleteDateModal
+          count={selectedIds.size}
+          onConfirm={(dateString) => { batchCompleteAt(dateString); setShowCompleteDateModal(false); }}
+          onCancel={() => setShowCompleteDateModal(false)}
+        />
       )}
     </div>
   );
