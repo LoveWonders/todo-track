@@ -62,6 +62,22 @@ const DATE_PATTERNS = [
     if (d < now) return endOfMonth(now.getFullYear() + 1, +m[1] - 1);
     return d;
   }},
+  { regex: /([一二三四五六七八九十]{1,2})月底/, handler: (m) => {
+    const map = { '一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'十一':11,'十二':12 };
+    const month = map[m[1]];
+    if (!month) return null;
+    const now = new Date();
+    const d = endOfMonth(now.getFullYear(), month - 1);
+    if (d < now) return endOfMonth(now.getFullYear() + 1, month - 1);
+    return d;
+  }},
+  { regex: /(?<!\d)(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])(?!\d)/, handler: (m) => {
+    const mm = +m[1], dd = +m[2];
+    const now = new Date();
+    const d = new Date(now.getFullYear(), mm - 1, dd);
+    if (d < now) d.setFullYear(d.getFullYear() + 1);
+    return d;
+  }},
   { regex: /(\d{1,2})月初/, handler: (m) => {
     const now = new Date();
     const d = new Date(now.getFullYear(), +m[1] - 1, 1);
@@ -142,19 +158,12 @@ export function formatDate(date) {
   if (!date) return '';
   const d = new Date(date);
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const diff = Math.round((target - today) / 86400000);
-
-  if (diff === 0) return '今天';
-  if (diff === 1) return '明天';
-  if (diff === 2) return '后天';
-  if (diff === -1) return '昨天';
-  if (diff < 0) return `已过期${Math.abs(diff)}天`;
-
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${mm}-${dd}`;
+  const mm = d.getMonth() + 1;
+  const dd = d.getDate();
+  if (d.getFullYear() !== now.getFullYear()) {
+    return `${d.getFullYear()}.${mm}.${dd}`;
+  }
+  return `${mm}.${dd}`;
 }
 
 export function isOverdue(date) {

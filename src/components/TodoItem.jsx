@@ -60,6 +60,35 @@ function InlineEdit({ value, onSave, className, placeholder, style, inBatch }) {
   );
 }
 
+function Countdown({ dueDate }) {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 600000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const now = new Date();
+  const target = new Date(dueDate);
+  const diff = target - now;
+
+  if (diff < 0) {
+    const abs = Math.abs(diff);
+    const days = Math.floor(abs / 86400000);
+    const hours = Math.floor((abs % 86400000) / 3600000);
+    if (days > 0) return <span className="countdown overdue">已超{days}天</span>;
+    return <span className="countdown overdue">已超{hours}小时</span>;
+  }
+
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+
+  if (days > 0) return <span className="countdown">{days}天后</span>;
+  if (hours > 0) return <span className="countdown near">{hours}小时后</span>;
+  return <span className="countdown urgent">{minutes}分钟后</span>;
+}
+
 function DateEdit({ value, onSave, overdue, inBatch }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(value || '');
@@ -206,7 +235,7 @@ function TagsEdit({ tags, onSave, inBatch }) {
         {tags.map(tag => (
           <span key={tag} className="tag-chip edit-mode">
             #{tag}
-            <span className="tag-remove" onClick={() => removeTag(tag)}>&times;</span>
+            <span className="tag-remove" onMouseDown={(e) => { e.preventDefault(); removeTag(tag); }}>&times;</span>
           </span>
         ))}
         <input
@@ -229,7 +258,7 @@ function TagsEdit({ tags, onSave, inBatch }) {
     <span className="todo-tags clickable" onClick={(e) => { if (inBatch) { e.stopPropagation(); return; } setEditing(true); }} title="点击编辑标签">
       {tags.length > 0 ? (
         tags.map(tag => (
-          <span key={tag} className="todo-tag">#{tag}</span>
+          <span key={tag} className={`todo-tag ${tag === '紧急' ? 'urgent' : ''}`}>#{tag}</span>
         ))
       ) : (
         <span className="todo-tag placeholder">+ 标签</span>
@@ -504,7 +533,7 @@ export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggle
 
   return (
     <div
-      className={`todo-item ${statusClass} ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''} ${batchMode ? 'batch-mode' : ''}`}
+      className={`todo-item ${statusClass} ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''} ${batchMode ? 'batch-mode' : ''} ${todo.tags.includes('紧急') ? 'urgent' : ''}`}
       onClick={batchMode ? () => onBatchToggle(todo.id) : undefined}
     >
       <div className="todo-header">
@@ -528,9 +557,12 @@ export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggle
             <DateEdit
               value={todo.dueDate}
               onSave={(val) => onUpdateTodo(todo.id, { dueDate: val })}
-              overdue={overdue}
+              overdue={false}
               inBatch={batchMode}
             />
+            {todo.status === 'active' && todo.dueDate && (
+              <Countdown dueDate={todo.dueDate} />
+            )}
             <span className="todo-date" style={{ color: '#ccc' }}>
               {formatDate(todo.createdAt)}
             </span>

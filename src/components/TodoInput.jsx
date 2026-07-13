@@ -110,6 +110,13 @@ export default function TodoInput({ onAdd }) {
             onChange={handleTextChange}
             onKeyDown={handleKeyDown}
           />
+          {!tags.includes('紧急') && (
+            <button
+              className="tag-quick-urgent"
+              onClick={() => addTag('紧急')}
+              title="添加紧急标签"
+            >!</button>
+          )}
           <button className="btn btn-primary" onClick={handleSubmit}>&#x2795;</button>
         </div>
       </div>

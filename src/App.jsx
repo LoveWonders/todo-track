@@ -27,8 +27,7 @@ export default function App() {
 
   const filteredTodos = (() => {
     const hasFilter = filterConfig.includeTags.length > 0 || filterConfig.excludeTags.length > 0;
-    if (!hasFilter) return source;
-    return source.filter(t => {
+    const base = !hasFilter ? source : source.filter(t => {
       if (filterConfig.excludeTags.length > 0 && filterConfig.excludeTags.some(tag => t.tags.includes(tag))) {
         return false;
       }
@@ -37,6 +36,13 @@ export default function App() {
       }
       return true;
     });
+    const urgent = [];
+    const normal = [];
+    for (const t of base) {
+      if (t.tags.includes('紧急')) urgent.push(t);
+      else normal.push(t);
+    }
+    return [...urgent, ...normal];
   })();
 
   const isArchive = view === 'archive';

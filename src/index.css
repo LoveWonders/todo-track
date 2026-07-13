@@ -714,6 +714,33 @@ body {
   border-left-color: var(--danger);
 }
 
+.todo-item.urgent {
+  border-left-color: var(--danger);
+  background: #fff5f5;
+}
+
+.todo-tag.urgent {
+  background: var(--danger);
+  color: #fff;
+  font-weight: 600;
+}
+
+.tag-quick-urgent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger);
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .todo-header {
   display: flex;
   align-items: flex-start;
@@ -727,22 +754,33 @@ body {
 
 .todo-meta {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow: hidden;
   margin-top: 3px;
+  font-size: var(--font-size-small);
 }
 
 .todo-meta .todo-tags {
   display: inline-flex;
   gap: 4px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .todo-date {
   font-size: var(--font-size-small);
   color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.countdown {
+  font-size: var(--font-size-small);
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 .todo-date.overdue-label {
@@ -750,11 +788,31 @@ body {
   font-weight: 500;
 }
 
+.countdown {
+  font-size: var(--font-size-small);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.countdown.near {
+  color: #e67e22;
+}
+
+.countdown.urgent {
+  color: var(--danger);
+}
+
+.countdown.overdue {
+  color: var(--danger);
+}
+
 .todo-tags {
   display: inline-flex;
   gap: 4px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .todo-tag {
