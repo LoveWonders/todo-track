@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { formatDate, isOverdue, parseDateText } from '../utils/dateParser';
+import CompleteDateModal from './CompleteDateModal';
 
 function InlineEdit({ value, onSave, className, placeholder, style, inBatch }) {
   const [editing, setEditing] = useState(false);
@@ -237,13 +238,14 @@ function TagsEdit({ tags, onSave, inBatch }) {
   );
 }
 
-function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgress, onAddProgress, inBatch }) {
+function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgress, onAddProgress, onUpdateProgressCompletedAt, inBatch }) {
   const [progressText, setProgressText] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [manageMode, setManageMode] = useState(false);
   const [selectedPIds, setSelectedPIds] = useState(new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showDateModal, setShowDateModal] = useState(false);
 
   const activeProgress = (progress || []).filter(p => p.status === 'active');
   const archivedProgress = (progress || []).filter(p => p.status !== 'active');
@@ -261,6 +263,7 @@ function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgres
     setManageMode(false);
     setSelectedPIds(new Set());
     setConfirmDelete(false);
+    setShowDateModal(false);
   };
 
   const handleBatchDelete = () => {
@@ -364,6 +367,14 @@ function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgres
                   >
                     删除 ({selectedPIds.size})
                   </button>
+                  <button
+                    className="btn-mini btn-mini-save"
+                    onClick={() => setShowDateModal(true)}
+                    disabled={selectedPIds.size === 0}
+                    style={{ opacity: selectedPIds.size === 0 ? 0.4 : 1, fontSize: 11, background: 'var(--accent)', padding: '4px 6px' }}
+                  >
+                    改时 ({selectedPIds.size})
+                  </button>
                   <button className="btn-mini btn-mini-cancel" onClick={exitManage}>取消</button>
                 </>
               )}
@@ -435,11 +446,22 @@ function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgres
           )}
         </div>
       )}
+
+      {showDateModal && (
+        <CompleteDateModal
+          count={selectedPIds.size}
+          onConfirm={(dateString) => {
+            selectedPIds.forEach(pid => onUpdateProgressCompletedAt(todoId, pid, dateString));
+            exitManage();
+          }}
+          onCancel={() => setShowDateModal(false)}
+        />
+      )}
     </div>
   );
 }
 
-export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggleProgressStatus, onDeleteProgress, onUpdateTodo, onDragStart, onBatchToggle, isDragging, isSelected, batchMode, isArchive }) {
+export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggleProgressStatus, onDeleteProgress, onUpdateProgressCompletedAt, onUpdateTodo, onDragStart, onBatchToggle, isDragging, isSelected, batchMode, isArchive }) {
   const overdue = todo.status === 'active' && isOverdue(todo.dueDate);
   const statusClass = todo.status === 'completed' ? 'completed'
     : todo.status === 'cancelled' ? 'cancelled'
@@ -554,6 +576,7 @@ export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggle
           onToggleProgressStatus={onToggleProgressStatus}
           onDeleteProgress={onDeleteProgress}
           onAddProgress={onAddProgress}
+          onUpdateProgressCompletedAt={onUpdateProgressCompletedAt}
           inBatch={batchMode}
         />
       )}

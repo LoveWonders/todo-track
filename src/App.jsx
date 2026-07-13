@@ -2,14 +2,15 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTodos } from './hooks/useTodos';
 import TodoInput from './components/TodoInput';
 import TodoItem from './components/TodoItem';
-import TagFilter from './components/TagFilter';
+import TagFilterBar from './components/TagFilterBar';
 import WeeklyReport from './components/WeeklyReport';
 import CompleteDateModal from './components/CompleteDateModal';
+import DataMenu from './components/DataMenu';
 import BatchBar from './components/BatchBar';
 
 export default function App() {
-  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateCompletedAt, allTags } = useTodos();
-  const [activeTag, setActiveTag] = useState(null);
+  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags } = useTodos();
+  const [filterConfig, setFilterConfig] = useState({ includeTags: [], excludeTags: [] });
   const [view, setView] = useState('active');
   const [dragId, setDragId] = useState(null);
   const [dragY, setDragY] = useState(0);
@@ -24,9 +25,19 @@ export default function App() {
 
   const source = view === 'active' ? activeTodos : archivedTodos;
 
-  const filteredTodos = activeTag
-    ? source.filter(t => t.tags.includes(activeTag))
-    : source;
+  const filteredTodos = (() => {
+    const hasFilter = filterConfig.includeTags.length > 0 || filterConfig.excludeTags.length > 0;
+    if (!hasFilter) return source;
+    return source.filter(t => {
+      if (filterConfig.excludeTags.length > 0 && filterConfig.excludeTags.some(tag => t.tags.includes(tag))) {
+        return false;
+      }
+      if (filterConfig.includeTags.length > 0) {
+        return filterConfig.includeTags.some(tag => t.tags.includes(tag));
+      }
+      return true;
+    });
+  })();
 
   const isArchive = view === 'archive';
 
@@ -178,6 +189,7 @@ export default function App() {
             onAddProgress={addProgress}
             onToggleProgressStatus={toggleProgressStatus}
             onDeleteProgress={deleteProgress}
+            onUpdateProgressCompletedAt={updateProgressCompletedAt}
             onUpdateTodo={updateTodo}
             onDragStart={handleDragStart}
             onBatchToggle={handleBatchToggle}
@@ -202,12 +214,15 @@ export default function App() {
     >
       <header className="app-header">
         <h1>待办</h1>
-        {dragId && (
-          <span style={{ fontSize: 12, color: 'var(--accent)' }}>拖动排序中...</span>
-        )}
-        {batchMode && (
-          <span style={{ fontSize: 12, color: 'var(--accent)' }}>批量操作</span>
-        )}
+        <div className="app-header-right">
+          {dragId && (
+            <span style={{ fontSize: 12, color: 'var(--accent)' }}>拖动排序中...</span>
+          )}
+          {batchMode && (
+            <span style={{ fontSize: 12, color: 'var(--accent)' }}>批量操作</span>
+          )}
+          <DataMenu todos={todos} onImport={importTodos} />
+        </div>
       </header>
 
       <div className="view-tabs">
@@ -232,7 +247,7 @@ export default function App() {
       </div>
 
       {allTags.length > 0 && !dragId && !batchMode && view !== 'weekly' && (
-        <TagFilter tags={allTags} activeTag={activeTag} onSelectTag={setActiveTag} />
+        <TagFilterBar allTags={allTags} onFilterChange={setFilterConfig} />
       )}
 
       {view === 'weekly' ? (

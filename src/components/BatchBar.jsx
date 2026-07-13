@@ -144,7 +144,10 @@ export default function BatchBar({ count, onCancel, onDelete, onComplete, onCanc
         </div>
       ) : (
         <>
-          <span className="batch-count">已选 {count} 项</span>
+          <div className="batch-top-row">
+            <span className="batch-count">已选 {count} 项</span>
+            <button className="batch-cancel" onClick={onCancel}>取消</button>
+          </div>
           <div className="batch-actions">
             <button className="batch-btn done" onClick={onComplete}>完成</button>
             <button className="batch-btn cancel" onClick={onCancelItems}>作废</button>
@@ -154,7 +157,6 @@ export default function BatchBar({ count, onCancel, onDelete, onComplete, onCanc
             <button className="batch-btn date" onClick={onOpenCompleteDateModal}>修改完成时间</button>
             <button className="batch-btn danger" onClick={() => setActiveAction('confirm_delete')}>删除</button>
           </div>
-          <button className="batch-cancel" onClick={onCancel}>取消</button>
         </>
       )}
     </div>

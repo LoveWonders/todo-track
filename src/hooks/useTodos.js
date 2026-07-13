@@ -124,6 +124,18 @@ export function useTodos() {
     ));
   }, []);
 
+  const updateProgressCompletedAt = useCallback((todoId, progressId, dateString) => {
+    const isoString = new Date(dateString + 'T12:00:00').toISOString();
+    setTodos(prev => prev.map(t =>
+      t.id === todoId ? {
+        ...t,
+        progress: (t.progress || []).map(p =>
+          p.id === progressId ? { ...p, status: 'completed', completedAt: isoString } : p
+        )
+      } : t
+    ));
+  }, []);
+
   const updateCompletedAt = useCallback((id, dateString) => {
     const isoString = new Date(dateString + 'T12:00:00').toISOString();
     setTodos(prev => prev.map(t =>
@@ -131,9 +143,26 @@ export function useTodos() {
     ));
   }, []);
 
+  const importTodos = useCallback((importData, strategy) => {
+    setTodos(prev => {
+      const existingIds = new Set(prev.map(t => t.id));
+      const conflictingIds = importData.filter(t => existingIds.has(t.id)).map(t => t.id);
+      let merged;
+      if (strategy === 'overwrite') {
+        const overwriteSet = new Set(conflictingIds);
+        merged = [...prev.filter(t => !overwriteSet.has(t.id)), ...importData];
+      } else {
+        merged = [...prev, ...importData.filter(t => !existingIds.has(t.id))];
+      }
+      const maxId = Math.max(...merged.map(t => t.id), 0);
+      nextId = maxId + 1;
+      return merged;
+    });
+  }, []);
+
   const activeTodos = todos.filter(t => t.status === 'active');
   const archivedTodos = todos.filter(t => t.status !== 'active');
   const allTags = [...new Set(todos.flatMap(t => t.tags))].sort();
 
-  return { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateCompletedAt, allTags };
+  return { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
 }
