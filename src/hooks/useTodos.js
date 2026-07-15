@@ -1,35 +1,36 @@
-import { useState, useEffect, useCallback } from 'react';
-
-const STORAGE_KEY = 'todo_app_data';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { loadData, saveData, migrateFromLocalStorage } from '../utils/storage';
 
 let nextId = Date.now();
 
-function loadTodos() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const data = JSON.parse(raw);
+export function useTodos() {
+  const [todos, setTodos] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const saveTimerRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await migrateFromLocalStorage();
+      const data = await loadData();
+      if (cancelled) return;
       if (data.length > 0) {
         nextId = Math.max(...data.map(t => t.id), nextId) + 1;
       }
-      return data;
-    }
-  } catch { /* ignore */ }
-  return [];
-}
-
-function saveTodos(todos) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
-  } catch { /* ignore */ }
-}
-
-export function useTodos() {
-  const [todos, setTodos] = useState(loadTodos);
+      setTodos(data);
+      setLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
-    saveTodos(todos);
-  }, [todos]);
+    if (!loaded) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveData(todos);
+    }, 100);
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+  }, [todos, loaded]);
 
   const addTodo = useCallback(({ title, dueDate, tags }) => {
     const todo = {
@@ -157,10 +158,9 @@ export function useTodos() {
   const importTodos = useCallback((importData, strategy) => {
     setTodos(prev => {
       const existingIds = new Set(prev.map(t => t.id));
-      const conflictingIds = importData.filter(t => existingIds.has(t.id)).map(t => t.id);
       let merged;
       if (strategy === 'overwrite') {
-        const overwriteSet = new Set(conflictingIds);
+        const overwriteSet = new Set(importData.filter(t => existingIds.has(t.id)).map(t => t.id));
         merged = [...prev.filter(t => !overwriteSet.has(t.id)), ...importData];
       } else {
         merged = [...prev, ...importData.filter(t => !existingIds.has(t.id))];
@@ -175,5 +175,5 @@ export function useTodos() {
   const archivedTodos = todos.filter(t => t.status !== 'active');
   const allTags = [...new Set(todos.flatMap(t => t.tags))].sort();
 
-  return { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
+  return { todos, activeTodos, archivedTodos, loaded, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
 }

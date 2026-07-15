@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { exportTodos, parseImportFile, findConflicts } from '../utils/exportImport';
+import { exportTodos, exportTodosNative, shareExportedFile, parseImportFile, findConflicts } from '../utils/exportImport';
+import { getIsNative } from '../utils/storage';
 
 export default function DataMenu({ todos, onImport }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [conflictModal, setConflictModal] = useState(null);
   const [pendingImport, setPendingImport] = useState(null);
+  const [toast, setToast] = useState(null);
   const menuRef = useRef(null);
   const fileRef = useRef(null);
 
@@ -19,9 +21,28 @@ export default function DataMenu({ todos, onImport }) {
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  const handleExport = () => {
-    exportTodos(todos);
+  const handleExport = async () => {
     setMenuOpen(false);
+    if (getIsNative()) {
+      try {
+        const filename = await exportTodosNative(todos);
+        setToast({ type: 'success', filename });
+      } catch (err) {
+        setToast({ type: 'error', message: '导出失败：' + err.message });
+      }
+    } else {
+      exportTodos(todos);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!toast || !toast.filename) return;
+    try {
+      await shareExportedFile(toast.filename);
+    } catch {
+      // user cancelled
+    }
+    setToast(null);
   };
 
   const handleFileSelect = async (e) => {
@@ -106,6 +127,27 @@ export default function DataMenu({ todos, onImport }) {
               <button className="btn-mini btn-mini-save" onClick={() => handleConflictResolve('skip')}>跳过重复</button>
               <button className="btn-mini btn-mini-save" onClick={() => handleConflictResolve('overwrite')} style={{ background: 'var(--warn)' }}>覆盖</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="toast-container" onClick={() => setToast(null)}>
+          <div className={`toast-card ${toast.type}`} onClick={e => e.stopPropagation()}>
+            {toast.type === 'success' ? (
+              <>
+                <span className="toast-icon">&#x2705;</span>
+                <span className="toast-msg">备份已保存至应用文档目录</span>
+                <button className="toast-btn" onClick={handleShare}>分享文件</button>
+                <button className="toast-close" onClick={() => setToast(null)}>&times;</button>
+              </>
+            ) : (
+              <>
+                <span className="toast-icon">&#x274C;</span>
+                <span className="toast-msg">{toast.message}</span>
+                <button className="toast-close" onClick={() => setToast(null)}>&times;</button>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -1,11 +1,16 @@
+import { getIsNative } from './storage';
+
+function getExportFilename() {
+  const now = new Date();
+  const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+  return `todotrack_${ts}.json`;
+}
+
 export function exportTodos(todos) {
   const json = JSON.stringify(todos, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-
-  const now = new Date();
-  const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-  const filename = `todotrack_${ts}.json`;
+  const filename = getExportFilename();
 
   const a = document.createElement('a');
   a.href = url;
@@ -14,6 +19,48 @@ export function exportTodos(todos) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+export async function exportTodosNative(todos) {
+  const json = JSON.stringify(todos, null, 2);
+  const filename = getExportFilename();
+
+  const { Filesystem, Directory } = await import('@capacitor/filesystem');
+  await Filesystem.writeFile({
+    path: filename,
+    data: json,
+    directory: Directory.Documents,
+    recursive: true,
+  });
+
+  return filename;
+}
+
+export async function shareExportedFile(filename) {
+  const { Share } = await import('@capacitor/share');
+  const { Filesystem, Directory } = await import('@capacitor/filesystem');
+
+  const result = await Filesystem.getUri({
+    path: filename,
+    directory: Directory.Documents,
+  });
+
+  await Share.share({
+    title: '待办数据备份',
+    text: 'TodoTrack 待办事项数据备份',
+    url: result.uri,
+    dialogTitle: '分享备份文件',
+  });
+}
+
+export async function exportAndShareTodos(todos) {
+  const filename = await exportTodosNative(todos);
+  try {
+    await shareExportedFile(filename);
+  } catch {
+    // user cancelled share, file is still saved
+  }
+  return filename;
 }
 
 export function parseImportFile(file) {
