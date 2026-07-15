@@ -267,7 +267,7 @@ function TagsEdit({ tags, onSave, inBatch }) {
   );
 }
 
-function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgress, onAddProgress, onUpdateProgressCompletedAt, inBatch }) {
+function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgress, onAddProgress, onUpdateProgress, onUpdateProgressCompletedAt, inBatch }) {
   const [progressText, setProgressText] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -275,6 +275,8 @@ function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgres
   const [selectedPIds, setSelectedPIds] = useState(new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showDateModal, setShowDateModal] = useState(false);
+  const [editingProgress, setEditingProgress] = useState(null);
+  const [editText, setEditText] = useState('');
 
   const activeProgress = (progress || []).filter(p => p.status === 'active');
   const archivedProgress = (progress || []).filter(p => p.status !== 'active');
@@ -330,6 +332,19 @@ function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgres
 
   const allCount = (progress || []).length;
 
+  const handleOpenProgressEdit = (p) => {
+    setEditingProgress(p);
+    setEditText(p.text);
+  };
+
+  const handleSaveProgressEdit = () => {
+    const trimmed = editText.trim();
+    if (trimmed && trimmed !== editingProgress.text) {
+      onUpdateProgress(todoId, editingProgress.id, trimmed);
+    }
+    setEditingProgress(null);
+  };
+
   return (
     <div className="progress-section" onClick={inBatch ? e => e.stopPropagation() : undefined}>
       {activeProgress.length > 0 && (
@@ -337,13 +352,12 @@ function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgres
           {activeProgress.map(p => (
             <div
               key={p.id}
-              className={`progress-entry active ${manageMode ? 'progress-manage' : ''} ${selectedPIds.has(p.id) ? 'progress-selected' : ''}`}
-              onClick={manageMode ? () => toggleSelect(p.id) : undefined}
+              className={`progress-entry active progress-card ${manageMode ? 'progress-manage' : 'progress-clickable'} ${selectedPIds.has(p.id) ? 'progress-selected' : ''}`}
+              onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenProgressEdit(p)}
             >
               {!inBatch && !manageMode && (
                 <span className="progress-actions">
                   <button className="p-action done" onClick={(e) => { e.stopPropagation(); onToggleProgressStatus(todoId, p.id, 'completed'); }} title="完成">&#x2713;</button>
-                  <button className="p-action cancel" onClick={(e) => { e.stopPropagation(); onToggleProgressStatus(todoId, p.id, 'cancelled'); }} title="作废">&#x2717;</button>
                 </span>
               )}
               {manageMode && (
@@ -416,7 +430,7 @@ function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgres
                     + 添加进度
                   </button>
                   {allCount > 0 && (
-                    <button className="btn-mini btn-add-progress" onClick={() => { setManageMode(true); setConfirmDelete(false); }}>
+                    <button className="btn-mini btn-add-progress" style={{ marginLeft: 'auto' }} onClick={() => { setManageMode(true); setConfirmDelete(false); }}>
                       管理进度
                     </button>
                   )}
@@ -451,8 +465,8 @@ function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgres
               {archivedProgress.map(p => (
                 <div
                   key={p.id}
-                  className={`progress-entry ${p.status} ${manageMode ? 'progress-manage' : ''} ${selectedPIds.has(p.id) ? 'progress-selected' : ''}`}
-                  onClick={manageMode ? () => toggleSelect(p.id) : undefined}
+                  className={`progress-entry ${p.status} ${manageMode ? 'progress-manage' : 'progress-clickable'} ${selectedPIds.has(p.id) ? 'progress-selected' : ''}`}
+                  onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenProgressEdit(p)}
                 >
                   {!inBatch && !manageMode && (
                     <span className="progress-actions">
@@ -486,16 +500,56 @@ function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgres
           onCancel={() => setShowDateModal(false)}
         />
       )}
+
+      {editingProgress && (
+        <div className="modal-full-overlay" onClick={() => setEditingProgress(null)}>
+          <div className="modal-full-sheet" onClick={e => e.stopPropagation()}>
+            <div className="modal-full-header">
+              <span className="modal-full-title">编辑进度</span>
+              <button className="modal-full-close" onClick={() => setEditingProgress(null)}>&times;</button>
+            </div>
+            <div className="modal-full-body">
+              <textarea
+                className="modal-edit-textarea"
+                value={editText}
+                onChange={e => setEditText(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="modal-full-footer">
+              <button className="btn-cancel" onClick={() => setEditingProgress(null)}>取消</button>
+              <button className="btn-save" onClick={handleSaveProgressEdit}>保存</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggleProgressStatus, onDeleteProgress, onUpdateProgressCompletedAt, onUpdateTodo, onDragStart, onBatchToggle, isDragging, isSelected, batchMode, isArchive }) {
+export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggleProgressStatus, onDeleteProgress, onUpdateProgress, onUpdateProgressCompletedAt, onUpdateTodo, onDragStart, onBatchToggle, isDragging, isSelected, batchMode, isArchive }) {
   const overdue = todo.status === 'active' && isOverdue(todo.dueDate);
   const statusClass = todo.status === 'completed' ? 'completed'
     : todo.status === 'cancelled' ? 'cancelled'
     : overdue ? 'overdue'
     : '';
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editText, setEditText] = useState('');
+
+  const handleOpenEdit = () => {
+    if (batchMode) return;
+    setEditText(todo.title || '');
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = () => {
+    const trimmed = editText.trim();
+    if (trimmed && trimmed !== todo.title) {
+      onUpdateTodo(todo.id, { title: trimmed });
+    }
+    setShowEditModal(false);
+  };
 
   const pressTimer = useRef(null);
   const pressMoved = useRef(false);
@@ -546,12 +600,12 @@ export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggle
         )}
         <div className="todo-content">
           <div style={{ marginBottom: 3 }}>
-            <InlineEdit
-              value={todo.title}
-              onSave={(val) => onUpdateTodo(todo.id, { title: val })}
-              placeholder="待办内容"
-              inBatch={batchMode}
-            />
+            <span
+              className="todo-title-text"
+              onClick={handleOpenEdit}
+            >
+              {todo.title || '待办内容'}
+            </span>
           </div>
           <div className="todo-meta">
             <DateEdit
@@ -608,6 +662,7 @@ export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggle
           onToggleProgressStatus={onToggleProgressStatus}
           onDeleteProgress={onDeleteProgress}
           onAddProgress={onAddProgress}
+          onUpdateProgress={onUpdateProgress}
           onUpdateProgressCompletedAt={onUpdateProgressCompletedAt}
           inBatch={batchMode}
         />
@@ -624,6 +679,29 @@ export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggle
               {p.text}
             </div>
           ))}
+        </div>
+      )}
+
+      {showEditModal && (
+        <div className="modal-full-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-full-sheet" onClick={e => e.stopPropagation()}>
+            <div className="modal-full-header">
+              <span className="modal-full-title">编辑内容</span>
+              <button className="modal-full-close" onClick={() => setShowEditModal(false)}>&times;</button>
+            </div>
+            <div className="modal-full-body">
+              <textarea
+                className="modal-edit-textarea"
+                value={editText}
+                onChange={e => setEditText(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="modal-full-footer">
+              <button className="btn-cancel" onClick={() => setShowEditModal(false)}>取消</button>
+              <button className="btn-save" onClick={handleSaveEdit}>保存</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

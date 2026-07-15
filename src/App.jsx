@@ -9,7 +9,7 @@ import DataMenu from './components/DataMenu';
 import BatchBar from './components/BatchBar';
 
 export default function App() {
-  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags } = useTodos();
+  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags } = useTodos();
   const [filterConfig, setFilterConfig] = useState({ includeTags: [], excludeTags: [] });
   const [view, setView] = useState('active');
   const [dragId, setDragId] = useState(null);
@@ -195,6 +195,7 @@ export default function App() {
             onAddProgress={addProgress}
             onToggleProgressStatus={toggleProgressStatus}
             onDeleteProgress={deleteProgress}
+            onUpdateProgress={updateProgress}
             onUpdateProgressCompletedAt={updateProgressCompletedAt}
             onUpdateTodo={updateTodo}
             onDragStart={handleDragStart}

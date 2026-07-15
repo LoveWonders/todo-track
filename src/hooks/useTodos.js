@@ -124,6 +124,17 @@ export function useTodos() {
     ));
   }, []);
 
+  const updateProgress = useCallback((todoId, progressId, text) => {
+    setTodos(prev => prev.map(t =>
+      t.id === todoId ? {
+        ...t,
+        progress: (t.progress || []).map(p =>
+          p.id === progressId ? { ...p, text: text.trim() } : p
+        )
+      } : t
+    ));
+  }, []);
+
   const updateProgressCompletedAt = useCallback((todoId, progressId, dateString) => {
     const isoString = new Date(dateString + 'T12:00:00').toISOString();
     setTodos(prev => prev.map(t =>
@@ -164,5 +175,5 @@ export function useTodos() {
   const archivedTodos = todos.filter(t => t.status !== 'active');
   const allTags = [...new Set(todos.flatMap(t => t.tags))].sort();
 
-  return { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
+  return { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
 }
