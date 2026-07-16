@@ -1,4 +1,5 @@
 import { getIsNative } from './storage';
+import { addLog } from './logger';
 
 function getExportFilename() {
   const now = new Date();
@@ -25,25 +26,55 @@ export async function exportTodosNative(todos) {
   const json = JSON.stringify(todos, null, 2);
   const filename = getExportFilename();
 
-  const { Filesystem, Directory } = await import('@capacitor/filesystem');
-  await Filesystem.writeFile({
-    path: filename,
-    data: json,
-    directory: Directory.Documents,
-    recursive: true,
-  });
+  if (!filename || typeof filename !== 'string') {
+    throw new Error('path 参数无效：' + JSON.stringify(filename));
+  }
+  if (!json || typeof json !== 'string') {
+    throw new Error('data 参数无效：非字符串数据');
+  }
 
-  return filename;
+  addLog('info', '开始导出', { path: filename, dataLength: json.length, preview: json.slice(0, 50) });
+
+  const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+
+  if (!Directory.Data) {
+    const err = new Error('Directory 枚举加载失败');
+    addLog('error', '导出失败', { error: err.message });
+    throw err;
+  }
+
+  try {
+    const result = await Filesystem.writeFile({
+      path: filename,
+      data: json,
+      directory: Directory.Data,
+      encoding: Encoding.UTF8,
+      recursive: true,
+    });
+    addLog('success', '导出成功', { uri: result.uri, size: json.length });
+    return filename;
+  } catch (err) {
+    const detail = JSON.stringify(err, Object.getOwnPropertyNames(err));
+    addLog('error', '导出失败', { error: err.message, detail });
+    throw err;
+  }
 }
 
 export async function shareExportedFile(filename) {
+  if (!filename || typeof filename !== 'string') {
+    addLog('error', '分享失败', { error: 'filename 无效' });
+    throw new Error('shareExportedFile: filename 无效');
+  }
+
   const { Share } = await import('@capacitor/share');
   const { Filesystem, Directory } = await import('@capacitor/filesystem');
 
   const result = await Filesystem.getUri({
     path: filename,
-    directory: Directory.Documents,
+    directory: Directory.Data,
   });
+
+  addLog('info', '开始分享', { filename, uri: result.uri });
 
   await Share.share({
     title: '待办数据备份',

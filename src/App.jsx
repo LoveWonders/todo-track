@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTodos } from './hooks/useTodos';
+import { useBackButton } from './hooks/useBackButton';
 import TodoInput from './components/TodoInput';
 import TodoItem from './components/TodoItem';
 import TagFilterBar from './components/TagFilterBar';
@@ -50,6 +51,8 @@ export default function App() {
   const exitBatch = useCallback(() => {
     setSelectedIds(new Set());
   }, []);
+
+  const exitPrompt = useBackButton({ view, setView, batchMode, exitBatch });
 
   const handleBatchToggle = useCallback((id) => {
     setSelectedIds(prev => {
@@ -320,6 +323,17 @@ export default function App() {
           onConfirm={(dateString) => { batchCompleteAt(dateString); setShowCompleteDateModal(false); }}
           onCancel={() => setShowCompleteDateModal(false)}
         />
+      )}
+
+      {exitPrompt && (
+        <div className="exit-toast-wrapper" onClick={() => {}}>
+          <div className="exit-toast">
+            <span className="exit-toast-text">再按一次退出应用</span>
+            <div className="exit-toast-bar">
+              <div className="exit-toast-bar-inner" />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

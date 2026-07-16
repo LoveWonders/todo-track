@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { exportTodos, exportTodosNative, shareExportedFile, parseImportFile, findConflicts } from '../utils/exportImport';
 import { getIsNative } from '../utils/storage';
+import { getLogs, clearLogs } from '../utils/logger';
 
 export default function DataMenu({ todos, onImport }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [conflictModal, setConflictModal] = useState(null);
   const [pendingImport, setPendingImport] = useState(null);
   const [toast, setToast] = useState(null);
+  const [logModal, setLogModal] = useState(false);
+  const [logs, setLogs] = useState([]);
   const menuRef = useRef(null);
   const fileRef = useRef(null);
 
@@ -76,6 +79,27 @@ export default function DataMenu({ todos, onImport }) {
     setPendingImport(null);
   };
 
+  const openLogs = () => {
+    setMenuOpen(false);
+    setLogs(getLogs());
+    setLogModal(true);
+  };
+
+  const handleClearLogs = () => {
+    clearLogs();
+    setLogs([]);
+    setLogModal(false);
+  };
+
+  const logTypeLabel = (type) => {
+    switch (type) {
+      case 'error': return '错误';
+      case 'success': return '成功';
+      case 'info': return '信息';
+      default: return type;
+    }
+  };
+
   return (
     <>
       <div className="data-menu" ref={menuRef}>
@@ -94,6 +118,9 @@ export default function DataMenu({ todos, onImport }) {
             </button>
             <button className="data-menu-item" onClick={() => fileRef.current?.click()}>
               导入数据
+            </button>
+            <button className="data-menu-item" onClick={openLogs}>
+              调试日志
             </button>
             <input
               ref={fileRef}
@@ -126,6 +153,41 @@ export default function DataMenu({ todos, onImport }) {
               <button className="btn-mini btn-mini-cancel" onClick={() => setConflictModal(null)}>取消</button>
               <button className="btn-mini btn-mini-save" onClick={() => handleConflictResolve('skip')}>跳过重复</button>
               <button className="btn-mini btn-mini-save" onClick={() => handleConflictResolve('overwrite')} style={{ background: 'var(--warn)' }}>覆盖</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {logModal && (
+        <div className="modal-overlay" onClick={() => setLogModal(false)}>
+          <div className="modal-card log-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <span className="modal-title">调试日志</span>
+              <button className="modal-close" onClick={() => setLogModal(false)}>&times;</button>
+            </div>
+            <div className="modal-body log-body">
+              {logs.length === 0 ? (
+                <div className="log-empty">暂无日志</div>
+              ) : (
+                logs.map(entry => (
+                  <div key={entry.id} className={`log-entry log-${entry.type}`}>
+                    <div className="log-head">
+                      <span className={`log-badge log-badge-${entry.type}`}>{logTypeLabel(entry.type)}</span>
+                      <span className="log-ts">{entry.ts}</span>
+                    </div>
+                    <div className="log-msg">{entry.message}</div>
+                    {entry.detail && (
+                      <pre className="log-detail">{JSON.stringify(entry.detail, null, 2)}</pre>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-mini btn-mini-cancel" onClick={() => setLogModal(false)}>关闭</button>
+              {logs.length > 0 && (
+                <button className="btn-mini btn-mini-save" style={{ background: 'var(--warn)' }} onClick={handleClearLogs}>清空日志</button>
+              )}
             </div>
           </div>
         </div>
