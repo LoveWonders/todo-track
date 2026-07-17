@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { exportTodos, exportTodosNative, shareExportedFile, parseImportFile, findConflicts } from '../utils/exportImport';
-import { getIsNative } from '../utils/storage';
+import { getIsNative, clearAllData } from '../utils/storage';
 import { getLogs, clearLogs } from '../utils/logger';
 
 export default function DataMenu({ todos, onImport }) {
@@ -9,6 +9,7 @@ export default function DataMenu({ todos, onImport }) {
   const [pendingImport, setPendingImport] = useState(null);
   const [toast, setToast] = useState(null);
   const [logModal, setLogModal] = useState(false);
+  const [clearConfirm, setClearConfirm] = useState(false);
   const [logs, setLogs] = useState([]);
   const menuRef = useRef(null);
   const fileRef = useRef(null);
@@ -29,7 +30,7 @@ export default function DataMenu({ todos, onImport }) {
     if (getIsNative()) {
       try {
         const result = await exportTodosNative(todos);
-        setToast({ type: 'success', filename: result.filename, path: result.path });
+        setToast({ type: 'success', filename: result.filename, path: result.path, uri: result.uri });
       } catch (err) {
         setToast({ type: 'error', message: '导出失败：' + err.message });
       }
@@ -39,9 +40,9 @@ export default function DataMenu({ todos, onImport }) {
   };
 
   const handleShare = async () => {
-    if (!toast || !toast.filename) return;
+    if (!toast || !toast.uri) return;
     try {
-      await shareExportedFile(toast.filename);
+      await shareExportedFile(toast.uri);
     } catch {
       // user cancelled
     }
@@ -91,6 +92,17 @@ export default function DataMenu({ todos, onImport }) {
     setLogModal(false);
   };
 
+  const handleClearData = () => {
+    setMenuOpen(false);
+    setClearConfirm(true);
+  };
+
+  const confirmClearData = async () => {
+    await clearAllData();
+    setClearConfirm(false);
+    window.location.reload();
+  };
+
   const logTypeLabel = (type) => {
     switch (type) {
       case 'error': return '错误';
@@ -121,6 +133,9 @@ export default function DataMenu({ todos, onImport }) {
             </button>
             <button className="data-menu-item" onClick={openLogs}>
               调试日志
+            </button>
+            <button className="data-menu-item data-menu-item-danger" onClick={handleClearData}>
+              清除本地缓存并重置
             </button>
             <input
               ref={fileRef}
@@ -153,6 +168,25 @@ export default function DataMenu({ todos, onImport }) {
               <button className="btn-mini btn-mini-cancel" onClick={() => setConflictModal(null)}>取消</button>
               <button className="btn-mini btn-mini-save" onClick={() => handleConflictResolve('skip')}>跳过重复</button>
               <button className="btn-mini btn-mini-save" onClick={() => handleConflictResolve('overwrite')} style={{ background: 'var(--warn)' }}>覆盖</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {clearConfirm && (
+        <div className="modal-overlay" onClick={() => setClearConfirm(false)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <span className="modal-title">危险操作</span>
+            </div>
+            <div className="modal-body">
+              <p className="modal-desc">
+                此操作将清空所有待办数据且无法恢复，是否继续？
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-mini btn-mini-cancel" onClick={() => setClearConfirm(false)}>取消</button>
+              <button className="btn-mini btn-mini-save" onClick={confirmClearData} style={{ background: 'var(--danger)' }}>确认清除</button>
             </div>
           </div>
         </div>

@@ -128,6 +128,11 @@ body {
   border-top: 1px solid var(--border);
 }
 
+.data-menu-item-danger {
+  color: var(--danger) !important;
+  font-weight: 500;
+}
+
 .toast-container {
   position: fixed;
   inset: 0;

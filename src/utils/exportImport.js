@@ -38,75 +38,50 @@ export async function exportTodosNative(todos) {
 
   addLog('info', '开始导出', { filename, dataLength: json.length, preview: json.slice(0, 80) });
 
-  const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
-
   try {
-    const result = await Filesystem.writeFile({
-      path: filename,
-      data: json,
-      directory: Directory.External,
-      encoding: Encoding.UTF8,
-      recursive: true,
-    });
-
-    const verify = await Filesystem.stat({
-      path: filename,
-      directory: Directory.External,
-    });
-
-    const pathHint = `/Android/data/com.todotrack.app/files/${filename}`;
+    const { DownloadPlugin } = await import('./downloadPlugin');
+    const result = await DownloadPlugin.saveToDownloads({ filename, data: json });
 
     addLog('success', '导出成功', {
       uri: result.uri,
+      filename: result.filename,
       dataLength: json.length,
-      fileSize: verify.size,
-      fileUri: verify.uri,
     });
 
-    if (verify.size === 0) {
-      throw new Error('文件写入后大小为 0 字节，写入异常');
-    }
-
-    return { filename, path: pathHint };
+    return { filename, path: '系统下载目录 (Download)', uri: result.uri };
   } catch (err) {
-    const detail = JSON.stringify(err, Object.getOwnPropertyNames(err));
-    addLog('error', '导出失败', { error: err.message, detail });
+    const detail = typeof err === 'object' ? JSON.stringify(err, Object.getOwnPropertyNames(err)) : String(err);
+    addLog('error', '导出失败', { error: err.message || String(err), detail });
     throw err;
   }
 }
 
-export async function shareExportedFile(filename) {
-  if (!filename || typeof filename !== 'string') {
-    addLog('error', '分享失败', { error: 'filename 无效' });
-    throw new Error('shareExportedFile: filename 无效');
+export async function shareExportedFile(fileUri) {
+  if (!fileUri || typeof fileUri !== 'string') {
+    addLog('error', '分享失败', { error: 'fileUri 无效' });
+    throw new Error('shareExportedFile: fileUri 无效');
   }
 
   const { Share } = await import('@capacitor/share');
-  const { Filesystem, Directory } = await import('@capacitor/filesystem');
 
-  const result = await Filesystem.getUri({
-    path: filename,
-    directory: Directory.External,
-  });
-
-  addLog('info', '开始分享', { filename, uri: result.uri });
+  addLog('info', '开始分享', { uri: fileUri });
 
   await Share.share({
     title: '待办数据备份',
     text: 'TodoTrack 待办事项数据备份',
-    url: result.uri,
+    url: fileUri,
     dialogTitle: '分享备份文件',
   });
 }
 
 export async function exportAndShareTodos(todos) {
-  const { filename } = await exportTodosNative(todos);
+  const result = await exportTodosNative(todos);
   try {
-    await shareExportedFile(filename);
+    await shareExportedFile(result.uri);
   } catch {
     // user cancelled share, file is still saved
   }
-  return filename;
+  return result.filename;
 }
 
 export function parseImportFile(file) {
