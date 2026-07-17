@@ -167,6 +167,20 @@ body {
 .toast-msg {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toast-msg-title {
+  font-size: 13px;
+}
+
+.toast-msg-path {
+  font-size: 10px;
+  color: var(--text2);
+  word-break: break-all;
+  opacity: 0.7;
 }
 
 .toast-btn {
@@ -1450,6 +1464,29 @@ body {
 
 .batch-cancel:active {
   background: var(--bg);
+}
+
+.batch-select-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.batch-select-btn {
+  padding: 3px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.batch-select-btn:active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
 }
 
 .batch-actions {

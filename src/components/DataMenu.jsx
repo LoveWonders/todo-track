@@ -28,8 +28,8 @@ export default function DataMenu({ todos, onImport }) {
     setMenuOpen(false);
     if (getIsNative()) {
       try {
-        const filename = await exportTodosNative(todos);
-        setToast({ type: 'success', filename });
+        const result = await exportTodosNative(todos);
+        setToast({ type: 'success', filename: result.filename, path: result.path });
       } catch (err) {
         setToast({ type: 'error', message: '导出失败：' + err.message });
       }
@@ -199,7 +199,10 @@ export default function DataMenu({ todos, onImport }) {
             {toast.type === 'success' ? (
               <>
                 <span className="toast-icon">&#x2705;</span>
-                <span className="toast-msg">备份已保存至应用文档目录</span>
+                <div className="toast-msg">
+                  <span className="toast-msg-title">备份已保存</span>
+                  {toast.path && <span className="toast-msg-path">{toast.path}</span>}
+                </div>
                 <button className="toast-btn" onClick={handleShare}>分享文件</button>
                 <button className="toast-close" onClick={() => setToast(null)}>&times;</button>
               </>

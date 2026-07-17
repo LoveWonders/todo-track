@@ -174,6 +174,21 @@ export default function App() {
     selectedIds.forEach(id => addProgress(id, text));
   };
 
+  const selectAll = () => {
+    const ids = new Set(filteredTodos.map(t => t.id));
+    setSelectedIds(ids);
+  };
+
+  const invertSelection = () => {
+    setSelectedIds(prev => {
+      const next = new Set();
+      for (const t of filteredTodos) {
+        if (!prev.has(t.id)) next.add(t.id);
+      }
+      return next;
+    });
+  };
+
   const batchCompleteAt = (dateString) => {
     selectedIds.forEach(id => updateCompletedAt(id, dateString));
     exitBatch();
@@ -303,6 +318,7 @@ export default function App() {
         batchMode ? (
           <BatchBar
             count={selectedIds.size}
+            total={filteredTodos.length}
             onCancel={exitBatch}
             onDelete={batchDelete}
             onComplete={batchComplete}
@@ -311,6 +327,8 @@ export default function App() {
             onSetTags={batchSetTags}
             onAddProgress={batchAddProgress}
             onOpenCompleteDateModal={() => setShowCompleteDateModal(true)}
+            onSelectAll={selectAll}
+            onInvertSelection={invertSelection}
           />
         ) : (
           <TodoInput onAdd={addTodo} />

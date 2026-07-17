@@ -29,30 +29,45 @@ export async function exportTodosNative(todos) {
   if (!filename || typeof filename !== 'string') {
     throw new Error('path 参数无效：' + JSON.stringify(filename));
   }
-  if (!json || typeof json !== 'string') {
+  if (typeof json !== 'string') {
     throw new Error('data 参数无效：非字符串数据');
   }
+  if (json.length === 0) {
+    throw new Error('data 参数无效：空字符串');
+  }
 
-  addLog('info', '开始导出', { path: filename, dataLength: json.length, preview: json.slice(0, 50) });
+  addLog('info', '开始导出', { filename, dataLength: json.length, preview: json.slice(0, 80) });
 
   const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
-
-  if (!Directory.Data) {
-    const err = new Error('Directory 枚举加载失败');
-    addLog('error', '导出失败', { error: err.message });
-    throw err;
-  }
 
   try {
     const result = await Filesystem.writeFile({
       path: filename,
       data: json,
-      directory: Directory.Data,
+      directory: Directory.External,
       encoding: Encoding.UTF8,
       recursive: true,
     });
-    addLog('success', '导出成功', { uri: result.uri, size: json.length });
-    return filename;
+
+    const verify = await Filesystem.stat({
+      path: filename,
+      directory: Directory.External,
+    });
+
+    const pathHint = `/Android/data/com.todotrack.app/files/${filename}`;
+
+    addLog('success', '导出成功', {
+      uri: result.uri,
+      dataLength: json.length,
+      fileSize: verify.size,
+      fileUri: verify.uri,
+    });
+
+    if (verify.size === 0) {
+      throw new Error('文件写入后大小为 0 字节，写入异常');
+    }
+
+    return { filename, path: pathHint };
   } catch (err) {
     const detail = JSON.stringify(err, Object.getOwnPropertyNames(err));
     addLog('error', '导出失败', { error: err.message, detail });
@@ -71,7 +86,7 @@ export async function shareExportedFile(filename) {
 
   const result = await Filesystem.getUri({
     path: filename,
-    directory: Directory.Data,
+    directory: Directory.External,
   });
 
   addLog('info', '开始分享', { filename, uri: result.uri });
@@ -85,7 +100,7 @@ export async function shareExportedFile(filename) {
 }
 
 export async function exportAndShareTodos(todos) {
-  const filename = await exportTodosNative(todos);
+  const { filename } = await exportTodosNative(todos);
   try {
     await shareExportedFile(filename);
   } catch {
@@ -98,8 +113,16 @@ export function parseImportFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
+      let raw = e.target.result;
+      if (!raw || raw.length === 0) {
+        reject(new Error('文件内容为空'));
+        return;
+      }
+      if (raw.charCodeAt(0) === 0xFEFF) {
+        raw = raw.slice(1);
+      }
       try {
-        const data = JSON.parse(e.target.result);
+        const data = JSON.parse(raw);
         if (!Array.isArray(data)) {
           reject(new Error('文件格式错误：需要待办数组'));
           return;
@@ -112,7 +135,13 @@ export function parseImportFile(file) {
           return;
         }
         resolve(data);
-      } catch {
+      } catch (err) {
+        addLog('error', 'JSON 解析失败', {
+          filename: file.name,
+          fileSize: file.size,
+          preview: raw.slice(0, 100),
+          parseError: err.message,
+        });
         reject(new Error('文件解析失败：不是有效的 JSON 格式'));
       }
     };

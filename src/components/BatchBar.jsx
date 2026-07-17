@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { parseDateText } from '../utils/dateParser';
 
-export default function BatchBar({ count, onCancel, onDelete, onComplete, onCancelItems, onSetDate, onSetTags, onAddProgress, onOpenCompleteDateModal }) {
+export default function BatchBar({ count, total, onCancel, onDelete, onComplete, onCancelItems, onSetDate, onSetTags, onAddProgress, onOpenCompleteDateModal, onSelectAll, onInvertSelection }) {
   const [activeAction, setActiveAction] = useState(null);
   const [inputText, setInputText] = useState('');
   const [dateText, setDateText] = useState('');
@@ -147,6 +147,10 @@ export default function BatchBar({ count, onCancel, onDelete, onComplete, onCanc
           <div className="batch-top-row">
             <span className="batch-count">已选 {count} 项</span>
             <button className="batch-cancel" onClick={onCancel}>取消</button>
+          </div>
+          <div className="batch-select-row">
+            <button className="batch-select-btn" onClick={onSelectAll}>全选</button>
+            <button className="batch-select-btn" onClick={onInvertSelection}>反选</button>
           </div>
           <div className="batch-actions">
             <button className="batch-btn done" onClick={onComplete}>完成</button>

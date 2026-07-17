@@ -1,5 +1,24 @@
 const MAX_LOGS = 200;
-const logs = [];
+const STORAGE_KEY = 'todotrack_debug_logs';
+
+let logs = [];
+
+(function init() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      logs = JSON.parse(raw);
+    }
+  } catch {
+    logs = [];
+  }
+})();
+
+function persist() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+  } catch { /* ignore */ }
+}
 
 export function addLog(type, message, detail) {
   const entry = {
@@ -11,8 +30,9 @@ export function addLog(type, message, detail) {
   };
   logs.unshift(entry);
   if (logs.length > MAX_LOGS) {
-    logs.pop();
+    logs.length = MAX_LOGS;
   }
+  persist();
   return entry;
 }
 
@@ -21,5 +41,6 @@ export function getLogs() {
 }
 
 export function clearLogs() {
-  logs.length = 0;
+  logs = [];
+  persist();
 }
