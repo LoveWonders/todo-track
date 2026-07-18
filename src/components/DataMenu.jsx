@@ -106,6 +106,15 @@ export default function DataMenu({ todos, onImport }) {
     window.location.reload();
   };
 
+  const getSelectedLogsText = () => {
+    return logs
+      .filter(e => selectedIds.has(e.id))
+      .map(e =>
+        `[${e.ts}] [${logTypeLabel(e.type)}] ${e.message}` +
+        (e.detail ? '\n' + JSON.stringify(e.detail, null, 2) : '')
+      ).join('\n\n---\n\n');
+  };
+
   const copyToClipboard = async (text) => {
     try {
       const { Clipboard } = await import('@capacitor/clipboard');
@@ -151,12 +160,7 @@ export default function DataMenu({ todos, onImport }) {
       return;
     }
 
-    const text = logs
-      .filter(e => selectedIds.has(e.id))
-      .map(e =>
-        `[${e.ts}] [${logTypeLabel(e.type)}] ${e.message}` +
-        (e.detail ? '\n' + JSON.stringify(e.detail, null, 2) : '')
-      ).join('\n\n---\n\n');
+    const text = getSelectedLogsText();
 
     try {
       const ok = await copyToClipboard(text);
@@ -171,10 +175,12 @@ export default function DataMenu({ todos, onImport }) {
   };
 
   const handleExportLogs = async () => {
-    const text = logs.map(e =>
-      `[${e.ts}] [${logTypeLabel(e.type)}] ${e.message}` +
-      (e.detail ? '\n' + JSON.stringify(e.detail, null, 2) : '')
-    ).join('\n\n---\n\n');
+    if (selectedIds.size === 0) {
+      setToast({ type: 'error', message: '请先选择要导出的日志' });
+      return;
+    }
+
+    const text = getSelectedLogsText();
 
     const now = new Date();
     const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
