@@ -1,0 +1,1 @@
+import{t as e}from"./dist-Cnp6P8yH.js";function t(t){return e.nativePromise(`DownloadPlugin`,`saveToDownloads`,t)}var n={saveToDownloads(n){return e.isNativePlatform()?t(n):Promise.reject(Error(`DownloadPlugin 仅在原生环境可用`))}};export{n as DownloadPlugin};

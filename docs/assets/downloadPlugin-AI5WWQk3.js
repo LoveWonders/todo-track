@@ -1,1 +1,0 @@
-import{r as e}from"./dist-BqG9tZro.js";var t=e(`DownloadPlugin`,{web:{async saveToDownloads(){return Promise.reject(Error(`DownloadPlugin 仅在原生环境可用`))}},android:{}});export{t as DownloadPlugin};

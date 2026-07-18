@@ -40,7 +40,7 @@ export async function exportTodosNative(todos) {
 
   try {
     const { DownloadPlugin } = await import('./downloadPlugin');
-    const result = await DownloadPlugin.saveToDownloads({ filename, data: json });
+    const result = await DownloadPlugin.saveToDownloads({ filename, data: json, subFolder: 'todotrack' });
 
     addLog('success', '导出成功', {
       uri: result.uri,
@@ -48,7 +48,7 @@ export async function exportTodosNative(todos) {
       dataLength: json.length,
     });
 
-    return { filename, path: '系统下载目录 (Download)', uri: result.uri };
+    return { filename, path: 'Download/todotrack/', uri: result.uri };
   } catch (err) {
     const detail = typeof err === 'object' ? JSON.stringify(err, Object.getOwnPropertyNames(err)) : String(err);
     addLog('error', '导出失败', { error: err.message || String(err), detail });
