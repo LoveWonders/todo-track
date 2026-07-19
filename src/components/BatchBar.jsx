@@ -5,7 +5,6 @@ export default function BatchBar({ count, total, onCancel, onDelete, onComplete,
   const [activeAction, setActiveAction] = useState(null);
   const [inputText, setInputText] = useState('');
   const [dateText, setDateText] = useState('');
-  const pickerRef = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -19,25 +18,6 @@ export default function BatchBar({ count, total, onCancel, onDelete, onComplete,
       inputRef.current.focus();
     }
   }, [activeAction]);
-
-  const openCalendar = () => {
-    if (pickerRef.current) {
-      if (typeof pickerRef.current.showPicker === 'function') {
-        pickerRef.current.showPicker();
-      } else {
-        pickerRef.current.focus();
-        pickerRef.current.click();
-      }
-    }
-  };
-
-  const handleCalendarPick = (e) => {
-    const picked = e.target.value;
-    if (picked) {
-      onSetDate(picked);
-      setActiveAction(null);
-    }
-  };
 
   const handleDateSubmit = () => {
     const trimmed = dateText.trim();
@@ -89,19 +69,13 @@ export default function BatchBar({ count, total, onCancel, onDelete, onComplete,
             <div className="batch-action-row">
               <input
                 ref={inputRef}
-                className="batch-input"
+                className="batch-input batch-input-date"
                 placeholder="输入日期：明天、下周一、20260710"
                 value={dateText}
                 onChange={e => setDateText(e.target.value)}
                 onKeyDown={handleKeyDown}
               />
-              <button className="calendar-btn" onClick={openCalendar}>📅</button>
-              <input
-                ref={pickerRef}
-                type="date"
-                className="date-picker-hidden"
-                onChange={handleCalendarPick}
-              />
+              <button className="calendar-btn" onClick={() => inputRef.current?.focus()}>&#x1F4C5;</button>
               <button className="btn-mini btn-mini-save" onClick={handleDateSubmit}>确认</button>
             </div>
           )}

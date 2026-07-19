@@ -1472,6 +1472,11 @@ body {
   border-color: var(--accent);
 }
 
+.batch-input-date {
+  flex: 2;
+  min-width: 180px;
+}
+
 .batch-top-row {
   display: flex;
   align-items: center;
