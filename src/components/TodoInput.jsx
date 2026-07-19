@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { useSmartInput } from '../hooks/useSmartInput';
 import { useCalendarLogic } from '../hooks/useCalendarLogic';
 import { useTagLogic } from '../hooks/useTagLogic';
@@ -14,7 +14,7 @@ export default function TodoInput({ onAdd }) {
   } = useSmartInput();
 
   const {
-    startDate, dueDate, pickerRef, openPicker, handleCalendarPick
+    startDate, dueDate, pickerRef, openPicker, handleCalendarPick, tryParseDateText
   } = useCalendarLogic(parsed.startDate, parsed.dueDate, ({ start, end }) => {
     setPickedStart(start);
     setPickedEnd(end);
@@ -53,6 +53,22 @@ export default function TodoInput({ onAdd }) {
 
   const displayStart = pickedStart !== null ? pickedStart : startDate;
   const displayEnd = pickedEnd !== null ? pickedEnd : dueDate;
+  const displayText = formatDateRange(displayStart, displayEnd);
+
+  const handleDateTextBlur = useCallback((e) => {
+    const val = e.target.value;
+    if (val && val !== displayText) {
+      tryParseDateText(val);
+    }
+  }, [displayText, tryParseDateText]);
+
+  const handleDateTextKeyDown = useCallback((e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = e.target.value;
+      if (val) tryParseDateText(val);
+    }
+  }, [tryParseDateText]);
 
   return (
     <div className="todo-input">
@@ -79,13 +95,24 @@ export default function TodoInput({ onAdd }) {
       {(displayEnd || tags.length > 0) && (
         <div className="input-preview">
           {displayEnd && (
-            <span
-              className="preview-date"
-              onClick={() => openPicker('end')}
-              title="点击选择日期"
-            >
-              {formatDateRange(displayStart, displayEnd)}
-            </span>
+            <div className="date-picker-row">
+              <input
+                type="text"
+                className="date-text-input"
+                defaultValue={displayText}
+                key={displayText}
+                onBlur={handleDateTextBlur}
+                onKeyDown={handleDateTextKeyDown}
+              />
+              <button
+                type="button"
+                className="calendar-btn"
+                onClick={() => openPicker('end')}
+                title="选择日期"
+              >
+                &#x1F4C5;
+              </button>
+            </div>
           )}
           {[...new Set([...tags, ...parsed.tags])].map(tag => (
             <span key={tag} className="preview-tag">

@@ -786,6 +786,30 @@ body {
   background: var(--accent);
 }
 
+.date-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.date-text-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: var(--font-size-small);
+  background: var(--card);
+  color: var(--text);
+  outline: none;
+  height: 24px;
+  line-height: 1.4;
+}
+
+.date-text-input:focus {
+  border-color: var(--accent);
+}
+
 .clickable {
   cursor: pointer;
   padding: 2px 4px;
