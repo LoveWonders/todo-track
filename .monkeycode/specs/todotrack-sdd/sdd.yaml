@@ -1,0 +1,208 @@
+# TodoTrack 软件设计描述 (SDD)
+# 版本: 1.0
+# 日期: 2026-07-18
+
+project:
+  name: "TodoTrack"
+  description: "轻量、离线优先的移动端待办事项 PWA 应用"
+  license: "MIT"
+  repository: "https://github.com/LoveWonders/todo-track"
+
+functional_requirements:
+  FR_01_todo_crud:
+    description: "对待办事项执行创建、读取、更新、删除操作"
+    details:
+      - "创建待办时自动解析用户输入中的日期和 #标签"
+      - "支持纯文本、YYYY-MM-DD、自然语言(今天/明天/下周X)等22种日期表达式"
+      - "每个待办可设置截止日期、多个标签、多个子进度"
+    acceptance:
+      - "输入 '明天交报告 #工作' 应解析出标题=交报告, dueDate=明天, tags=[工作]"
+      - "编辑标题/日期/标签后数据应持久化，刷新页面不丢失"
+
+  FR_02_progress_tracking:
+    description: "每个待办项支持多子进度的增删改查与完成状态切换"
+    details:
+      - "子进度支持 active/completed/cancelled 三种状态"
+      - "批量操作：全选、批量添加进度、批量删除待办"
+      - "归档模式下进度超过5条默认折叠，可展开"
+
+  FR_03_filter_and_view:
+    description: "多视图筛选与标签过滤系统"
+    details:
+      - "三个视图：进行中(active)、归档(archive)、周报(weekly)"
+      - "标签筛选支持包含/排除，最多3个可固定槽位"
+      - "槽位支持清除后5秒内撤销"
+    acceptance:
+      - "筛选 #工作 后仅显示含该标签的待办"
+      - "槽位固定后切换视图应保持筛选"
+
+  FR_04_batch_operations:
+    description: "批量选择与批量操作"
+    details:
+      - "长按进入批量模式，勾选多个待办"
+      - "批量操作：删除、标记完成、取消、设置日期、设置标签、添加进度、修改完成时间"
+      - "Android 返回键在批量模式下优先退出批量模式"
+
+  FR_05_drag_sort:
+    description: "拖拽排序待办项"
+    details:
+      - "长按触发拖拽，显示浮层跟随手指"
+      - "移动过程中实时计算插入位置"
+      - "松手后完成重排并持久化"
+
+  FR_06_weekly_report:
+    description: "周报生成与一键复制"
+    details:
+      - "自动聚合本周和上周的完成/进行中/无进展三类待办"
+      - "一键复制结构化的汇报文本到剪贴板"
+
+  FR_07_data_persistence:
+    description: "离线数据持久化与容灾"
+    details:
+      - "浏览器环境：localStorage 存储"
+      - "Android 原生环境：Filesystem + localStorage 双写容灾"
+      - "读取时 Filesystem 优先，失败自动回退 localStorage"
+      - "应用启动时自动从 localStorage 迁移到 Filesystem（首次）"
+      - "数据变更后 100ms debounce 触发保存"
+    acceptance:
+      - "Android 端强制 kill 进程后重新打开，数据不丢失"
+      - "localStorage 数据损坏时 Filesystem 数据仍可用"
+
+  FR_08_import_export:
+    description: "JSON 格式数据导入导出"
+    details:
+      - "导出：浏览器触发文件下载，Android 通过 DownloadPlugin 写入 Download/todotrack/ 目录"
+      - "导入：JSON 文件校验 BOM/格式/字段，ID 冲突弹窗选择跳过或覆盖"
+      - "导入后自动重算 nextId 避免冲突"
+
+  FR_09_debug_logging:
+    description: "全链路调试日志"
+    details:
+      - "分级日志（错误/成功/信息），上限200条"
+      - "勾选后批量复制（三级剪贴板降级）或导出 TXT"
+      - "独立 localStorage key 存储，不影响业务数据"
+
+  FR_10_native_download:
+    description: "Android 原生下载插件"
+    details:
+      - "自定义 Capacitor 插件 DownloadPlugin"
+      - "通过 MediaStore API 写入 Download/todotrack/"
+      - "浏览器环境自动降级为 Blob + a 标签下载"
+
+non_functional_requirements:
+  NFR_01_performance:
+    - "页面首屏渲染 < 1s"
+    - "100ms debounce 控制保存频率，避免高频 I/O"
+    - "PWA Service Worker 预缓存静态资源，二次加载 < 200ms"
+
+  NFR_02_offline:
+    - "PWA 离线可用，Service Worker 缓存所有静态资源"
+    - "无网络时所有 CRUD 操作正常，数据持久化到本地存储"
+    - "不支持后端同步，纯本地数据"
+
+  NFR_03_reliability:
+    - "数据双写容灾：Filesystem 写入失败不影响 localStorage"
+    - "数据加载三级回退：Filesystem → localStorage → 空数组"
+    - "JSON 解析失败自动回退，不丢数据"
+    - "localStorage 配额不足时静默降级（不阻断用户操作）"
+
+  NFR_04_security:
+    - "不上传任何数据到服务器，纯本地存储"
+    - "无第三方统计/追踪 SDK"
+    - "无网络请求（除 Service Worker 更新外）"
+    - "导出文件不含敏感信息"
+
+  NFR_05_compatibility:
+    - "浏览器：Chrome 90+, Safari 14+, Edge 90+"
+    - "Android：API 24+ (Android 7.0+)"
+    - "PWA：支持 install 到主屏幕，独立窗口运行"
+
+  NFR_06_maintainability:
+    - "组件化架构，每个功能模块独立文件"
+    - "TypeScript 类型定义覆盖核心接口"
+    - "CSS 变量集中管理主题色和间距"
+
+  NFR_07_packaging:
+    - "Capacitor 8.x 原生壳"
+    - "Debug 签名 APK，版本号统一"
+    - "Vercel 输出目录：docs/"
+
+technology_stack:
+  frontend:
+    framework: "React 19.2"
+    build_tool: "Vite 8.1"
+    pwa: "vite-plugin-pwa (Workbox 7.4)"
+    language: "JavaScript (JSX)"
+  
+  mobile:
+    framework: "Capacitor 8.4"
+    platform: "Android (API 24+)"
+    plugins:
+      - "@capacitor/app (应用生命周期)"
+      - "@capacitor/clipboard (剪贴板)"
+      - "@capacitor/filesystem (文件系统)"
+      - "@capacitor/share (系统分享)"
+    custom_plugin: "DownloadPlugin (Java, MediaStore API)"
+  
+  storage:
+    browser: "localStorage"
+    android: "@capacitor/filesystem (Directory.Data) + localStorage 双写"
+  
+  dev_tools:
+    linter: "oxlint"
+    java: "JDK 21 (Eclipse Temurin)"
+    android_sdk: "Android SDK 36"
+
+architecture:
+  pattern: "单页应用 (SPA) + Props Drilling"
+  component_tree:
+    App:
+      description: "根组件，持有所有状态并通过 props 向下分发"
+      children: [DataMenu, TagFilterBar, TodoList, BatchBar, TodoInput, WeeklyReport, CompleteDateModal]
+      state:
+        - "todos (useTodos hook)"
+        - "view (active/archive/weekly)"
+        - "filterConfig"
+        - "batchMode + selectedIds"
+        - "dragId/dragY/dropIdx"
+    TodoItem:
+      description: "单个待办项，内含5个内部编辑组件"
+      children: [InlineEdit, Countdown, DateEdit, TagsEdit, ProgressLog]
+    DataMenu:
+      description: "右上角菜单：导出/导入/调试日志/清除数据"
+    BatchBar:
+      description: "批量操作底部栏，内含 activeAction 状态机"
+    TagFilterBar:
+      description: "标签筛选栏，3个可配置槽位"
+    WeeklyReport:
+      description: "周报视图，自动聚合"
+
+  data_flow:
+    direction: "单向数据流"
+    pattern: "useTodos hook → App (state owner) → props → children → callback → App → useTodos"
+    persistence_flow: "useTodos 变更 → 100ms debounce → saveData() → Filesystem + localStorage 双写"
+
+data_model:
+  Todo:
+    id: "number (自增)"
+    title: "string"
+    dueDate: "string | null (YYYY-MM-DD)"
+    tags: "string[]"
+    status: "active | completed | cancelled"
+    createdAt: "string (ISO 8601)"
+    completedAt: "string | null (ISO 8601)"
+    progress: "Progress[]"
+  
+  Progress:
+    id: "number (Date.now())"
+    text: "string"
+    createdAt: "string (ISO 8601)"
+    completedAt: "string | null (ISO 8601)"
+    status: "active | completed | cancelled"
+  
+  LogEntry:
+    id: "string (timestamp + random)"
+    type: "error | success | info"
+    message: "string"
+    detail: "any (可选)"
+    ts: "string (ISO 8601)"
