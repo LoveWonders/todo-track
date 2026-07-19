@@ -24,16 +24,14 @@ export function parseSmartInput(rawText) {
   let dueDate = null;
   let text = rawText;
 
-  const tagRegex = /(?:^|\s)#(\S+)/g;
+  const tagRegex = /#(\S+)/g;
   let tagMatch;
   while ((tagMatch = tagRegex.exec(text)) !== null) {
     tags.push(tagMatch[1]);
   }
-  text = text.replace(tagRegex, (match, captured, offset) => {
-    return offset === 0 && match.startsWith('#') ? '' : ' ';
-  }).trim();
+  text = text.replace(tagRegex, '').trim();
 
-  const dateMatch = text.match(/(?:^|\s)@(\S+)/);
+  const dateMatch = text.match(/@(\S+)/);
   if (dateMatch) {
     const dateText = dateMatch[1];
     try {
@@ -49,9 +47,7 @@ export function parseSmartInput(rawText) {
     } catch (e) {
       // chrono 解析失败，忽略
     }
-    text = text.replace(/(?:^|\s)@(\S+)/, (match, captured, offset) => {
-      return offset === 0 && match.startsWith('@') ? '' : ' ';
-    }).trim();
+    text = text.replace(/@(\S+)/, '').trim();
   }
 
   return {
