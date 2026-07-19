@@ -14,10 +14,21 @@ export function useTodos() {
       await migrateFromLocalStorage();
       const data = await loadData();
       if (cancelled) return;
-      if (data.length > 0) {
-        nextId = Math.max(...data.map(t => t.id), nextId) + 1;
+      const migrated = data.map(t => {
+        let dueDate = t.dueDate;
+        if (dueDate && /^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+          dueDate = dueDate + 'T23:59:59';
+        }
+        let startDate = t.startDate;
+        if (startDate == null && dueDate) {
+          startDate = dueDate;
+        }
+        return { ...t, dueDate, startDate };
+      });
+      if (migrated.length > 0) {
+        nextId = Math.max(...migrated.map(t => t.id), nextId) + 1;
       }
-      setTodos(data);
+      setTodos(migrated);
       setLoaded(true);
     })();
     return () => { cancelled = true; };
@@ -32,10 +43,11 @@ export function useTodos() {
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [todos, loaded]);
 
-  const addTodo = useCallback(({ title, dueDate, tags }) => {
+  const addTodo = useCallback(({ title, startDate, dueDate, tags }) => {
     const todo = {
       id: nextId++,
       title,
+      startDate: startDate || null,
       dueDate: dueDate || null,
       tags: tags || [],
       status: 'active',

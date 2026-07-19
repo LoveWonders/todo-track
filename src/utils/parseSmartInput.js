@@ -1,11 +1,27 @@
+import * as chrono from 'chrono-node';
+
+function toISODateTime(date) {
+  if (!date) return null;
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return null;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}`;
+}
+
 /**
  * 智能输入解析器（纯函数）
  * @param {string} rawText - 用户输入的原始文本
- * @returns {{ cleanContent: string, date: string | null, tags: string[] }}
+ * @returns {{ cleanContent: string, startDate: string | null, dueDate: string | null, tags: string[] }}
  */
 export function parseSmartInput(rawText) {
   const tags = [];
-  let date = null;
+  let startDate = null;
+  let dueDate = null;
   let text = rawText;
 
   const tagRegex = /(?:^|\s)#(\S+)/g;
@@ -17,18 +33,31 @@ export function parseSmartInput(rawText) {
     return offset === 0 && match.startsWith('#') ? '' : ' ';
   }).trim();
 
-  const dateRegex = /(?:^|\s)@(\S+)/g;
-  let dateMatch;
-  while ((dateMatch = dateRegex.exec(text)) !== null) {
-    date = dateMatch[1];
+  const dateMatch = text.match(/(?:^|\s)@(\S+)/);
+  if (dateMatch) {
+    const dateText = dateMatch[1];
+    try {
+      const results = chrono.parse(dateText, new Date(), { forwardDate: true });
+      if (results.length > 0) {
+        const parsed = results[0];
+        if (parsed.start) {
+          const end = parsed.end || parsed.start;
+          startDate = toISODateTime(parsed.start.date());
+          dueDate = toISODateTime(end.date());
+        }
+      }
+    } catch (e) {
+      // chrono 解析失败，忽略
+    }
+    text = text.replace(/(?:^|\s)@(\S+)/, (match, captured, offset) => {
+      return offset === 0 && match.startsWith('@') ? '' : ' ';
+    }).trim();
   }
-  text = text.replace(dateRegex, (match, captured, offset) => {
-    return offset === 0 && match.startsWith('@') ? '' : ' ';
-  }).trim();
 
   return {
     cleanContent: text,
-    date,
+    startDate,
+    dueDate,
     tags
   };
 }
