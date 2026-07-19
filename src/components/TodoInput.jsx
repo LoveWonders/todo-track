@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { useSmartInput } from '../hooks/useSmartInput';
 import { useCalendarLogic } from '../hooks/useCalendarLogic';
 import { useTagLogic } from '../hooks/useTagLogic';
@@ -14,7 +14,7 @@ export default function TodoInput({ onAdd }) {
   } = useSmartInput();
 
   const {
-    startDate, dueDate, pickerRef, openPicker, handleCalendarPick
+    startDate, dueDate, pickerRef, openPicker, handleCalendarPick, handleDateTextBlur
   } = useCalendarLogic(parsed.startDate, parsed.dueDate, ({ start, end }) => {
     setPickedStart(start);
     setPickedEnd(end);
@@ -54,6 +54,21 @@ export default function TodoInput({ onAdd }) {
   const displayStart = pickedStart !== null ? pickedStart : startDate;
   const displayEnd = pickedEnd !== null ? pickedEnd : dueDate;
 
+  const handleDateInputBlur = useCallback((e) => {
+    const text = e.target.value;
+    if (text && text !== formatDateRange(displayStart, displayEnd)) {
+      handleDateTextBlur(text);
+    }
+  }, [displayStart, displayEnd, handleDateTextBlur]);
+
+  const handleDateInputKeyDown = useCallback((e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const text = e.target.value;
+      if (text) handleDateTextBlur(text);
+    }
+  }, [handleDateTextBlur]);
+
   return (
     <div className="todo-input">
       <div className="input-row">
@@ -79,13 +94,17 @@ export default function TodoInput({ onAdd }) {
       {(displayEnd || tags.length > 0) && (
         <div className="input-preview">
           {displayEnd && (
-            <span
+            <input
+              type="text"
               className="preview-date"
+              defaultValue={formatDateRange(displayStart, displayEnd)}
+              key={formatDateRange(displayStart, displayEnd)}
+              onBlur={handleDateInputBlur}
+              onKeyDown={handleDateInputKeyDown}
               onClick={() => openPicker('end')}
-              title="点击选择日期"
-            >
-              {formatDateRange(displayStart, displayEnd)}
-            </span>
+              placeholder="日期，如明天、下周"
+              title="输入自然语言日期或点击选择"
+            />
           )}
           {[...new Set([...tags, ...parsed.tags])].map(tag => (
             <span key={tag} className="preview-tag">
