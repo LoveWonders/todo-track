@@ -31,16 +31,22 @@ export default function TodoInput({ onAdd }) {
 
   const handleSubmit = () => {
     const final = parsed.cleanContent.trim();
-    if (!final) return;
+    const finalStart = pickedStart !== null ? pickedStart : startDate;
+    const finalEnd = pickedEnd !== null ? pickedEnd : dueDate;
     const submittedTags = [...new Set([
       ...tags,
       ...parsed.tags,
       ...(isUrgent ? ['紧急'] : [])
     ])];
+
+    if (!final && !finalEnd && submittedTags.length === 0) return;
+
+    const title = final || formatDateRange(null, finalEnd) || '待办';
+
     onAdd({
-      title: final,
-      startDate: pickedStart || startDate,
-      dueDate: pickedEnd || dueDate,
+      title,
+      startDate: finalStart,
+      dueDate: finalEnd,
       tags: submittedTags
     });
     clearSmart();
