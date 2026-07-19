@@ -351,10 +351,60 @@ body {
   outline: none;
   background: var(--bg);
   color: var(--text);
+  height: 40px;
+  box-sizing: border-box;
 }
 
 .bottom-input .input-row input:focus {
   border-color: var(--accent);
+}
+
+.btn-urgent {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 6px;
+  background: var(--border);
+  color: var(--text-secondary);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-urgent.active {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn-add {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.btn-add:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-add:not(:disabled):active {
+  background: var(--accent-hover);
 }
 
 .bottom-input .parsed-info {
@@ -365,7 +415,13 @@ body {
   margin-bottom: 6px;
 }
 
-.bottom-input .parsed-date input[type="date"] {
+.bottom-input .parsed-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bottom-input .parsed-date input[type="text"] {
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 3px 6px;
@@ -379,6 +435,27 @@ body {
   gap: 4px;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.parsed-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: var(--font-size-small);
+}
+
+.parsed-tag .tag-remove {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
 }
 
 .bottom-input .tag-input {

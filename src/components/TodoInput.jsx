@@ -8,6 +8,7 @@ export default function TodoInput({ onAdd }) {
   const inputRef = useRef(null);
   const [pickedStart, setPickedStart] = useState(null);
   const [pickedEnd, setPickedEnd] = useState(null);
+  const [isUrgent, setIsUrgent] = useState(false);
 
   const {
     text, setText, parsed, clear: clearSmart
@@ -31,7 +32,11 @@ export default function TodoInput({ onAdd }) {
   const handleSubmit = () => {
     const final = parsed.cleanContent.trim();
     if (!final) return;
-    const submittedTags = [...new Set([...tags, ...parsed.tags])];
+    const submittedTags = [...new Set([
+      ...tags,
+      ...parsed.tags,
+      ...(isUrgent ? ['紧急'] : [])
+    ])];
     onAdd({
       title: final,
       startDate: pickedStart || startDate,
@@ -40,6 +45,7 @@ export default function TodoInput({ onAdd }) {
     });
     clearSmart();
     clearTags();
+    setIsUrgent(false);
     setPickedStart(null);
     setPickedEnd(null);
   };
@@ -71,70 +77,67 @@ export default function TodoInput({ onAdd }) {
   }, [tryParseDateText]);
 
   return (
-    <div className="todo-input">
-      <div className="input-row">
-        <input
-          ref={inputRef}
-          type="text"
-          className="input-main"
-          value={text}
-          onChange={handleTextChange}
-          onKeyDown={handleKeyDown}
-          placeholder="添加待办... @日期 #标签"
-        />
-        <button
-          type="button"
-          className="btn-submit"
-          onClick={handleSubmit}
-          disabled={!parsed.cleanContent.trim()}
-        >
-          +
-        </button>
-      </div>
-
-      {(displayEnd || tags.length > 0) && (
-        <div className="input-preview">
-          {displayEnd && (
-            <div className="date-picker-row">
-              <input
-                type="text"
-                className="date-text-input"
-                defaultValue={displayText}
-                key={displayText}
-                onBlur={handleDateTextBlur}
-                onKeyDown={handleDateTextKeyDown}
-              />
-              <button
-                type="button"
-                className="calendar-btn"
-                onClick={() => openPicker('end')}
-                title="选择日期"
-              >
-                &#x1F4C5;
-              </button>
+    <div className="bottom-input">
+      <div className="bottom-input-inner">
+        {(displayEnd || tags.length > 0 || parsed.tags.length > 0) && (
+          <div className="parsed-info">
+            {displayEnd && (
+              <div className="parsed-date">
+                <input
+                  type="text"
+                  defaultValue={displayText}
+                  key={displayText}
+                  onBlur={handleDateTextBlur}
+                  onKeyDown={handleDateTextKeyDown}
+                />
+                <button className="calendar-btn" onClick={() => openPicker('end')} title="选择日期">&#x1F4C5;</button>
+              </div>
+            )}
+            <div className="parsed-tags">
+              {[...new Set([...tags, ...parsed.tags])].map(tag => (
+                <span key={tag} className="parsed-tag">
+                  #{tag}
+                  <button className="tag-remove" onClick={() => removeTag(tag)}>&times;</button>
+                </span>
+              ))}
             </div>
-          )}
-          {[...new Set([...tags, ...parsed.tags])].map(tag => (
-            <span key={tag} className="preview-tag">
-              #{tag}
-              <button
-                type="button"
-                className="tag-remove"
-                onClick={() => removeTag(tag)}
-              >
-                &times;
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
+          </div>
+        )}
 
-      <input
-        ref={pickerRef}
-        type="date"
-        style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: 1, height: 1, opacity: 0 }}
-        onChange={handleCalendarPick}
-      />
+        <div className="input-row">
+          <input
+            ref={inputRef}
+            type="text"
+            value={text}
+            onChange={handleTextChange}
+            onKeyDown={handleKeyDown}
+            placeholder="添加待办... @日期 #标签"
+          />
+          <button
+            type="button"
+            className={`btn-urgent ${isUrgent ? 'active' : ''}`}
+            onClick={() => setIsUrgent(v => !v)}
+            title="紧急"
+          >
+            !
+          </button>
+          <button
+            type="button"
+            className="btn-add"
+            onClick={handleSubmit}
+            disabled={!parsed.cleanContent.trim()}
+          >
+            +
+          </button>
+        </div>
+
+        <input
+          ref={pickerRef}
+          type="date"
+          style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+          onChange={handleCalendarPick}
+        />
+      </div>
     </div>
   );
 }
