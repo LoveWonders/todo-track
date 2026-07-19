@@ -5,14 +5,15 @@ function extractDatePart(iso) {
   return typeof iso === 'string' && iso.length >= 10 ? iso.slice(0, 10) : '';
 }
 
-export function useCalendarLogic(initialDate) {
+export function useCalendarLogic(dueDate, onDateChange) {
   const [dateText, setDateText] = useState('');
   const pickerRef = useRef(null);
-  const callbackRef = useRef(null);
+  const onChangeRef = useRef(onDateChange);
+  onChangeRef.current = onDateChange;
 
   useEffect(() => {
-    setDateText(initialDate ? formatDate(initialDate) : '');
-  }, [initialDate]);
+    setDateText(dueDate ? formatDate(dueDate) : '');
+  }, [dueDate]);
 
   useEffect(() => {
     const input = document.createElement('input');
@@ -25,7 +26,7 @@ export function useCalendarLogic(initialDate) {
       if (picked) {
         const isoString = picked + 'T23:59:59';
         setDateText(formatDate(isoString));
-        callbackRef.current?.(picked);
+        onChangeRef.current?.(isoString);
       }
     };
 
@@ -44,15 +45,15 @@ export function useCalendarLogic(initialDate) {
 
   useEffect(() => {
     if (pickerRef.current) {
-      pickerRef.current.value = initialDate ? extractDatePart(initialDate) : '';
+      pickerRef.current.value = dueDate ? extractDatePart(dueDate) : '';
     }
-  }, [initialDate]);
+  }, [dueDate]);
 
   const openPicker = useCallback(() => {
     const input = pickerRef.current;
     if (!input) return;
-    if (initialDate) {
-      input.value = extractDatePart(initialDate);
+    if (dueDate) {
+      input.value = extractDatePart(dueDate);
     }
     requestAnimationFrame(() => {
       if (typeof input.showPicker === 'function') {
@@ -61,11 +62,11 @@ export function useCalendarLogic(initialDate) {
         input.focus();
       }
     });
-  }, [initialDate]);
+  }, [dueDate]);
 
-  const handleCalendarPick = useCallback((callback) => {
-    callbackRef.current = callback;
-  }, []);
+  const handleCalendarPick = useCallback(() => {
+    openPicker();
+  }, [openPicker]);
 
   return { dateText, setDateText, pickerRef, openPicker, handleCalendarPick };
 }

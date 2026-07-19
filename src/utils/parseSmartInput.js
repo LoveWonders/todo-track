@@ -41,9 +41,9 @@ export function parseSmartInput(rawText) {
       if (results.length > 0) {
         const parsed = results[0];
         if (parsed.start) {
-          const end = parsed.end || parsed.start;
-          startDate = toISODateTime(parsed.start.date());
-          dueDate = toISODateTime(end.date());
+          const hasRange = parsed.end && parsed.end.date().getTime() !== parsed.start.date().getTime();
+          dueDate = toISODateTime((parsed.end || parsed.start).date());
+          startDate = hasRange ? toISODateTime(parsed.start.date()) : null;
         }
       }
     } catch (e) {
