@@ -43,7 +43,7 @@ export function useCalendarLogic(startDate, dueDate, onDateRangeChange) {
     onChangeRef.current?.({ start, end });
   }, []);
 
-  const handleDateTextBlur = useCallback((text) => {
+  const tryParseDateText = useCallback((text) => {
     if (!text || !text.trim()) return false;
     try {
       const results = chrono.parse(text, new Date(), { forwardDate: true });
@@ -95,6 +95,6 @@ export function useCalendarLogic(startDate, dueDate, onDateRangeChange) {
     pickerRef,
     openPicker,
     handleCalendarPick,
-    handleDateTextBlur
+    tryParseDateText
   };
 }
