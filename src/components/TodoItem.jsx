@@ -633,6 +633,18 @@ export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggle
             <>
               <button className="btn-action done" onClick={() => onToggleStatus(todo.id, 'completed')} title="完成">&#x2713;</button>
               <button className="btn-action cancel" onClick={() => onToggleStatus(todo.id, 'cancelled')} title="作废">&#x2717;</button>
+              <button
+                className="btn-action urgent"
+                onClick={() => {
+                  if (!todo.tags.includes('紧急')) {
+                    onUpdateTodo(todo.id, { tags: [...todo.tags, '紧急'] });
+                  }
+                }}
+                title="紧急"
+                style={{ color: todo.tags.includes('紧急') ? '#e74c3c' : '#7f8c8d' }}
+              >
+                !
+              </button>
             </>
           )}
           {!batchMode && todo.status !== 'active' && (
