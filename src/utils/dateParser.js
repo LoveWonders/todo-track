@@ -182,3 +182,11 @@ export function toDateString(date) {
   const dd = String(d.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 }
+
+export function formatDateRange(startDate, dueDate) {
+  if (!dueDate) return '';
+  if (startDate && startDate !== dueDate) {
+    return `${formatDate(startDate)} ~ ${formatDate(dueDate)}`;
+  }
+  return formatDate(dueDate);
+}
