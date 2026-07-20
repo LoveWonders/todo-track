@@ -44,3 +44,21 @@ export function clearLogs() {
   logs = [];
   persist();
 }
+
+export function logTypeLabel(type) {
+  switch (type) {
+    case 'error': return '错误';
+    case 'success': return '成功';
+    case 'info': return '信息';
+    default: return type;
+  }
+}
+
+export function getSelectedLogsText(logs, selectedIds) {
+  return logs
+    .filter(e => selectedIds.has(e.id))
+    .map(e =>
+      `[${e.ts}] [${logTypeLabel(e.type)}] ${e.message}` +
+      (e.detail ? '\n' + JSON.stringify(e.detail, null, 2) : '')
+    ).join('\n\n---\n\n');
+}

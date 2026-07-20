@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { exportTodos, exportTodosNative, shareExportedFile, parseImportFile, findConflicts } from '../utils/exportImport';
 import { getIsNative, clearAllData } from '../utils/storage';
-import { getLogs, clearLogs } from '../utils/logger';
+import { getLogs, clearLogs, logTypeLabel, getSelectedLogsText } from '../utils/logger';
 
 export default function DataMenu({ todos, onImport }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -106,15 +106,6 @@ export default function DataMenu({ todos, onImport }) {
     window.location.reload();
   };
 
-  const getSelectedLogsText = () => {
-    return logs
-      .filter(e => selectedIds.has(e.id))
-      .map(e =>
-        `[${e.ts}] [${logTypeLabel(e.type)}] ${e.message}` +
-        (e.detail ? '\n' + JSON.stringify(e.detail, null, 2) : '')
-      ).join('\n\n---\n\n');
-  };
-
   const copyToClipboard = async (text) => {
     try {
       const { Clipboard } = await import('@capacitor/clipboard');
@@ -160,7 +151,7 @@ export default function DataMenu({ todos, onImport }) {
       return;
     }
 
-    const text = getSelectedLogsText();
+    const text = getSelectedLogsText(logs, selectedIds);
 
     try {
       const ok = await copyToClipboard(text);
@@ -180,7 +171,7 @@ export default function DataMenu({ todos, onImport }) {
       return;
     }
 
-    const text = getSelectedLogsText();
+    const text = getSelectedLogsText(logs, selectedIds);
 
     const now = new Date();
     const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
@@ -197,15 +188,6 @@ export default function DataMenu({ todos, onImport }) {
       setToast({ type: 'success', path: 'Download/todotrack/', uri: null });
     } catch (err) {
       setToast({ type: 'error', message: '日志导出失败：' + (err.message || String(err)) });
-    }
-  };
-
-  const logTypeLabel = (type) => {
-    switch (type) {
-      case 'error': return '错误';
-      case 'success': return '成功';
-      case 'info': return '信息';
-      default: return type;
     }
   };
 

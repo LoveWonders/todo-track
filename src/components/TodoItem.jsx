@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { formatDate, isOverdue } from '../utils/dateParser';
-import InlineEdit from './InlineEdit';
+import useLongPress from '../hooks/useLongPress';
 import Countdown from './Countdown';
 import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
@@ -31,39 +31,20 @@ export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggle
     setShowEditModal(false);
   };
 
-  const pressTimer = useRef(null);
-  const pressMoved = useRef(false);
-  const pressCoords = useRef({ x: 0, y: 0 });
-  const clickHandled = useRef(false);
+  const handleLongPress = useCallback((coords) => {
+    if (onDragStart) onDragStart(todo.id, coords);
+  }, [todo.id, onDragStart]);
 
-  const startPress = useCallback((e) => {
-    if (batchMode) return;
-    pressMoved.current = false;
-    clickHandled.current = false;
-    const touch = e.touches ? e.touches[0] : e;
-    pressCoords.current = { x: touch.clientX, y: touch.clientY };
-    pressTimer.current = setTimeout(() => {
-      if (!pressMoved.current && onDragStart) {
-        onDragStart(todo.id, pressCoords.current);
-        clickHandled.current = true;
-      }
-    }, 400);
-  }, [todo.id, onDragStart, batchMode]);
-
-  const movePress = useCallback(() => { pressMoved.current = true; }, []);
-
-  const cancelPress = useCallback(() => {
-    if (!pressTimer.current) return;
-    clearTimeout(pressTimer.current);
-    pressTimer.current = null;
-    if (!pressMoved.current && !clickHandled.current && onBatchToggle) {
-      clickHandled.current = true;
-      onBatchToggle(todo.id);
-    }
+  const handleTap = useCallback(() => {
+    if (onBatchToggle) onBatchToggle(todo.id);
   }, [todo.id, onBatchToggle]);
 
+  const longPress = useLongPress(handleLongPress, handleTap, { threshold: 400 });
+
+  const isUrgent = todo.tags.includes('紧急');
+
   return (
-    <div className={`todo-item ${statusClass} ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''} ${batchMode ? 'batch-mode' : ''} ${todo.tags.includes('紧急') ? 'urgent' : ''}`}
+    <div className={`todo-item ${statusClass} ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''} ${batchMode ? 'batch-mode' : ''} ${isUrgent ? 'urgent' : ''}`}
       onClick={batchMode ? () => onBatchToggle(todo.id) : undefined}>
       <div className="todo-header">
         {batchMode && (
@@ -89,9 +70,9 @@ export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggle
               <button className="btn-action done" onClick={() => onToggleStatus(todo.id, 'completed')} title="完成">&#x2713;</button>
               <button className="btn-action cancel" onClick={() => onToggleStatus(todo.id, 'cancelled')} title="作废">&#x2717;</button>
               <button className="btn-action urgent" onClick={() => {
-                if (!todo.tags.includes('紧急')) onUpdateTodo(todo.id, { tags: [...todo.tags, '紧急'] });
+                if (!isUrgent) onUpdateTodo(todo.id, { tags: [...todo.tags, '紧急'] });
               }} title="紧急"
-                style={{ color: todo.tags.includes('紧急') ? '#e74c3c' : '#7f8c8d' }}>!</button>
+                style={{ color: isUrgent ? '#e74c3c' : '#7f8c8d' }}>!</button>
             </>
           )}
           {!batchMode && todo.status !== 'active' && (
@@ -100,10 +81,14 @@ export default function TodoItem({ todo, onToggleStatus, onAddProgress, onToggle
         </div>
 
         <div className={`drag-handle ${batchMode ? 'disabled' : ''}`}
-          onTouchStart={!batchMode ? startPress : undefined} onTouchMove={!batchMode ? movePress : undefined}
-          onTouchEnd={!batchMode ? cancelPress : undefined} onMouseDown={!batchMode ? startPress : undefined}
-          onMouseMove={!batchMode ? movePress : undefined} onMouseUp={!batchMode ? cancelPress : undefined}
-          onMouseLeave={!batchMode ? cancelPress : undefined} title={batchMode ? '' : '长按拖动排序'}>
+          onTouchStart={!batchMode ? longPress.onTouchStart : undefined}
+          onTouchMove={!batchMode ? longPress.onTouchMove : undefined}
+          onTouchEnd={!batchMode ? longPress.onTouchEnd : undefined}
+          onMouseDown={!batchMode ? longPress.onMouseDown : undefined}
+          onMouseMove={!batchMode ? longPress.onMouseMove : undefined}
+          onMouseUp={!batchMode ? longPress.onMouseUp : undefined}
+          onMouseLeave={!batchMode ? longPress.onMouseLeave : undefined}
+          title={batchMode ? '' : '长按拖动排序'}>
           <span className="drag-handle-icon">{batchMode ? '\u2630' : '\u2807'}</span>
         </div>
       </div>

@@ -1401,7 +1401,7 @@ body {
 
 .drop-indicator {
   height: 3px;
-  margin: 2px 0;
+  margin: -1.5px 0;
   background: var(--accent);
   border-radius: 2px;
   animation: drop-pulse 0.8s ease-in-out infinite;

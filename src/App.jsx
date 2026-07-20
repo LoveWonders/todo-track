@@ -1,45 +1,21 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTodos } from './hooks/useTodos';
 import { useBackButton } from './hooks/useBackButton';
+import useFilteredTodos from './hooks/useFilteredTodos';
+import useDragSort from './hooks/useDragSort';
+import useBatchActions from './hooks/useBatchActions';
 import TodoInput from './components/TodoInput';
-import TodoItem from './components/TodoItem';
+import TodoListItem from './components/TodoListItem';
 import TagFilterBar from './components/TagFilterBar';
 import WeeklyReport from './components/WeeklyReport';
 import CompleteDateModal from './components/CompleteDateModal';
 import DataMenu from './components/DataMenu';
 import BatchBar from './components/BatchBar';
 
-function useFilteredTodos(source, filterConfig) {
-  return useMemo(() => {
-    const hasFilter = filterConfig.includeTags.length > 0 || filterConfig.excludeTags.length > 0;
-    const base = hasFilter
-      ? source.filter(t => {
-          if (filterConfig.excludeTags.some(tag => t.tags.includes(tag))) return false;
-          if (filterConfig.includeTags.length > 0) return filterConfig.includeTags.some(tag => t.tags.includes(tag));
-          return true;
-        })
-      : source;
-
-    const urgent = [];
-    const normal = [];
-    for (const t of base) {
-      (t.tags.includes('紧急') ? urgent : normal).push(t);
-    }
-    return [...urgent, ...normal];
-  }, [source, filterConfig]);
-}
-
 export default function App() {
   const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags } = useTodos();
   const [filterConfig, setFilterConfig] = useState({ includeTags: [], excludeTags: [] });
   const [view, setView] = useState('active');
-  const [dragId, setDragId] = useState(null);
-  const [dragY, setDragY] = useState(0);
-  const [dropIdx, setDropIdx] = useState(-1);
-  const dragFromIdxRef = useRef(-1);
-  const lastTargetRef = useRef(-1);
-  const itemElsRef = useRef({});
-  const throttleTimerRef = useRef(null);
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showCompleteDateModal, setShowCompleteDateModal] = useState(false);
@@ -75,160 +51,15 @@ export default function App() {
     }
   }, [selectedIds, batchMode]);
 
-  const handleDragStart = useCallback((id, coords) => {
-    const idx = filteredTodos.findIndex(t => t.id === id);
-    if (idx === -1) return;
-    dragFromIdxRef.current = idx;
-    lastTargetRef.current = idx;
-    setDragId(id);
-    setDropIdx(idx);
-    setDragY(coords.y);
-  }, [filteredTodos]);
+  const {
+    dragId, dragY, dropIdx, dragFromIdx,
+    handleDragStart, handleDragMove, handleDragEnd, setItemRef,
+  } = useDragSort(filteredTodos, moveTodoTo);
 
-  const handleDragMove = useCallback((e) => {
-    if (!dragId) return;
-    e.preventDefault();
-    const y = e.touches ? e.touches[0].clientY : e.clientY;
-    setDragY(y);
-
-    if (throttleTimerRef.current) return;
-    throttleTimerRef.current = setTimeout(() => {
-      throttleTimerRef.current = null;
-    }, 50);
-
-    let closest = lastTargetRef.current;
-    let minDist = Infinity;
-    for (const [id, el] of Object.entries(itemElsRef.current)) {
-      if (Number(id) === dragId) continue;
-      const rect = el.getBoundingClientRect();
-      const mid = rect.top + rect.height / 2;
-      const dist = Math.abs(y - mid);
-      if (dist < minDist) {
-        minDist = dist;
-        closest = filteredTodos.findIndex(t => t.id === Number(id));
-      }
-    }
-    if (closest !== lastTargetRef.current) {
-      lastTargetRef.current = closest;
-      setDropIdx(closest);
-    }
-  }, [dragId, filteredTodos]);
-
-  const handleDragEnd = useCallback(() => {
-    if (!dragId) return;
-    const fromIdx = dragFromIdxRef.current;
-    let toIdx = lastTargetRef.current;
-    if (toIdx > fromIdx && fromIdx >= 0) {
-      toIdx = Math.min(toIdx, filteredTodos.length - 1);
-    }
-    if (toIdx !== fromIdx && fromIdx >= 0) {
-      moveTodoTo(dragId, toIdx);
-    }
-    setDragId(null);
-    setDropIdx(-1);
-    lastTargetRef.current = -1;
-    if (throttleTimerRef.current) {
-      clearTimeout(throttleTimerRef.current);
-      throttleTimerRef.current = null;
-    }
-  }, [dragId, filteredTodos.length, moveTodoTo]);
-
-  const setItemRef = useCallback((id, el) => {
-    if (el) {
-      itemElsRef.current[id] = el;
-    } else {
-      delete itemElsRef.current[id];
-    }
-  }, []);
-
-  const batchDelete = () => {
-    selectedIds.forEach(id => deleteTodo(id));
-    exitBatch();
-  };
-
-  const batchComplete = () => {
-    selectedIds.forEach(id => toggleStatus(id, 'completed'));
-    exitBatch();
-  };
-
-  const batchCancel = () => {
-    selectedIds.forEach(id => toggleStatus(id, 'cancelled'));
-    exitBatch();
-  };
-
-  const batchSetDate = (date) => {
-    selectedIds.forEach(id => updateTodo(id, { dueDate: date }));
-  };
-
-  const batchSetTags = (tags) => {
-    selectedIds.forEach(id => {
-      const todo = todos.find(t => t.id === id);
-      if (todo) {
-        const existing = new Set(todo.tags);
-        tags.forEach(t => existing.add(t));
-        updateTodo(id, { tags: [...existing] });
-      }
-    });
-  };
-
-  const batchAddProgress = (text) => {
-    selectedIds.forEach(id => addProgress(id, text));
-  };
-
-  const selectAll = () => {
-    const ids = new Set(filteredTodos.map(t => t.id));
-    setSelectedIds(ids);
-  };
-
-  const invertSelection = () => {
-    setSelectedIds(prev => {
-      const next = new Set();
-      for (const t of filteredTodos) {
-        if (!prev.has(t.id)) next.add(t.id);
-      }
-      return next;
-    });
-  };
-
-  const batchCompleteAt = (dateString) => {
-    selectedIds.forEach(id => updateCompletedAt(id, dateString));
-    exitBatch();
-  };
-
-  const renderItem = (todo) => {
-    const isDragged = dragId === todo.id;
-    const showInsertBefore = dragId && !isDragged && dropIdx === filteredTodos.findIndex(t => t.id === todo.id) && dropIdx < dragFromIdxRef.current;
-    const showInsertAfter = dragId && !isDragged && (() => {
-      if (dropIdx < 0) return false;
-      const afterIdx = filteredTodos.findIndex(t => t.id === todo.id);
-      return dropIdx === afterIdx && dropIdx >= dragFromIdxRef.current;
-    })();
-
-    return (
-      <div key={todo.id}>
-        {showInsertBefore && <div className="drop-indicator" />}
-        <div ref={(el) => setItemRef(todo.id, el)}>
-          <TodoItem
-            todo={todo}
-            onToggleStatus={toggleStatus}
-            onAddProgress={addProgress}
-            onToggleProgressStatus={toggleProgressStatus}
-            onDeleteProgress={deleteProgress}
-            onUpdateProgress={updateProgress}
-            onUpdateProgressCompletedAt={updateProgressCompletedAt}
-            onUpdateTodo={updateTodo}
-            onDragStart={handleDragStart}
-            onBatchToggle={handleBatchToggle}
-            isDragging={isDragged}
-            isSelected={selectedIds.has(todo.id)}
-            batchMode={batchMode}
-            isArchive={isArchive}
-          />
-        </div>
-        {showInsertAfter && !showInsertBefore && <div className="drop-indicator" />}
-      </div>
-    );
-  };
+  const {
+    batchDelete, batchComplete, batchCancel, batchSetDate,
+    batchSetTags, batchAddProgress, batchCompleteAt, selectAll, invertSelection,
+  } = useBatchActions(selectedIds, setSelectedIds, filteredTodos, exitBatch, deleteTodo, toggleStatus, updateTodo, addProgress, updateCompletedAt);
 
   return (
     <div
@@ -288,7 +119,29 @@ export default function App() {
                 {!isArchive && <p style={{ fontSize: 12, marginTop: 8 }}>长按待办可拖动排序</p>}
               </div>
             ) : (
-              filteredTodos.map((todo) => renderItem(todo))
+              filteredTodos.map((todo) => (
+                <TodoListItem
+                  key={todo.id}
+                  todo={todo}
+                  dragId={dragId}
+                  dropIdx={dropIdx}
+                  dragFromIdx={dragFromIdx}
+                  filteredTodos={filteredTodos}
+                  setItemRef={setItemRef}
+                  onToggleStatus={toggleStatus}
+                  onAddProgress={addProgress}
+                  onToggleProgressStatus={toggleProgressStatus}
+                  onDeleteProgress={deleteProgress}
+                  onUpdateProgress={updateProgress}
+                  onUpdateProgressCompletedAt={updateProgressCompletedAt}
+                  onUpdateTodo={updateTodo}
+                  onDragStart={handleDragStart}
+                  onBatchToggle={handleBatchToggle}
+                  isSelected={selectedIds.has(todo.id)}
+                  batchMode={batchMode}
+                  isArchive={isArchive}
+                />
+              ))
             )}
           </div>
           <div className="scroll-spacer" />

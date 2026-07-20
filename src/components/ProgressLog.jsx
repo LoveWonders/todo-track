@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import CompleteDateModal from './CompleteDateModal';
+import ProgressManageBar from './ProgressManageBar';
+import ProgressDefaultBar from './ProgressDefaultBar';
 
 export default function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgress, onAddProgress, onUpdateProgress, onUpdateProgressCompletedAt, inBatch }) {
   const [progressText, setProgressText] = useState('');
@@ -187,55 +189,3 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
   );
 }
 
-const DISABLED_STYLE = (selectedCount) => ({
-  opacity: selectedCount === 0 ? 0.4 : 1,
-  fontSize: 11,
-});
-
-function ProgressManageBar({ selectedCount, confirmDelete, onComplete, onCancelItems, onDelete, onSetDate, onExit, onCancelConfirm, hasSelection }) {
-  if (confirmDelete) {
-    return (
-      <div className="progress-manage-bar">
-        <span style={{ color: 'var(--danger)', fontWeight: 500, fontSize: 12 }}>确认删除 {selectedCount} 条进度？</span>
-        <button className="btn-mini btn-mini-save" onClick={onDelete} style={{ background: 'var(--danger)', fontSize: 11 }}>确认删除</button>
-        <button className="btn-mini btn-mini-cancel" onClick={onCancelConfirm}>取消</button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="progress-manage-bar">
-      <button className="btn-mini btn-mini-save" onClick={onComplete} disabled={!hasSelection}
-        style={{ ...DISABLED_STYLE(selectedCount), background: 'var(--success)' }}>完成 ({selectedCount})</button>
-      <button className="btn-mini btn-mini-save" onClick={onCancelItems} disabled={!hasSelection}
-        style={{ ...DISABLED_STYLE(selectedCount), background: 'var(--text-secondary)' }}>作废 ({selectedCount})</button>
-      <button className="btn-mini btn-mini-save" onClick={onDelete} disabled={!hasSelection}
-        style={{ ...DISABLED_STYLE(selectedCount), background: 'var(--danger)' }}>删除 ({selectedCount})</button>
-      <button className="btn-mini btn-mini-save" onClick={onSetDate} disabled={!hasSelection}
-        style={{ ...DISABLED_STYLE(selectedCount), background: 'var(--accent)', padding: '4px 6px' }}>改时 ({selectedCount})</button>
-      <button className="btn-mini btn-mini-cancel" onClick={onExit}>取消</button>
-    </div>
-  );
-}
-
-function ProgressDefaultBar({ showInput, progressText, allCount, onShowInput, onTextChange, onKeyDown, onSubmit, onCancelInput, onManage }) {
-  if (showInput) {
-    return (
-      <>
-        <input type="text" placeholder="输入工作进度..." value={progressText}
-          onChange={e => onTextChange(e.target.value)} onKeyDown={onKeyDown} autoFocus />
-        <button className="btn-mini btn-mini-save" onClick={onSubmit}>保存</button>
-        <button className="btn-mini btn-mini-cancel" onClick={onCancelInput}>&times;</button>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <button className="btn-mini btn-add-progress" onClick={onShowInput}>+ 添加进度</button>
-      {allCount > 0 && (
-        <button className="btn-mini btn-add-progress" style={{ marginLeft: 'auto' }} onClick={onManage}>管理进度</button>
-      )}
-    </>
-  );
-}
