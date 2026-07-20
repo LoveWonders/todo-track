@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useTodos } from './hooks/useTodos';
 import { useBackButton } from './hooks/useBackButton';
 import TodoInput from './components/TodoInput';
@@ -8,6 +8,26 @@ import WeeklyReport from './components/WeeklyReport';
 import CompleteDateModal from './components/CompleteDateModal';
 import DataMenu from './components/DataMenu';
 import BatchBar from './components/BatchBar';
+
+function useFilteredTodos(source, filterConfig) {
+  return useMemo(() => {
+    const hasFilter = filterConfig.includeTags.length > 0 || filterConfig.excludeTags.length > 0;
+    const base = hasFilter
+      ? source.filter(t => {
+          if (filterConfig.excludeTags.some(tag => t.tags.includes(tag))) return false;
+          if (filterConfig.includeTags.length > 0) return filterConfig.includeTags.some(tag => t.tags.includes(tag));
+          return true;
+        })
+      : source;
+
+    const urgent = [];
+    const normal = [];
+    for (const t of base) {
+      (t.tags.includes('紧急') ? urgent : normal).push(t);
+    }
+    return [...urgent, ...normal];
+  }, [source, filterConfig]);
+}
 
 export default function App() {
   const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags } = useTodos();
@@ -25,28 +45,9 @@ export default function App() {
   const [showCompleteDateModal, setShowCompleteDateModal] = useState(false);
 
   const source = view === 'active' ? activeTodos : archivedTodos;
-
-  const filteredTodos = (() => {
-    const hasFilter = filterConfig.includeTags.length > 0 || filterConfig.excludeTags.length > 0;
-    const base = !hasFilter ? source : source.filter(t => {
-      if (filterConfig.excludeTags.length > 0 && filterConfig.excludeTags.some(tag => t.tags.includes(tag))) {
-        return false;
-      }
-      if (filterConfig.includeTags.length > 0) {
-        return filterConfig.includeTags.some(tag => t.tags.includes(tag));
-      }
-      return true;
-    });
-    const urgent = [];
-    const normal = [];
-    for (const t of base) {
-      if (t.tags.includes('紧急')) urgent.push(t);
-      else normal.push(t);
-    }
-    return [...urgent, ...normal];
-  })();
-
   const isArchive = view === 'archive';
+
+  const filteredTodos = useFilteredTodos(source, filterConfig);
 
   const exitBatch = useCallback(() => {
     setSelectedIds(new Set());
