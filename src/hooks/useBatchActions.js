@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-export default function useBatchActions(selectedIds, setSelectedIds, filteredTodos, exitBatch, deleteTodo, toggleStatus, updateTodo, addProgress, updateCompletedAt) {
+export default function useBatchActions(selectedIds, setSelectedIds, filteredTodos, sourceTodos, exitBatch, deleteTodo, toggleStatus, updateTodo, addProgress, updateCompletedAt) {
   const batchDelete = useCallback(() => {
     if (selectedIds.size === 0) return;
     if (!window.confirm(`确认删除 ${selectedIds.size} 个任务？`)) return;
@@ -24,14 +24,14 @@ export default function useBatchActions(selectedIds, setSelectedIds, filteredTod
 
   const batchSetTags = useCallback((tags) => {
     selectedIds.forEach(id => {
-      const todo = filteredTodos.find(t => t.id === id);
+      const todo = sourceTodos.find(t => t.id === id);
       if (todo) {
-        const existing = new Set(todo.tags);
+        const existing = new Set(todo.tags || []);
         tags.forEach(t => existing.add(t));
         updateTodo(id, { tags: [...existing] });
       }
     });
-  }, [selectedIds, filteredTodos, updateTodo]);
+  }, [selectedIds, sourceTodos, updateTodo]);
 
   const batchAddProgress = useCallback((text) => {
     selectedIds.forEach(id => addProgress(id, text));

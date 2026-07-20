@@ -59,7 +59,7 @@ export default function App() {
   const {
     batchDelete, batchComplete, batchCancel, batchSetDate,
     batchSetTags, batchAddProgress, batchCompleteAt, selectAll, invertSelection,
-  } = useBatchActions(selectedIds, setSelectedIds, filteredTodos, exitBatch, deleteTodo, toggleStatus, updateTodo, addProgress, updateCompletedAt);
+  } = useBatchActions(selectedIds, setSelectedIds, filteredTodos, source, exitBatch, deleteTodo, toggleStatus, updateTodo, addProgress, updateCompletedAt);
 
   return (
     <div

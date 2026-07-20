@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 function todayStr() {
   const d = new Date();
@@ -10,31 +10,52 @@ function todayStr() {
 
 export default function CompleteDateModal({ count, onConfirm, onCancel }) {
   const [dateVal, setDateVal] = useState(todayStr());
+  const dynamicInputRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      const input = dynamicInputRef.current;
+      if (input && document.body.contains(input)) {
+        document.body.removeChild(input);
+      }
+      dynamicInputRef.current = null;
+    };
+  }, []);
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) onCancel();
   };
 
   const openCalendar = useCallback(() => {
+    const prev = dynamicInputRef.current;
+    if (prev && document.body.contains(prev)) {
+      document.body.removeChild(prev);
+    }
+
     const input = document.createElement('input');
     input.type = 'date';
     input.value = /^\d{4}-\d{2}-\d{2}$/.test(dateVal) ? dateVal : todayStr();
     input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0';
     document.body.appendChild(input);
+    dynamicInputRef.current = input;
 
     const cleanup = () => {
       if (document.body.contains(input)) document.body.removeChild(input);
+      if (dynamicInputRef.current === input) dynamicInputRef.current = null;
     };
 
-    input.addEventListener('change', (e) => {
+    const onChange = (e) => {
       const picked = e.target.value;
       if (picked) setDateVal(picked);
       cleanup();
-    });
+    };
 
-    input.addEventListener('blur', () => {
+    const onBlur = () => {
       setTimeout(cleanup, 200);
-    });
+    };
+
+    input.addEventListener('change', onChange);
+    input.addEventListener('blur', onBlur);
 
     requestAnimationFrame(() => {
       if (typeof input.showPicker === 'function') {

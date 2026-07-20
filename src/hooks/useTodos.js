@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { loadData, saveData, migrateFromLocalStorage } from '../utils/storage';
 
-let nextId = Date.now();
-
 export function useTodos() {
   const [todos, setTodos] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const saveTimerRef = useRef(null);
+  const todoIdRef = useRef(Date.now());
+  const progressIdRef = useRef(Date.now());
 
   useEffect(() => {
     let cancelled = false;
@@ -26,7 +26,9 @@ export function useTodos() {
         return { ...t, dueDate, startDate };
       });
       if (migrated.length > 0) {
-        nextId = Math.max(...migrated.map(t => t.id), nextId) + 1;
+        todoIdRef.current = Math.max(...migrated.map(t => t.id), todoIdRef.current) + 1;
+        const maxProgressId = Math.max(...migrated.flatMap(t => (t.progress || []).map(p => p.id)), 0);
+        if (maxProgressId > 0) progressIdRef.current = maxProgressId + 1;
       }
       setTodos(migrated);
       setLoaded(true);
@@ -45,7 +47,7 @@ export function useTodos() {
 
   const addTodo = useCallback(({ title, startDate, dueDate, tags }) => {
     const todo = {
-      id: nextId++,
+      id: todoIdRef.current++,
       title,
       startDate: startDate || null,
       dueDate: dueDate || null,
@@ -99,7 +101,7 @@ export function useTodos() {
       t.id === id ? {
         ...t,
         progress: [...(t.progress || []), {
-          id: Date.now(),
+          id: progressIdRef.current++,
           text: text.trim(),
           createdAt: new Date().toISOString(),
           status: 'active',
@@ -178,7 +180,7 @@ export function useTodos() {
         merged = [...prev, ...importData.filter(t => !existingIds.has(t.id))];
       }
       const maxId = Math.max(...merged.map(t => t.id), 0);
-      nextId = maxId + 1;
+      todoIdRef.current = maxId + 1;
       return merged;
     });
   }, []);

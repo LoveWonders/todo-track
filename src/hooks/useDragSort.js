@@ -4,11 +4,10 @@ export default function useDragSort(filteredTodos, moveTodoTo) {
   const [dragId, setDragId] = useState(null);
   const [dragY, setDragY] = useState(0);
   const [dropIdx, setDropIdx] = useState(-1);
-  const dragFromIdxRef = useRef(-1);
+  const [dragFromIdx, setDragFromIdx] = useState(-1);
   const lastTargetRef = useRef(-1);
   const itemElsRef = useRef({});
   const throttleTimerRef = useRef(null);
-
   const dropIdxRef = useRef(-1);
 
   const setItemRef = useCallback((id, el) => {
@@ -22,7 +21,7 @@ export default function useDragSort(filteredTodos, moveTodoTo) {
   const handleDragStart = useCallback((id, coords) => {
     const idx = filteredTodos.findIndex(t => t.id === id);
     if (idx === -1) return;
-    dragFromIdxRef.current = idx;
+    setDragFromIdx(idx);
     lastTargetRef.current = idx;
     setDragId(id);
     setDropIdx(idx);
@@ -62,28 +61,25 @@ export default function useDragSort(filteredTodos, moveTodoTo) {
 
   const handleDragEnd = useCallback(() => {
     if (!dragId) return;
-    const fromIdx = dragFromIdxRef.current;
-    let toIdx = lastTargetRef.current;
-    if (toIdx >= filteredTodos.length) {
-      toIdx = filteredTodos.length - 1;
-    }
-    if (toIdx !== fromIdx && fromIdx >= 0) {
+    const toIdx = lastTargetRef.current;
+    if (toIdx !== dragFromIdx && dragFromIdx >= 0 && toIdx < filteredTodos.length) {
       moveTodoTo(dragId, toIdx);
     }
     setDragId(null);
+    setDragFromIdx(-1);
     setDropIdx(-1);
     lastTargetRef.current = -1;
     if (throttleTimerRef.current) {
       clearTimeout(throttleTimerRef.current);
       throttleTimerRef.current = null;
     }
-  }, [dragId, filteredTodos.length, moveTodoTo]);
+  }, [dragId, dragFromIdx, filteredTodos.length, moveTodoTo]);
 
   return {
     dragId,
     dragY,
     dropIdx,
-    dragFromIdx: dragFromIdxRef.current,
+    dragFromIdx,
     handleDragStart,
     handleDragMove,
     handleDragEnd,
