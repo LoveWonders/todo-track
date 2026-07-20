@@ -3,8 +3,14 @@ import { formatDate, parseDateText } from '../utils/dateParser';
 
 export default function DateEdit({ value, onSave, overdue, inBatch }) {
   const [editing, setEditing] = useState(false);
-  const [text, setText] = useState(value || '');
+  const [text, setText] = useState(value ?? '');
   const inputRef = useRef(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -13,18 +19,18 @@ export default function DateEdit({ value, onSave, overdue, inBatch }) {
     }
   }, [editing]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     const trimmed = text.trim();
     if (!trimmed) { onSave(null); setEditing(false); return; }
     const parsed = parseDateText(trimmed);
     if (parsed) onSave(parsed);
     setEditing(false);
-  };
+  }, [text, onSave]);
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') { e.preventDefault(); handleSave(); }
-    else if (e.key === 'Escape') { setText(value || ''); setEditing(false); }
-  };
+    else if (e.key === 'Escape') { setText(value ?? ''); setEditing(false); }
+  }, [handleSave, value]);
 
   const openCalendar = useCallback(() => {
     const input = document.createElement('input');
@@ -33,8 +39,12 @@ export default function DateEdit({ value, onSave, overdue, inBatch }) {
     input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0';
     document.body.appendChild(input);
 
+    let cleaned = false;
     const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
       if (document.body.contains(input)) document.body.removeChild(input);
+      if (!mountedRef.current) return;
       setEditing(false);
     };
 
@@ -42,19 +52,20 @@ export default function DateEdit({ value, onSave, overdue, inBatch }) {
       const picked = e.target.value;
       if (picked) { onSave(picked); setText(picked); }
       cleanup();
-    });
-    input.addEventListener('blur', () => { setTimeout(cleanup, 200); });
+    }, { once: true });
+
+    input.addEventListener('blur', () => { setTimeout(cleanup, 200); }, { once: true });
 
     requestAnimationFrame(() => {
       typeof input.showPicker === 'function' ? input.showPicker() : input.focus();
     });
   }, [value, onSave]);
 
-  const handleDateClick = (e) => {
+  const handleDateClick = useCallback((e) => {
     if (inBatch) { e.stopPropagation(); return; }
-    setText(value || '');
+    setText(value ?? '');
     setEditing(true);
-  };
+  }, [inBatch, value]);
 
   if (editing) {
     return (

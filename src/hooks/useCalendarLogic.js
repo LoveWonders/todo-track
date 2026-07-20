@@ -2,6 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import * as chrono from 'chrono-node';
 import { toISODateTime, extractDatePart, parseLocalDate } from '../utils/datePatterns';
 
+const DEBUG = import.meta.env.DEV;
+const log = DEBUG ? console.log.bind(console) : () => {};
+
 export function useCalendarLogic(startDate, dueDate, onDateRangeChange) {
   const [currentStart, setCurrentStart] = useState(null);
   const [currentEnd, setCurrentEnd] = useState(null);
@@ -29,11 +32,11 @@ export function useCalendarLogic(startDate, dueDate, onDateRangeChange) {
 
   const tryParseDateText = useCallback((text) => {
     if (!text || !text.trim()) return false;
-    console.log('[tryParseDateText] 尝试解析:', text);
+    log('[tryParseDateText] 尝试解析:', text);
 
     try {
       const results = chrono.zh.parse(text, new Date(), { forwardDate: true });
-      console.log('[tryParseDateText] chrono.zh 结果:', results.length, '条');
+      log('[tryParseDateText] chrono.zh 结果:', results.length, '条');
 
       if (results.length > 0) {
         const parsed = results[0];
@@ -41,23 +44,23 @@ export function useCalendarLogic(startDate, dueDate, onDateRangeChange) {
         const hasRange = parsed.end && parsed.end.date().getTime() !== parsed.start.date().getTime();
         const end = toISODateTime((parsed.end || parsed.start).date());
         const start = hasRange ? toISODateTime(parsed.start.date()) : null;
-        console.log('[tryParseDateText] chrono 成功, start:', start, ', end:', end);
+        log('[tryParseDateText] chrono 成功, start:', start, ', end:', end);
         emitChange(start, end);
         return true;
       }
     } catch (e) {
-      console.log('[tryParseDateText] chrono 异常:', e);
+      log('[tryParseDateText] chrono 异常:', e);
     }
 
     const fallback = parseLocalDate(text);
     if (fallback) {
       const iso = toISODateTime(fallback);
-      console.log('[tryParseDateText] 本地 fallback 成功:', iso);
+      log('[tryParseDateText] 本地 fallback 成功:', iso);
       emitChange(null, iso);
       return true;
     }
 
-    console.log('[tryParseDateText] 所有解析失败');
+    log('[tryParseDateText] 所有解析失败');
     return false;
   }, [emitChange]);
 

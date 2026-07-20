@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import CompleteDateModal from './CompleteDateModal';
 
 export default function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgress, onAddProgress, onUpdateProgress, onUpdateProgressCompletedAt, inBatch }) {
@@ -9,62 +9,76 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
   const [selectedPIds, setSelectedPIds] = useState(new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showDateModal, setShowDateModal] = useState(false);
-  const [editingProgress, setEditingProgress] = useState(null);
-  const [editText, setEditText] = useState('');
+  const [editing, setEditing] = useState(null);
 
-  const activeProgress = (progress || []).filter(p => p.status === 'active');
-  const archivedProgress = (progress || []).filter(p => p.status !== 'active');
-  const allCount = (progress || []).length;
+  const items = progress ?? [];
 
-  const toggleSelect = (pid) => {
+  const { activeProgress, archivedProgress, allCount } = useMemo(() => {
+    const active = [];
+    const archived = [];
+    for (const p of items) {
+      (p.status === 'active' ? active : archived).push(p);
+    }
+    return { activeProgress: active, archivedProgress: archived, allCount: items.length };
+  }, [items]);
+
+  const toggleSelect = useCallback((pid) => {
     setSelectedPIds(prev => {
       const next = new Set(prev);
       next.has(pid) ? next.delete(pid) : next.add(pid);
       return next;
     });
-  };
+  }, []);
 
-  const exitManage = () => {
+  const exitManage = useCallback(() => {
     setManageMode(false);
     setSelectedPIds(new Set());
     setConfirmDelete(false);
     setShowDateModal(false);
-  };
+  }, []);
 
-  const handleBatchDelete = () => {
+  const handleBatchDelete = useCallback(() => {
     if (!confirmDelete) { setConfirmDelete(true); return; }
     selectedPIds.forEach(pid => onDeleteProgress(todoId, pid));
     exitManage();
-  };
+  }, [confirmDelete, selectedPIds, todoId, onDeleteProgress, exitManage]);
 
-  const handleBatchComplete = () => {
+  const handleBatchComplete = useCallback(() => {
     selectedPIds.forEach(pid => onToggleProgressStatus(todoId, pid, 'completed'));
     exitManage();
-  };
+  }, [selectedPIds, todoId, onToggleProgressStatus, exitManage]);
 
-  const handleBatchCancel = () => {
+  const handleBatchCancel = useCallback(() => {
     selectedPIds.forEach(pid => onToggleProgressStatus(todoId, pid, 'cancelled'));
     exitManage();
-  };
+  }, [selectedPIds, todoId, onToggleProgressStatus, exitManage]);
 
-  const handleSubmit = () => {
-    if (progressText.trim()) {
-      onAddProgress(todoId, progressText);
-      setProgressText('');
-    }
-  };
+  const handleSubmit = useCallback(() => {
+    const trimmed = progressText.trim();
+    if (!trimmed) return;
+    onAddProgress(todoId, trimmed);
+    setProgressText('');
+    setShowInput(false);
+  }, [progressText, todoId, onAddProgress]);
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') { e.preventDefault(); handleSubmit(); }
-  };
+  }, [handleSubmit]);
 
-  const handleOpenProgressEdit = (p) => { setEditingProgress(p); setEditText(p.text); };
+  const handleOpenEdit = useCallback((p) => {
+    setEditing({ progress: p, text: p.text ?? '' });
+  }, []);
 
-  const handleSaveProgressEdit = () => {
-    const trimmed = editText.trim();
-    if (trimmed && trimmed !== editingProgress.text) onUpdateProgress(todoId, editingProgress.id, trimmed);
-    setEditingProgress(null);
-  };
+  const handleSaveEdit = useCallback(() => {
+    if (!editing) return;
+    const trimmed = editing.text.trim();
+    if (trimmed && trimmed !== editing.progress.text) {
+      onUpdateProgress(todoId, editing.progress.id, trimmed);
+    }
+    setEditing(null);
+  }, [editing, todoId, onUpdateProgress]);
+
+  const hasSelection = selectedPIds.size > 0;
 
   return (
     <div className="progress-section" onClick={inBatch ? e => e.stopPropagation() : undefined}>
@@ -73,7 +87,7 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
           {activeProgress.map(p => (
             <div key={p.id}
               className={`progress-entry active progress-card ${manageMode ? 'progress-manage' : 'progress-clickable'} ${selectedPIds.has(p.id) ? 'progress-selected' : ''}`}
-              onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenProgressEdit(p)}>
+              onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenEdit(p)}>
               {!inBatch && !manageMode && (
                 <span className="progress-actions">
                   <button className="p-action done" onClick={(e) => { e.stopPropagation(); onToggleProgressStatus(todoId, p.id, 'completed'); }} title="完成">&#x2713;</button>
@@ -84,7 +98,7 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
                   {selectedPIds.has(p.id) ? '\u2713' : ''}
                 </span>
               )}
-              <span className="progress-date">{new Date(p.createdAt || p.time).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span>
+              <span className="progress-date">{new Date(p.createdAt ?? p.time).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span>
               <span className="progress-text">{p.text}</span>
             </div>
           ))}
@@ -93,25 +107,30 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
 
       {!inBatch && (
         <div className="todo-progress-bar">
-          {manageMode ? <ProgressManageBar
-            selectedCount={selectedPIds.size} confirmDelete={confirmDelete}
-            onComplete={handleBatchComplete} onCancel={handleBatchCancel}
-            onDelete={handleBatchDelete} onSetDate={() => setShowDateModal(true)}
-            onExit={exitManage} onCancelConfirm={() => setConfirmDelete(false)}
-          /> : <ProgressDefaultBar
-            showInput={showInput} progressText={progressText}
-            allCount={allCount}
-            onShowInput={() => setShowInput(true)} onTextChange={setProgressText}
-            onKeyDown={handleKeyDown} onSubmit={handleSubmit}
-            onCancelInput={() => setShowInput(false)}
-            onManage={() => { setManageMode(true); setConfirmDelete(false); }}
-          />}
+          {manageMode ? (
+            <ProgressManageBar
+              selectedCount={selectedPIds.size} confirmDelete={confirmDelete}
+              onComplete={handleBatchComplete} onCancelItems={handleBatchCancel}
+              onDelete={handleBatchDelete} onSetDate={() => setShowDateModal(true)}
+              onExit={exitManage} onCancelConfirm={() => setConfirmDelete(false)}
+              hasSelection={hasSelection}
+            />
+          ) : (
+            <ProgressDefaultBar
+              showInput={showInput} progressText={progressText}
+              allCount={allCount}
+              onShowInput={() => setShowInput(true)} onTextChange={setProgressText}
+              onKeyDown={handleKeyDown} onSubmit={handleSubmit}
+              onCancelInput={() => setShowInput(false)}
+              onManage={() => { setManageMode(true); setConfirmDelete(false); }}
+            />
+          )}
         </div>
       )}
 
       {archivedProgress.length > 0 && (
         <div className="progress-archive">
-          <div className="archive-toggle" onClick={() => setShowArchived(!showArchived)}>
+          <div className="archive-toggle" onClick={() => setShowArchived(v => !v)}>
             <span className={`triangle ${showArchived ? 'open' : ''}`}>&#x25B6;</span>
             <span>已归档进度 ({archivedProgress.length})</span>
           </div>
@@ -120,7 +139,7 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
               {archivedProgress.map(p => (
                 <div key={p.id}
                   className={`progress-entry ${p.status} ${manageMode ? 'progress-manage' : 'progress-clickable'} ${selectedPIds.has(p.id) ? 'progress-selected' : ''}`}
-                  onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenProgressEdit(p)}>
+                  onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenEdit(p)}>
                   {!inBatch && !manageMode && (
                     <span className="progress-actions">
                       <button className="p-action undo" onClick={(e) => { e.stopPropagation(); onToggleProgressStatus(todoId, p.id, p.status); }} title="恢复">&#x21A9;</button>
@@ -132,7 +151,7 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
                     </span>
                   )}
                   <span className="progress-status-tag">{p.status === 'completed' ? '已完成' : '已作废'}</span>
-                  <span className="progress-date">{new Date(p.createdAt || p.time).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span>
+                  <span className="progress-date">{new Date(p.createdAt ?? p.time).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span>
                   {p.text}
                 </div>
               ))}
@@ -147,19 +166,19 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
           onCancel={() => setShowDateModal(false)} />
       )}
 
-      {editingProgress && (
-        <div className="modal-full-overlay" onClick={() => setEditingProgress(null)}>
+      {editing && (
+        <div className="modal-full-overlay" onClick={() => setEditing(null)}>
           <div className="modal-full-sheet" onClick={e => e.stopPropagation()}>
             <div className="modal-full-header">
               <span className="modal-full-title">编辑进度</span>
-              <button className="modal-full-close" onClick={() => setEditingProgress(null)}>&times;</button>
+              <button className="modal-full-close" onClick={() => setEditing(null)}>&times;</button>
             </div>
             <div className="modal-full-body">
-              <textarea className="modal-edit-textarea" value={editText} onChange={e => setEditText(e.target.value)} autoFocus />
+              <textarea className="modal-edit-textarea" value={editing.text} onChange={e => setEditing(prev => ({ ...prev, text: e.target.value }))} autoFocus />
             </div>
             <div className="modal-full-footer">
-              <button className="btn-cancel" onClick={() => setEditingProgress(null)}>取消</button>
-              <button className="btn-save" onClick={handleSaveProgressEdit}>保存</button>
+              <button className="btn-cancel" onClick={() => setEditing(null)}>取消</button>
+              <button className="btn-save" onClick={handleSaveEdit}>保存</button>
             </div>
           </div>
         </div>
@@ -168,7 +187,12 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
   );
 }
 
-function ProgressManageBar({ selectedCount, confirmDelete, onComplete, onCancel, onDelete, onSetDate, onExit, onCancelConfirm }) {
+const DISABLED_STYLE = (selectedCount) => ({
+  opacity: selectedCount === 0 ? 0.4 : 1,
+  fontSize: 11,
+});
+
+function ProgressManageBar({ selectedCount, confirmDelete, onComplete, onCancelItems, onDelete, onSetDate, onExit, onCancelConfirm, hasSelection }) {
   if (confirmDelete) {
     return (
       <div className="progress-manage-bar">
@@ -181,14 +205,14 @@ function ProgressManageBar({ selectedCount, confirmDelete, onComplete, onCancel,
 
   return (
     <div className="progress-manage-bar">
-      <button className="btn-mini btn-mini-save" onClick={onComplete} disabled={selectedCount === 0}
-        style={{ opacity: selectedCount === 0 ? 0.4 : 1, fontSize: 11, background: 'var(--success)' }}>完成 ({selectedCount})</button>
-      <button className="btn-mini btn-mini-save" onClick={onCancel} disabled={selectedCount === 0}
-        style={{ opacity: selectedCount === 0 ? 0.4 : 1, fontSize: 11, background: 'var(--text-secondary)' }}>作废 ({selectedCount})</button>
-      <button className="btn-mini btn-mini-save" onClick={onDelete} disabled={selectedCount === 0}
-        style={{ opacity: selectedCount === 0 ? 0.4 : 1, fontSize: 11, background: 'var(--danger)' }}>删除 ({selectedCount})</button>
-      <button className="btn-mini btn-mini-save" onClick={onSetDate} disabled={selectedCount === 0}
-        style={{ opacity: selectedCount === 0 ? 0.4 : 1, fontSize: 11, background: 'var(--accent)', padding: '4px 6px' }}>改时 ({selectedCount})</button>
+      <button className="btn-mini btn-mini-save" onClick={onComplete} disabled={!hasSelection}
+        style={{ ...DISABLED_STYLE(selectedCount), background: 'var(--success)' }}>完成 ({selectedCount})</button>
+      <button className="btn-mini btn-mini-save" onClick={onCancelItems} disabled={!hasSelection}
+        style={{ ...DISABLED_STYLE(selectedCount), background: 'var(--text-secondary)' }}>作废 ({selectedCount})</button>
+      <button className="btn-mini btn-mini-save" onClick={onDelete} disabled={!hasSelection}
+        style={{ ...DISABLED_STYLE(selectedCount), background: 'var(--danger)' }}>删除 ({selectedCount})</button>
+      <button className="btn-mini btn-mini-save" onClick={onSetDate} disabled={!hasSelection}
+        style={{ ...DISABLED_STYLE(selectedCount), background: 'var(--accent)', padding: '4px 6px' }}>改时 ({selectedCount})</button>
       <button className="btn-mini btn-mini-cancel" onClick={onExit}>取消</button>
     </div>
   );
