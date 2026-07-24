@@ -923,15 +923,15 @@ body {
 .todo-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .todo-item {
   background: var(--card);
   border-radius: var(--radius);
-  padding: 10px 12px;
+  padding: 8px 10px;
   box-shadow: var(--shadow);
-  border-left: 3px solid var(--accent);
+  border-left: 2px solid var(--accent);
   transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
   position: relative;
 }
@@ -981,7 +981,7 @@ body {
 .todo-header {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: 4px;
 }
 
 .todo-content {
@@ -991,10 +991,10 @@ body {
 
 .todo-meta {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
   flex-wrap: wrap;
-  margin-top: 3px;
+  margin-top: 2px;
   font-size: var(--font-size-small);
 }
 
@@ -1298,7 +1298,7 @@ body {
 /* ---------- Actions ---------- */
 .todo-actions {
   display: flex;
-  gap: 5px;
+  gap: 4px;
   flex-shrink: 0;
   align-items: center;
 }
@@ -1384,17 +1384,17 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
-  border-radius: 4px;
+  border-radius: 3px;
   transition: background 0.15s;
   position: relative;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .drag-handle:active {
@@ -1403,7 +1403,7 @@ body {
 }
 
 .drag-handle-icon {
-  font-size: 15px;
+  font-size: 13px;
   color: var(--text-secondary);
   letter-spacing: -1px;
   opacity: 0.3;
@@ -1495,19 +1495,19 @@ body {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  margin-right: 2px;
+  margin-right: 0;
 }
 
 .check-circle {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   border: 2px solid var(--border);
   background: var(--card);
-  font-size: 12px;
+  font-size: 11px;
   color: var(--accent);
   transition: all 0.15s;
 }
@@ -2248,6 +2248,105 @@ body {
 
 .modal-full-footer .btn-cancel:active {
   background: var(--border);
+}
+
+/* ---- Todo Detail ---- */
+.detail-section {
+  margin-bottom: 10px;
+}
+
+.detail-section-title {
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.detail-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  padding: 6px 0;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.detail-title-edit {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.detail-title-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+}
+
+.detail-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+}
+
+.detail-label {
+  width: 56px;
+  flex-shrink: 0;
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+}
+
+.detail-value {
+  flex: 1;
+  font-size: var(--font-size);
+  color: var(--text);
+  min-width: 0;
+}
+
+.detail-status {
+  font-size: var(--font-size-small);
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.detail-status.status-active {
+  background: var(--primary-light);
+  color: var(--accent);
+}
+
+.detail-status.status-completed {
+  background: #e8f8f0;
+  color: var(--success);
+}
+
+.detail-status.status-cancelled {
+  background: var(--bg);
+  color: var(--text-secondary);
+}
+
+.detail-tag.urgent {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--danger);
+  color: #fff;
+  font-size: var(--font-size-small);
+  font-weight: 600;
 }
 
 /* ---- Performance Tester ---- */

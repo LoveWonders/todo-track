@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, memo } from 'react';
-import { formatDate, isOverdue } from '../utils/dateParser';
+import { isOverdue } from '../utils/dateParser';
 import { URGENT_TAG } from '../constants';
 import { useTodoActions, useTodoView } from '../hooks/TodoContext';
 import Countdown from './Countdown';
 import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
 import ProgressLog from './ProgressLog';
+import TodoDetail from './TodoDetail';
 
 function getStatusClass(todo) {
   if (todo.status === 'completed') return 'completed';
@@ -26,6 +27,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const [showEditModal, setShowEditModal] = useState(false);
   const [editText, setEditText] = useState('');
   const [moreOpen, setMoreOpen] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -122,6 +124,9 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
           </span>
           {moreOpen && (
             <div className="more-dropdown">
+              <button className="more-item" onClick={() => { setMoreOpen(false); setShowDetail(true); }}>
+                详情
+              </button>
               <button className="more-item" onClick={handleEnterBatch}>
                 选择
               </button>
@@ -159,9 +164,6 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
             {todo.status === 'active' && todo.dueDate && (
               <Countdown dueDate={todo.dueDate} />
             )}
-            <span className="todo-date" style={{ color: '#ccc' }}>
-              {formatDate(todo.createdAt)}
-            </span>
             <TagsEdit
               tags={todo.tags}
               onSave={(tags) => updateTodo(todo.id, { tags })}
@@ -261,6 +263,10 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
             </div>
           </div>
         </div>
+      )}
+
+      {showDetail && (
+        <TodoDetail todo={todo} onClose={() => setShowDetail(false)} />
       )}
     </div>
   );
