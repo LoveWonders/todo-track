@@ -2,8 +2,10 @@ import { useRef, useState, useCallback } from 'react';
 import * as chrono from 'chrono-node';
 import { useSmartInput } from '../hooks/useSmartInput';
 import { useTagLogic } from '../hooks/useTagLogic';
-import { formatDateRange } from '../utils/dateParser';
+import { formatDateRange, formatDateTime } from '../utils/dateParser';
 import { toISODateTime, extractDatePart, parseLocalDate } from '../utils/datePatterns';
+import { URGENT_TAG } from '../constants';
+import { useSettings } from '../hooks/useSettings';
 
 function tryParseDateText(text) {
   if (!text || !text.trim()) return null;
@@ -27,6 +29,17 @@ function tryParseDateText(text) {
   return null;
 }
 
+function isoToDatetimeLocal(iso) {
+  if (!iso) return '';
+  return iso.length >= 16 ? iso.slice(0, 16) : iso.slice(0, 10);
+}
+
+function makeDefaultDueDate(defaultDueMinute) {
+  const now = new Date();
+  now.setHours(21, defaultDueMinute, 0, 0);
+  return toISODateTime(now);
+}
+
 export default function TodoInput({ onAdd }) {
   const inputRef = useRef(null);
   const pickerRef = useRef(null);
@@ -34,14 +47,17 @@ export default function TodoInput({ onAdd }) {
   const [pickedStart, setPickedStart] = useState(null);
   const [pickedEnd, setPickedEnd] = useState(null);
   const [isUrgent, setIsUrgent] = useState(false);
+  const { settings } = useSettings();
 
   const { text, setText, parsed, clear: clearSmart } = useSmartInput();
   const { tags, removeTag, clearTags } = useTagLogic([]);
 
   const effectiveStart = pickedStart != null ? pickedStart : parsed.startDate;
   const effectiveEnd = pickedEnd != null ? pickedEnd : parsed.dueDate;
-  const displayText = formatDateRange(effectiveStart, effectiveEnd);
-  const submittedTags = [...new Set([...tags, ...parsed.tags, ...(isUrgent ? ['紧急'] : [])])];
+  const displayText = effectiveStart
+    ? formatDateTime(effectiveStart) + (effectiveEnd ? ` ~ ${formatDateTime(effectiveEnd)}` : '')
+    : effectiveEnd ? formatDateTime(effectiveEnd) : '';
+  const submittedTags = [...new Set([...tags, ...parsed.tags, ...(isUrgent ? [URGENT_TAG] : [])])];
 
   const canSubmit = parsed.cleanContent.trim() || effectiveEnd || submittedTags.length > 0;
 
@@ -50,7 +66,7 @@ export default function TodoInput({ onAdd }) {
     if (!input) return;
     pickTargetRef.current = target;
     const current = target === 'start' ? effectiveStart : effectiveEnd;
-    input.value = current ? extractDatePart(current) : '';
+    input.value = current ? isoToDatetimeLocal(current) : '';
     requestAnimationFrame(() => {
       typeof input.showPicker === 'function' ? input.showPicker() : input.focus();
     });
@@ -59,7 +75,7 @@ export default function TodoInput({ onAdd }) {
   const handleCalendarPick = useCallback((e) => {
     const picked = e.target.value;
     if (!picked) return;
-    const iso = picked + 'T23:59:59';
+    const iso = picked.length === 16 ? picked + ':00' : picked + 'T23:59:59';
     if (pickTargetRef.current === 'start') {
       setPickedStart(iso);
     } else {
@@ -92,15 +108,21 @@ export default function TodoInput({ onAdd }) {
   const handleSubmit = useCallback(() => {
     if (!canSubmit) return;
     const final = parsed.cleanContent.trim();
-    const title = final || formatDateRange(null, effectiveEnd) || '待办';
 
-    onAdd({ title, startDate: effectiveStart, dueDate: effectiveEnd, tags: submittedTags });
+    let finalDueDate = effectiveEnd;
+    if (!finalDueDate) {
+      finalDueDate = makeDefaultDueDate(settings.defaultDueMinute);
+    }
+
+    const title = final || formatDateRange(null, finalDueDate) || '待办';
+
+    onAdd({ title, startDate: effectiveStart, dueDate: finalDueDate, tags: submittedTags });
     clearSmart();
     clearTags();
     setIsUrgent(false);
     setPickedStart(null);
     setPickedEnd(null);
-  }, [canSubmit, parsed, effectiveStart, effectiveEnd, submittedTags, onAdd, clearSmart, clearTags]);
+  }, [canSubmit, parsed, effectiveStart, effectiveEnd, submittedTags, onAdd, clearSmart, clearTags, settings.defaultDueMinute]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -142,7 +164,7 @@ export default function TodoInput({ onAdd }) {
             disabled={!canSubmit}>+</button>
         </div>
 
-        <input ref={pickerRef} type="date"
+        <input ref={pickerRef} type="datetime-local"
           style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: 1, height: 1, opacity: 0 }}
           onChange={handleCalendarPick} />
       </div>

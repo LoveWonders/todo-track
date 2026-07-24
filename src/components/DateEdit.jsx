@@ -1,5 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { formatDate, parseDateText } from '../utils/dateParser';
+import { formatDate, formatDateTime, parseDateText } from '../utils/dateParser';
+
+function isoToDatetimeLocal(iso) {
+  if (!iso) return '';
+  return iso.length >= 16 ? iso.slice(0, 16) : iso.slice(0, 10);
+}
+
+function isoToDateLocal(iso) {
+  if (!iso) return '';
+  return iso.length >= 10 ? iso.slice(0, 10) : '';
+}
 
 export default function DateEdit({ value, onSave, overdue, inBatch }) {
   const [editing, setEditing] = useState(false);
@@ -34,8 +44,9 @@ export default function DateEdit({ value, onSave, overdue, inBatch }) {
 
   const openCalendar = useCallback(() => {
     const input = document.createElement('input');
-    input.type = 'date';
-    input.value = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : '';
+    const hasTime = typeof value === 'string' && value.includes('T') && /[1-9]/.test(value.slice(11, 13) + value.slice(14, 16));
+    input.type = hasTime ? 'datetime-local' : 'date';
+    input.value = hasTime ? isoToDatetimeLocal(value) : isoToDateLocal(value);
     input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0';
     document.body.appendChild(input);
 
@@ -50,7 +61,11 @@ export default function DateEdit({ value, onSave, overdue, inBatch }) {
 
     input.addEventListener('change', (e) => {
       const picked = e.target.value;
-      if (picked) { onSave(picked); setText(picked); }
+      if (picked) {
+        const iso = picked.length === 16 ? picked + ':00' : picked + 'T23:59:59';
+        onSave(iso);
+        setText(formatDateTime(iso));
+      }
       cleanup();
     }, { once: true });
 
