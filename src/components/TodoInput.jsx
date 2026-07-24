@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from 'react';
 import * as chrono from 'chrono-node';
 import { useSmartInput } from '../hooks/useSmartInput';
 import { useTagLogic } from '../hooks/useTagLogic';
-import { formatDateRange, formatDateTime } from '../utils/dateParser';
+import { formatDateRange, formatDateOnly } from '../utils/dateParser';
 import { toISODateTime, extractDatePart, parseLocalDate } from '../utils/datePatterns';
 import { URGENT_TAG } from '../constants';
 import { useSettings } from '../hooks/useSettings';
@@ -55,8 +55,8 @@ export default function TodoInput({ onAdd }) {
   const effectiveStart = pickedStart != null ? pickedStart : parsed.startDate;
   const effectiveEnd = pickedEnd != null ? pickedEnd : parsed.dueDate;
   const displayText = effectiveStart
-    ? formatDateTime(effectiveStart) + (effectiveEnd ? ` ~ ${formatDateTime(effectiveEnd)}` : '')
-    : effectiveEnd ? formatDateTime(effectiveEnd) : '';
+    ? formatDateOnly(effectiveStart) + (effectiveEnd ? ` ~ ${formatDateOnly(effectiveEnd)}` : '')
+    : effectiveEnd ? formatDateOnly(effectiveEnd) : '';
   const submittedTags = [...new Set([...tags, ...parsed.tags, ...(isUrgent ? [URGENT_TAG] : [])])];
 
   const canSubmit = parsed.cleanContent.trim() || effectiveEnd || submittedTags.length > 0;

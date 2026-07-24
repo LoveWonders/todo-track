@@ -346,12 +346,12 @@ body {
   flex: 1;
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 9px 12px;
+  padding: 8px 12px;
   font-size: var(--font-size);
   outline: none;
   background: var(--bg);
   color: var(--text);
-  height: 40px;
+  height: 34px;
   box-sizing: border-box;
 }
 
@@ -360,13 +360,13 @@ body {
 }
 
 .btn-urgent {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border: none;
   border-radius: 6px;
   background: var(--border);
   color: var(--text-secondary);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -382,13 +382,13 @@ body {
 }
 
 .btn-add {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border: none;
   border-radius: 6px;
   background: var(--accent);
   color: #fff;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   cursor: pointer;
   display: flex;

@@ -59,6 +59,16 @@ export function formatDateTime(date) {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
+export function formatDateOnly(date) {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  const now = new Date();
+  const mm = d.getMonth() + 1;
+  const dd = d.getDate();
+  return d.getFullYear() !== now.getFullYear() ? `${d.getFullYear()}.${mm}.${dd}` : `${mm}.${dd}`;
+}
+
 export function isOverdue(date) {
   if (!date) return false;
   const d = new Date(date);
