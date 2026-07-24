@@ -981,7 +981,7 @@ body {
 .todo-header {
   display: flex;
   align-items: flex-start;
-  gap: 4px;
+  gap: 6px;
 }
 
 .todo-content {
@@ -1298,18 +1298,19 @@ body {
 /* ---------- Actions ---------- */
 .todo-actions {
   display: flex;
-  gap: 4px;
+  gap: 5px;
   flex-shrink: 0;
+  align-items: center;
 }
 
 .btn-action {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--bg);
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 15px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1383,8 +1384,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 36px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   cursor: grab;
   user-select: none;
@@ -1393,6 +1394,7 @@ body {
   border-radius: 4px;
   transition: background 0.15s;
   position: relative;
+  margin-top: 1px;
 }
 
 .drag-handle:active {
@@ -1401,16 +1403,16 @@ body {
 }
 
 .drag-handle-icon {
-  font-size: 16px;
+  font-size: 15px;
   color: var(--text-secondary);
   letter-spacing: -1px;
-  opacity: 0.4;
+  opacity: 0.3;
   transition: opacity 0.15s;
 }
 
 .drag-handle:active .drag-handle-icon,
 .todo-item:hover .drag-handle-icon {
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 /* ---------- Drag & Drop ---------- */
@@ -2444,7 +2446,7 @@ body {
 
 .more-dropdown {
   position: absolute;
-  right: 0;
+  left: 0;
   top: 100%;
   margin-top: 4px;
   background: var(--card);
