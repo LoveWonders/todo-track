@@ -1,34 +1,42 @@
+import { memo } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import TodoItem from './TodoItem';
 
-export default function TodoListItem({ todo, dragId, dropIdx, dragFromIdx, filteredTodos, setItemRef, onToggleStatus, onAddProgress, onToggleProgressStatus, onDeleteProgress, onUpdateProgress, onUpdateProgressCompletedAt, onUpdateTodo, onDragStart, onBatchToggle, isSelected, batchMode, isArchive }) {
-  const isDragged = dragId === todo.id;
-  const itemIdx = filteredTodos.findIndex(t => t.id === todo.id);
+const TodoListItem = memo(function TodoListItem({ todo, selectedIds }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: todo.id });
 
-  const showInsertBefore = dragId && !isDragged && dropIdx === itemIdx && dropIdx < dragFromIdx;
-  const showInsertAfter = dragId && !isDragged && dropIdx >= 0 && dropIdx === itemIdx && dropIdx >= dragFromIdx;
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.3 : 1,
+  };
+
+  const isSelected = selectedIds.has(todo.id);
 
   return (
-    <div key={todo.id}>
-      {showInsertBefore && <div className="drop-indicator" />}
-      <div ref={(el) => setItemRef(todo.id, el)}>
-        <TodoItem
-          todo={todo}
-          onToggleStatus={onToggleStatus}
-          onAddProgress={onAddProgress}
-          onToggleProgressStatus={onToggleProgressStatus}
-          onDeleteProgress={onDeleteProgress}
-          onUpdateProgress={onUpdateProgress}
-          onUpdateProgressCompletedAt={onUpdateProgressCompletedAt}
-          onUpdateTodo={onUpdateTodo}
-          onDragStart={onDragStart}
-          onBatchToggle={onBatchToggle}
-          isDragging={isDragged}
-          isSelected={isSelected}
-          batchMode={batchMode}
-          isArchive={isArchive}
-        />
-      </div>
-      {showInsertAfter && !showInsertBefore && <div className="drop-indicator" />}
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <TodoItem
+        todo={todo}
+        isDragging={isDragging}
+        isSelected={isSelected}
+        dragListeners={listeners}
+      />
     </div>
   );
+}, areEqual);
+
+function areEqual(prev, next) {
+  if (prev.todo !== next.todo) return false;
+  if (prev.selectedIds.has(prev.todo.id) !== next.selectedIds.has(next.todo.id)) return false;
+  return true;
 }
+
+export default TodoListItem;

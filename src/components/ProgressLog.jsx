@@ -1,9 +1,12 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useTodoActions, useTodoView } from '../hooks/TodoContext';
 import CompleteDateModal from './CompleteDateModal';
 import ProgressManageBar from './ProgressManageBar';
 import ProgressDefaultBar from './ProgressDefaultBar';
 
-export default function ProgressLog({ progress, todoId, onToggleProgressStatus, onDeleteProgress, onAddProgress, onUpdateProgress, onUpdateProgressCompletedAt, inBatch }) {
+export default function ProgressLog({ progress, todoId }) {
+  const { toggleProgressStatus, deleteProgress, addProgress, updateProgress, updateProgressCompletedAt } = useTodoActions();
+  const { batchMode } = useTodoView();
   const [progressText, setProgressText] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -14,6 +17,7 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
   const [editing, setEditing] = useState(null);
 
   const items = progress ?? [];
+  const inBatch = batchMode;
 
   const { activeProgress, archivedProgress, allCount } = useMemo(() => {
     const active = [];
@@ -41,27 +45,27 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
 
   const handleBatchDelete = useCallback(() => {
     if (!confirmDelete) { setConfirmDelete(true); return; }
-    selectedPIds.forEach(pid => onDeleteProgress(todoId, pid));
+    selectedPIds.forEach(pid => deleteProgress(todoId, pid));
     exitManage();
-  }, [confirmDelete, selectedPIds, todoId, onDeleteProgress, exitManage]);
+  }, [confirmDelete, selectedPIds, todoId, deleteProgress, exitManage]);
 
   const handleBatchComplete = useCallback(() => {
-    selectedPIds.forEach(pid => onToggleProgressStatus(todoId, pid, 'completed'));
+    selectedPIds.forEach(pid => toggleProgressStatus(todoId, pid, 'completed'));
     exitManage();
-  }, [selectedPIds, todoId, onToggleProgressStatus, exitManage]);
+  }, [selectedPIds, todoId, toggleProgressStatus, exitManage]);
 
   const handleBatchCancel = useCallback(() => {
-    selectedPIds.forEach(pid => onToggleProgressStatus(todoId, pid, 'cancelled'));
+    selectedPIds.forEach(pid => toggleProgressStatus(todoId, pid, 'cancelled'));
     exitManage();
-  }, [selectedPIds, todoId, onToggleProgressStatus, exitManage]);
+  }, [selectedPIds, todoId, toggleProgressStatus, exitManage]);
 
   const handleSubmit = useCallback(() => {
     const trimmed = progressText.trim();
     if (!trimmed) return;
-    onAddProgress(todoId, trimmed);
+    addProgress(todoId, trimmed);
     setProgressText('');
     setShowInput(false);
-  }, [progressText, todoId, onAddProgress]);
+  }, [progressText, todoId, addProgress]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') { e.preventDefault(); handleSubmit(); }
@@ -75,10 +79,10 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
     if (!editing) return;
     const trimmed = editing.text.trim();
     if (trimmed && trimmed !== editing.progress.text) {
-      onUpdateProgress(todoId, editing.progress.id, trimmed);
+      updateProgress(todoId, editing.progress.id, trimmed);
     }
     setEditing(null);
-  }, [editing, todoId, onUpdateProgress]);
+  }, [editing, todoId, updateProgress]);
 
   const hasSelection = selectedPIds.size > 0;
 
@@ -92,7 +96,7 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
               onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenEdit(p)}>
               {!inBatch && !manageMode && (
                 <span className="progress-actions">
-                  <button className="p-action done" onClick={(e) => { e.stopPropagation(); onToggleProgressStatus(todoId, p.id, 'completed'); }} title="完成">&#x2713;</button>
+                  <button className="p-action done" onClick={(e) => { e.stopPropagation(); toggleProgressStatus(todoId, p.id, 'completed'); }} title="完成">&#x2713;</button>
                 </span>
               )}
               {manageMode && (
@@ -144,7 +148,7 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
                   onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenEdit(p)}>
                   {!inBatch && !manageMode && (
                     <span className="progress-actions">
-                      <button className="p-action undo" onClick={(e) => { e.stopPropagation(); onToggleProgressStatus(todoId, p.id, p.status); }} title="恢复">&#x21A9;</button>
+                      <button className="p-action undo" onClick={(e) => { e.stopPropagation(); toggleProgressStatus(todoId, p.id, p.status); }} title="恢复">&#x21A9;</button>
                     </span>
                   )}
                   {manageMode && (
@@ -164,7 +168,7 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
 
       {showDateModal && (
         <CompleteDateModal count={selectedPIds.size}
-          onConfirm={(dateString) => { selectedPIds.forEach(pid => onUpdateProgressCompletedAt(todoId, pid, dateString)); exitManage(); }}
+          onConfirm={(dateString) => { selectedPIds.forEach(pid => updateProgressCompletedAt(todoId, pid, dateString)); exitManage(); }}
           onCancel={() => setShowDateModal(false)} />
       )}
 
@@ -188,4 +192,3 @@ export default function ProgressLog({ progress, todoId, onToggleProgressStatus, 
     </div>
   );
 }
-

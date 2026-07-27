@@ -93,7 +93,6 @@ export default function useLongPress(onLongPress, onTap, { threshold = 500, move
   }, []);
 
   return {
-    clickHandledRef,
     clear,
     onTouchStart,
     onTouchMove,

@@ -1,6 +1,33 @@
-import { useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
-export default function useBatchActions(selectedIds, setSelectedIds, filteredTodos, sourceTodos, exitBatch, deleteTodo, toggleStatus, updateTodo, addProgress, updateCompletedAt) {
+export default function useBatchActions(filteredTodos, sourceTodos, deleteTodo, toggleStatus, updateTodo, addProgress, updateCompletedAt) {
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [batchMode, setBatchMode] = useState(false);
+
+  useEffect(() => {
+    if (selectedIds.size > 0 && !batchMode) {
+      setBatchMode(true);
+    } else if (selectedIds.size === 0 && batchMode) {
+      setBatchMode(false);
+    }
+  }, [selectedIds, batchMode]);
+
+  const exitBatch = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  const handleBatchToggle = useCallback((id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
   const batchDelete = useCallback(() => {
     if (selectedIds.size === 0) return;
     if (!window.confirm(`确认删除 ${selectedIds.size} 个任务？`)) return;
@@ -44,7 +71,7 @@ export default function useBatchActions(selectedIds, setSelectedIds, filteredTod
 
   const selectAll = useCallback(() => {
     setSelectedIds(new Set(filteredTodos.map(t => t.id)));
-  }, [filteredTodos, setSelectedIds]);
+  }, [filteredTodos]);
 
   const invertSelection = useCallback(() => {
     setSelectedIds(prev => {
@@ -54,7 +81,21 @@ export default function useBatchActions(selectedIds, setSelectedIds, filteredTod
       }
       return next;
     });
-  }, [filteredTodos, setSelectedIds]);
+  }, [filteredTodos]);
 
-  return { batchDelete, batchComplete, batchCancel, batchSetDate, batchSetTags, batchAddProgress, batchCompleteAt, selectAll, invertSelection };
+  return {
+    batchMode,
+    selectedIds,
+    exitBatch,
+    handleBatchToggle,
+    batchDelete,
+    batchComplete,
+    batchCancel,
+    batchSetDate,
+    batchSetTags,
+    batchAddProgress,
+    batchCompleteAt,
+    selectAll,
+    invertSelection,
+  };
 }

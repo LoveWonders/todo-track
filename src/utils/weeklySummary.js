@@ -66,39 +66,3 @@ export function getNoProgressLastWeek(todos, range) {
     );
   });
 }
-
-export function generateWeeklySummary(completed, progressed, noProgress) {
-  const lines = [];
-
-  if (completed.length > 0) {
-    lines.push('上周完成了：' + completed.map(t => t.title).join('、'));
-  }
-
-  if (progressed.length > 0) {
-    lines.push('上周推进了：' + progressed.map(t => t.title).join('、'));
-  }
-
-  if (noProgress.length > 0) {
-    lines.push('上周无进展：' + noProgress.map(t => t.title).join('、'));
-  }
-
-  return lines.join('\n');
-}
-
-export function generateThisWeekSummary(completed, progressed, noProgress) {
-  const lines = [];
-
-  if (completed.length > 0) {
-    lines.push('本周完成了：' + completed.map(t => t.title).join('、'));
-  }
-
-  if (progressed.length > 0) {
-    lines.push('本周推进了：' + progressed.map(t => t.title).join('、'));
-  }
-
-  if (noProgress.length > 0) {
-    lines.push('本周无进展：' + noProgress.map(t => t.title).join('、'));
-  }
-
-  return lines.join('\n');
-}

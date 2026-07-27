@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { loadData, saveData, migrateFromLocalStorage } from '../utils/storage';
+import { mergeAndArchive } from '../utils/autoArchive';
 
 export function useTodos() {
   const [todos, setTodos] = useState([]);
@@ -23,14 +24,24 @@ export function useTodos() {
         if (startDate == null && dueDate) {
           startDate = dueDate;
         }
-        return { ...t, dueDate, startDate };
+        return {
+          ...t,
+          dueDate,
+          startDate,
+          progress: t.progress || [],
+          tags: t.tags || [],
+          status: t.status || 'active',
+          completedAt: t.completedAt || null,
+          createdAt: t.createdAt || new Date().toISOString(),
+        };
       });
-      if (migrated.length > 0) {
-        todoIdRef.current = Math.max(...migrated.map(t => t.id), todoIdRef.current) + 1;
-        const maxProgressId = Math.max(...migrated.flatMap(t => (t.progress || []).map(p => p.id)), 0);
+      const afterArchive = mergeAndArchive(migrated);
+      if (afterArchive.length > 0) {
+        todoIdRef.current = Math.max(...afterArchive.map(t => t.id), todoIdRef.current) + 1;
+        const maxProgressId = Math.max(...afterArchive.flatMap(t => (t.progress || []).map(p => p.id)), 0);
         if (maxProgressId > 0) progressIdRef.current = maxProgressId + 1;
       }
-      setTodos(migrated);
+      setTodos(afterArchive);
       setLoaded(true);
     })();
     return () => { cancelled = true; };

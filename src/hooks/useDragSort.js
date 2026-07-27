@@ -9,6 +9,9 @@ export default function useDragSort(filteredTodos, moveTodoTo) {
   const itemElsRef = useRef({});
   const throttleTimerRef = useRef(null);
   const dropIdxRef = useRef(-1);
+  const filteredTodosRef = useRef(filteredTodos);
+
+  filteredTodosRef.current = filteredTodos;
 
   const setItemRef = useCallback((id, el) => {
     if (el) {
@@ -19,14 +22,14 @@ export default function useDragSort(filteredTodos, moveTodoTo) {
   }, []);
 
   const handleDragStart = useCallback((id, coords) => {
-    const idx = filteredTodos.findIndex(t => t.id === id);
+    const idx = filteredTodosRef.current.findIndex(t => t.id === id);
     if (idx === -1) return;
     setDragFromIdx(idx);
     lastTargetRef.current = idx;
     setDragId(id);
     setDropIdx(idx);
     setDragY(coords.y);
-  }, [filteredTodos]);
+  }, []);
 
   const handleDragMove = useCallback((e) => {
     if (!dragId) return;
@@ -43,7 +46,7 @@ export default function useDragSort(filteredTodos, moveTodoTo) {
       const dist = Math.abs(y - mid);
       if (dist < minDist) {
         minDist = dist;
-        closest = filteredTodos.findIndex(t => t.id === Number(id));
+        closest = filteredTodosRef.current.findIndex(t => t.id === Number(id));
       }
     }
     lastTargetRef.current = closest;
@@ -57,12 +60,12 @@ export default function useDragSort(filteredTodos, moveTodoTo) {
       dropIdxRef.current = closest;
       setDropIdx(closest);
     }
-  }, [dragId, filteredTodos]);
+  }, [dragId]);
 
   const handleDragEnd = useCallback(() => {
     if (!dragId) return;
     const toIdx = lastTargetRef.current;
-    if (toIdx !== dragFromIdx && dragFromIdx >= 0 && toIdx < filteredTodos.length) {
+    if (toIdx !== dragFromIdx && dragFromIdx >= 0 && toIdx < filteredTodosRef.current.length) {
       moveTodoTo(dragId, toIdx);
     }
     setDragId(null);
@@ -73,7 +76,7 @@ export default function useDragSort(filteredTodos, moveTodoTo) {
       clearTimeout(throttleTimerRef.current);
       throttleTimerRef.current = null;
     }
-  }, [dragId, dragFromIdx, filteredTodos.length, moveTodoTo]);
+  }, [dragId, dragFromIdx, moveTodoTo]);
 
   return {
     dragId,

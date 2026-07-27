@@ -6,6 +6,7 @@ import {
   getProgressedLastWeek,
   getNoProgressLastWeek,
 } from '../utils/weeklySummary';
+import { copyToClipboard } from '../utils/clipboard';
 
 function formatRange(range) {
   const s = range.start;
@@ -51,16 +52,9 @@ function WeekBlock({ label, range, todos }) {
     const text = buildCopyText(label, range, completed, progressed, noProgress);
     setCopied(true);
     try {
-      await navigator.clipboard.writeText(text);
+      await copyToClipboard(text);
     } catch {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
+      // clipboard failed silently
     }
     setTimeout(() => setCopied(false), 3000);
   }, [label, range, completed, progressed, noProgress]);

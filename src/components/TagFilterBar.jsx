@@ -1,23 +1,25 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { load, save } from '../utils/storage';
+import { URGENT_TAG } from '../constants';
 
 const SLOTS_KEY = 'todo_filter_slots';
 
 const DEFAULT_SLOTS = [
-  { id: 1, name: '紧急', ruleType: 'include', tags: ['紧急'] },
+  { id: 1, name: URGENT_TAG, ruleType: 'include', tags: [URGENT_TAG] },
   { id: 2, name: '长期', ruleType: 'include', tags: ['长期'] },
   { id: 3, name: '长期', ruleType: 'exclude', tags: ['长期'] },
 ];
 
 function loadSlots() {
   try {
-    const raw = localStorage.getItem(SLOTS_KEY);
+    const raw = load(SLOTS_KEY);
     if (raw) return JSON.parse(raw);
   } catch { /* ignore */ }
   return DEFAULT_SLOTS;
 }
 
 function saveSlots(slots) {
-  try { localStorage.setItem(SLOTS_KEY, JSON.stringify(slots)); } catch { /* ignore */ }
+  try { save(SLOTS_KEY, slots); } catch { /* ignore */ }
 }
 
 function buildSlotLabel(slot) {

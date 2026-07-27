@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { URGENT_TAG } from '../constants';
 
 export default function useFilteredTodos(source, filterConfig) {
   return useMemo(() => {
@@ -15,7 +16,7 @@ export default function useFilteredTodos(source, filterConfig) {
     const urgent = [];
     const normal = [];
     for (const t of base) {
-      (      (t.tags || []).includes('紧急') ? urgent : normal).push(t);
+      (      (t.tags || []).includes(URGENT_TAG) ? urgent : normal).push(t);
     }
     return [...urgent, ...normal];
   }, [source, filterConfig]);

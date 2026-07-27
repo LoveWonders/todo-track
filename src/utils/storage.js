@@ -204,3 +204,18 @@ export async function clearAllData() {
   localStorage.removeItem(STORAGE_KEY);
   addLog('info', '[清除] localStorage 已清空');
 }
+
+export function load(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw || null;
+  } catch {
+    return null;
+  }
+}
+
+export function save(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch { /* ignore */ }
+}

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, memo } from 'react';
+import { createPortal } from 'react-dom';
 import { isOverdue } from '../utils/dateParser';
 import { URGENT_TAG } from '../constants';
 import { useTodoActions, useTodoView } from '../hooks/TodoContext';
@@ -28,11 +29,14 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const [editText, setEditText] = useState('');
   const [moreOpen, setMoreOpen] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState({});
+  const dragRef = useRef(null);
 
   useEffect(() => {
     if (!moreOpen) return;
     const close = (e) => {
-      if (!e.target.closest('.more-dropdown')) setMoreOpen(false);
+      if (e.target.closest('.more-dropdown') || e.target.closest('.drag-handle')) return;
+      setMoreOpen(false);
     };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
@@ -99,6 +103,24 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
     setMoreOpen(false);
   };
 
+  const handleToggleMore = (e) => {
+    e.stopPropagation();
+    if (moreOpen) {
+      setMoreOpen(false);
+      return;
+    }
+    if (dragRef.current) {
+      const rect = dragRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: 'fixed',
+        left: rect.left + 'px',
+        top: (rect.bottom + 4) + 'px',
+        zIndex: 9999,
+      });
+    }
+    setMoreOpen(true);
+  };
+
   return (
     <div
       className={`todo-item ${statusClass} ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''} ${batchMode ? 'batch-mode' : ''} ${isUrgent ? 'urgent' : ''}`}
@@ -114,31 +136,34 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
         )}
 
         <div
+          ref={dragRef}
           className={`drag-handle ${batchMode ? 'disabled' : ''}`}
           {...(!batchMode ? dragListeners : {})}
-          onClick={!batchMode ? (e) => { e.stopPropagation(); setMoreOpen(!moreOpen); } : undefined}
+          onClick={!batchMode ? handleToggleMore : undefined}
           title={batchMode ? '' : '长按拖动 / 点击菜单'}
         >
           <span className="drag-handle-icon">
             {batchMode ? '\u2630' : '\u2807'}
           </span>
-          {moreOpen && (
-            <div className="more-dropdown">
-              <button className="more-item" onClick={() => { setMoreOpen(false); setShowDetail(true); }}>
-                详情
-              </button>
-              <button className="more-item" onClick={handleEnterBatch}>
-                选择
-              </button>
-              <button className="more-item" onClick={handleMoveTop}>
-                置顶
-              </button>
-              <button className="more-item" onClick={handleMoveBottom}>
-                置底
-              </button>
-            </div>
-          )}
         </div>
+
+        {moreOpen && createPortal(
+          <div className="more-dropdown" style={dropdownStyle}>
+            <button className="more-item" onClick={() => { setMoreOpen(false); setShowDetail(true); }}>
+              详情
+            </button>
+            <button className="more-item" onClick={handleEnterBatch}>
+              选择
+            </button>
+            <button className="more-item" onClick={handleMoveTop}>
+              置顶
+            </button>
+            <button className="more-item" onClick={handleMoveBottom}>
+              置底
+            </button>
+          </div>,
+          document.body
+        )}
 
         <div className="todo-content">
           <div style={{ marginBottom: 3 }}>
@@ -265,8 +290,9 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
         </div>
       )}
 
-      {showDetail && (
-        <TodoDetail todo={todo} onClose={() => setShowDetail(false)} />
+      {showDetail && createPortal(
+        <TodoDetail todo={todo} onClose={() => setShowDetail(false)} />,
+        document.body
       )}
     </div>
   );

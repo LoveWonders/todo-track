@@ -74,16 +74,6 @@ export async function shareExportedFile(fileUri) {
   });
 }
 
-export async function exportAndShareTodos(todos) {
-  const result = await exportTodosNative(todos);
-  try {
-    await shareExportedFile(result.uri);
-  } catch {
-    // user cancelled share, file is still saved
-  }
-  return result.filename;
-}
-
 export function parseImportFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -123,24 +113,6 @@ export function parseImportFile(file) {
     reader.onerror = () => reject(new Error('文件读取失败'));
     reader.readAsText(file);
   });
-}
-
-export function mergeTodos(existingTodos, importTodos, conflictStrategy) {
-  const existingIds = new Set(existingTodos.map(t => t.id));
-  const conflicts = importTodos.filter(t => existingIds.has(t.id));
-  const noConflicts = importTodos.filter(t => !existingIds.has(t.id));
-
-  if (conflicts.length === 0) {
-    return [...existingTodos, ...noConflicts];
-  }
-
-  if (conflictStrategy === 'overwrite') {
-    const overwriteIds = new Set(conflicts.map(t => t.id));
-    const kept = existingTodos.filter(t => !overwriteIds.has(t.id));
-    return [...kept, ...conflicts, ...noConflicts];
-  }
-
-  return [...existingTodos, ...noConflicts];
 }
 
 export function findConflicts(existingTodos, importTodos) {
