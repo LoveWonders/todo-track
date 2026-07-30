@@ -1,20 +1,46 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSettings } from '../hooks/useSettings';
+
+const DEFAULT_TAG_NAMES = ['长期', '个人', '总结'];
 
 export default function SettingsModal({ onClose }) {
   const { settings, updateSetting } = useSettings();
   const [minute, setMinute] = useState(String(settings.defaultDueMinute));
+  const [presetTags, setPresetTags] = useState(settings.presetTags || DEFAULT_TAG_NAMES);
+  const [newTag, setNewTag] = useState('');
+
+  useEffect(() => {
+    if (settings.presetTags) setPresetTags(settings.presetTags);
+  }, [settings.presetTags]);
 
   const handleSave = () => {
     const num = parseInt(minute, 10);
     if (isNaN(num) || num < 0 || num > 59) return;
     updateSetting('defaultDueMinute', num);
+    updateSetting('presetTags', presetTags.filter(t => t.trim()));
     onClose();
   };
 
+  const handleAddTag = () => {
+    const trimmed = newTag.trim();
+    if (trimmed && !presetTags.includes(trimmed)) {
+      setPresetTags([...presetTags, trimmed]);
+      setNewTag('');
+    }
+  };
+
+  const handleRemoveTag = (tag) => {
+    setPresetTags(presetTags.filter(t => t !== tag));
+  };
+
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleSave();
-    else if (e.key === 'Escape') onClose();
+    if (e.key === 'Enter') {
+      if (e.target.tagName === 'INPUT' && e.target.placeholder === '添加标签...') {
+        handleAddTag();
+      } else {
+        handleSave();
+      }
+    } else if (e.key === 'Escape') onClose();
   };
 
   return (
@@ -40,6 +66,30 @@ export default function SettingsModal({ onClose }) {
               onKeyDown={handleKeyDown}
               autoFocus
             />
+          </div>
+
+          <div className="settings-field">
+            <label className="settings-label">快捷标签预设</label>
+            <p className="settings-desc">
+              在 Bottom Sheet 中显示的快捷标签，点击即可选择/取消。
+            </p>
+            <div className="preset-tags-edit">
+              {presetTags.map(tag => (
+                <span key={tag} className="preset-tag-edit">
+                  #{tag}
+                  <button className="preset-tag-remove" onClick={() => handleRemoveTag(tag)}>&times;</button>
+                </span>
+              ))}
+              <input
+                type="text"
+                className="settings-input settings-input-tag"
+                placeholder="添加标签..."
+                value={newTag}
+                onChange={e => setNewTag(e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+              <button className="btn-add-tag" onClick={handleAddTag}>+</button>
+            </div>
           </div>
         </div>
         <div className="modal-footer">

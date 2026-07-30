@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, memo } from 'react';
+import { useState, useRef, useEffect, memo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { isOverdue } from '../utils/dateParser';
 import { URGENT_TAG } from '../constants';
@@ -8,6 +8,26 @@ import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
 import ProgressLog from './ProgressLog';
 import TodoDetail from './TodoDetail';
+
+function getTaskTier(todo) {
+  const now = new Date();
+  const threeDaysLater = new Date(now);
+  threeDaysLater.setDate(threeDaysLater.getDate() + 3);
+  const sevenDaysLater = new Date(now);
+  sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+
+  const tags = todo.tags || [];
+  const isUrgent = tags.includes(URGENT_TAG);
+  const isLongTerm = tags.includes('长期');
+  const dueDate = todo.dueDate ? new Date(todo.dueDate) : null;
+  const isOverdueTask = dueDate && dueDate < now;
+  const isDueSoon = dueDate && dueDate <= threeDaysLater;
+  const isDueInWeek = dueDate && dueDate <= sevenDaysLater;
+
+  if (isUrgent || isOverdueTask || isDueSoon) return 1;
+  if (!isLongTerm && isDueInWeek) return 2;
+  return 3;
+}
 
 function getStatusClass(todo) {
   if (todo.status === 'completed') return 'completed';
@@ -20,6 +40,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const { toggleStatus, updateTodo, handleBatchToggle, moveTodoToTop, moveTodoToBottom } = useTodoActions();
   const { batchMode, isArchive, devMode } = useTodoView();
   const statusClass = getStatusClass(todo);
+  const tier = getTaskTier(todo);
 
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
@@ -30,7 +51,25 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const [moreOpen, setMoreOpen] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({});
+  const [collapsed, setCollapsed] = useState(tier === 3);
   const dragRef = useRef(null);
+  const taskRef = useRef(null);
+
+  const isLongTerm = tier === 3;
+  const canCollapse = isLongTerm && todo.status === 'active';
+
+  useEffect(() => {
+    if (!collapsed) return;
+    const handleScroll = () => {
+      if (!taskRef.current) return;
+      const rect = taskRef.current.getBoundingClientRect();
+      if (rect.top < -rect.height || rect.bottom > window.innerHeight + rect.height) {
+        setCollapsed(true);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [collapsed]);
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -123,7 +162,8 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
   return (
     <div
-      className={`todo-item ${statusClass} ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''} ${batchMode ? 'batch-mode' : ''} ${isUrgent ? 'urgent' : ''}`}
+      ref={taskRef}
+      className={`todo-item ${statusClass} ${isLongTerm ? 'long-term' : ''} ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''} ${batchMode ? 'batch-mode' : ''} ${isUrgent ? 'urgent' : ''}`}
       onClick={handleItemClick}
     >
       <div className="todo-header">
@@ -227,7 +267,16 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
       </div>
 
       {!isArchive && todo.status === 'active' && (
-        <ProgressLog progress={todo.progress} todoId={todo.id} />
+        <>
+          {canCollapse && collapsed && (
+            <button className="expand-btn" onClick={(e) => { e.stopPropagation(); setCollapsed(false); }}>
+              展开进度 <span>&#x25BC;</span>
+            </button>
+          )}
+          {(!collapsed || !canCollapse) && (
+            <ProgressLog progress={todo.progress} todoId={todo.id} />
+          )}
+        </>
       )}
 
       {isArchive && todo.progress && todo.progress.length > 0 && (

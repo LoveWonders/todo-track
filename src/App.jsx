@@ -17,6 +17,8 @@ import DataMenu from './components/DataMenu';
 import BatchBar from './components/BatchBar';
 import PerformanceTester from './components/PerformanceTester';
 import SettingsModal from './components/SettingsModal';
+import TaskBottomSheet from './components/TaskBottomSheet';
+import FloatingActionButton from './components/FloatingActionButton';
 import { loadArchive, saveArchive } from './utils/autoArchive';
 import { formatDate } from './utils/dateParser';
 
@@ -29,6 +31,7 @@ export default function App() {
   const [archiveData, setArchiveData] = useState([]);
   const [showArchivedHistory, setShowArchivedHistory] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
 
   useEffect(() => {
     const stored = loadArchive();
@@ -266,9 +269,15 @@ export default function App() {
             onInvertSelection={invertSelection}
           />
         ) : (
-          <TodoInput onAdd={addTodo} />
+          <FloatingActionButton onClick={() => setBottomSheetOpen(true)} />
         )
       )}
+
+      <TaskBottomSheet
+        isOpen={bottomSheetOpen}
+        onClose={() => setBottomSheetOpen(false)}
+        onAdd={addTodo}
+      />
 
       {showCompleteDateModal && (
         <CompleteDateModal

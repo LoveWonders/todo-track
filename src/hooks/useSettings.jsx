@@ -4,6 +4,7 @@ const SETTINGS_KEY = 'todo_app_settings';
 
 const defaultSettings = {
   defaultDueMinute: 0,
+  presetTags: undefined,
 };
 
 function loadSettings() {

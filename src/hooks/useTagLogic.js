@@ -20,5 +20,9 @@ export function useTagLogic(initialTags = []) {
 
   const hasTag = useCallback((tag) => tags.includes(tag), [tags]);
 
-  return { tags, setTags, addTag, removeTag, clearTags, hasTag };
+  const toggleTag = useCallback((tag) => {
+    setTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+  }, []);
+
+  return { tags, setTags, addTag, removeTag, clearTags, hasTag, toggleTag };
 }
