@@ -239,7 +239,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
         <div className="todo-actions">
           {!batchMode && todo.status === 'active' && (
-            <>
+            <div className="actions-grid">
               <button className="btn-action done" onClick={handleComplete} title="完成">
                 &#x2713;
               </button>
@@ -255,12 +255,12 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
               >
                 !
               </button>
-              {canCollapse && collapsed && (
-                <button className="btn-action expand" onClick={(e) => { e.stopPropagation(); setCollapsed(false); }} title="展开进度">
-                  &#x25BC;
+              {canCollapse && (
+                <button className="btn-action expand" onClick={(e) => { e.stopPropagation(); setCollapsed(v => !v); }} title={collapsed ? '展开进度' : '收起进度'}>
+                  {collapsed ? '&#x25BC;' : '&#x25B2;'}
                 </button>
               )}
-            </>
+            </div>
           )}
           {!batchMode && todo.status !== 'active' && (
             <button className="btn-action undo" onClick={handleUndo} title="恢复">
