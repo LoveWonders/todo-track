@@ -257,7 +257,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
               </button>
               {canCollapse && (
                 <button className="btn-action expand" onClick={(e) => { e.stopPropagation(); setCollapsed(v => !v); }} title={collapsed ? '展开进度' : '收起进度'}>
-                  {collapsed ? '&#x25BC;' : '&#x25B2;'}
+                  {collapsed ? '\u25BC' : '\u25B2'}
                 </button>
               )}
             </div>
