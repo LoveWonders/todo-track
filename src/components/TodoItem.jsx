@@ -51,25 +51,10 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const [moreOpen, setMoreOpen] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({});
-  const [collapsed, setCollapsed] = useState(tier === 3);
+  const [collapsed, setCollapsed] = useState(false);
   const dragRef = useRef(null);
-  const taskRef = useRef(null);
 
-  const isLongTerm = tier === 3;
-  const canCollapse = isLongTerm && todo.status === 'active';
-
-  useEffect(() => {
-    if (!collapsed) return;
-    const handleScroll = () => {
-      if (!taskRef.current) return;
-      const rect = taskRef.current.getBoundingClientRect();
-      if (rect.top < -rect.height || rect.bottom > window.innerHeight + rect.height) {
-        setCollapsed(true);
-      }
-    };
-    window.addEventListener('scroll', handleScroll, true);
-    return () => window.removeEventListener('scroll', handleScroll, true);
-  }, [collapsed]);
+  const canCollapse = !isArchive && todo.status === 'active';
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -162,8 +147,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
   return (
     <div
-      ref={taskRef}
-      className={`todo-item ${statusClass} ${isLongTerm ? 'long-term' : ''} ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''} ${batchMode ? 'batch-mode' : ''} ${isUrgent ? 'urgent' : ''}`}
+      className={`todo-item ${statusClass} ${tier === 3 ? 'long-term' : ''} ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''} ${batchMode ? 'batch-mode' : ''} ${isUrgent ? 'urgent' : ''}`}
       onClick={handleItemClick}
     >
       <div className="todo-header">
@@ -271,10 +255,8 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
       </div>
 
-      {!isArchive && todo.status === 'active' && (
-        (!collapsed || !canCollapse) && (
-          <ProgressLog progress={todo.progress} todoId={todo.id} />
-        )
+      {!isArchive && todo.status === 'active' && canCollapse && (
+        <ProgressLog progress={todo.progress} todoId={todo.id} collapsed={collapsed} />
       )}
 
       {isArchive && todo.progress && todo.progress.length > 0 && (

@@ -3045,6 +3045,23 @@ body {
   opacity: 0.8;
 }
 
+.progress-log-collapsed {
+  padding: 6px 10px;
+  background: var(--bg);
+  border-radius: 4px;
+  margin: 4px 0;
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+}
+
+.progress-count {
+  font-weight: 500;
+}
+
+.progress-count-archived {
+  opacity: 0.7;
+}
+
 .btn-action.expand {
   background: var(--bg);
   color: var(--text-secondary);

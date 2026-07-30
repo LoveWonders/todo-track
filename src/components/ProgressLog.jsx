@@ -4,7 +4,7 @@ import CompleteDateModal from './CompleteDateModal';
 import ProgressManageBar from './ProgressManageBar';
 import ProgressDefaultBar from './ProgressDefaultBar';
 
-export default function ProgressLog({ progress, todoId }) {
+export default function ProgressLog({ progress, todoId, collapsed }) {
   const { toggleProgressStatus, deleteProgress, addProgress, updateProgress, updateProgressCompletedAt } = useTodoActions();
   const { batchMode } = useTodoView();
   const [progressText, setProgressText] = useState('');
@@ -17,6 +17,17 @@ export default function ProgressLog({ progress, todoId }) {
   const [editing, setEditing] = useState(null);
 
   const items = progress ?? [];
+
+  if (collapsed) {
+    const activeCount = items.filter(p => p.status === 'active').length;
+    const archivedCount = items.filter(p => p.status !== 'active').length;
+    return (
+      <div className="progress-log-collapsed">
+        <span className="progress-count">{activeCount} 进行中</span>
+        {archivedCount > 0 && <span className="progress-count-archived"> · {archivedCount} 已归档</span>}
+      </div>
+    );
+  }
   const inBatch = batchMode;
 
   const { activeProgress, archivedProgress, allCount } = useMemo(() => {
