@@ -48,3 +48,14 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - APK 打包后，输出的文件名格式为 `todotrack-v{版本号}-{YYYYMMDD}-{HHmm}.apk`
   - 示例：`todotrack-v1.1-20260724-0659.apk`
   - 同时将 APK 复制到工作区根目录，便于用户获取
+
+### v1.1.1 稳定版本里程碑
+- Date: 2026-07-30
+- Context: 用户确认 v1.1.1 为稳定运行的重要节点，后续开始功能界面优化完善
+- Category: 工作流协作
+- Instructions:
+  - v1.1.1 (versionCode 3) 已打包，作为稳定基线版本
+  - 核心功能完备：待办 CRUD、进度记录、标签系统、批量操作、归档、周报、数据导入导出
+  - 技术债已清理：Portal 渲染修复 opacity 问题、chrono 中文日期解析、依赖漏洞修复
+  - **下一步开始功能和界面优化完善阶段**，基于此版本迭代
+  - 每次优化迭代后如需发布新版本，使用 `npm run release:patch` / `minor` / `major` 命令
