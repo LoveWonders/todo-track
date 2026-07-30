@@ -2986,29 +2986,15 @@ body {
   opacity: 0.8;
 }
 
-.expand-btn {
-  display: block;
-  width: 100%;
-  padding: 6px 10px;
-  border: none;
+.btn-action.expand {
   background: var(--bg);
   color: var(--text-secondary);
-  font-size: var(--font-size-small);
-  cursor: pointer;
-  text-align: center;
-  border-radius: 4px;
-  margin: 4px 0;
-  transition: all 0.15s;
+  font-size: 12px;
 }
 
-.expand-btn:hover {
+.btn-action.expand:hover {
   background: var(--primary-light);
   color: var(--accent);
-}
-
-.expand-btn span {
-  margin-left: 4px;
-  font-size: 10px;
 }
 
 /* ---------- Settings Tag Edit ---------- */
@@ -3048,6 +3034,10 @@ body {
 
 .preset-tag-remove:hover {
   opacity: 1;
+}
+
+.settings-field {
+  margin-bottom: 16px;
 }
 
 .settings-input-tag {

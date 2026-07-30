@@ -255,6 +255,11 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
               >
                 !
               </button>
+              {canCollapse && collapsed && (
+                <button className="btn-action expand" onClick={(e) => { e.stopPropagation(); setCollapsed(false); }} title="展开进度">
+                  &#x25BC;
+                </button>
+              )}
             </>
           )}
           {!batchMode && todo.status !== 'active' && (
@@ -267,16 +272,9 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
       </div>
 
       {!isArchive && todo.status === 'active' && (
-        <>
-          {canCollapse && collapsed && (
-            <button className="expand-btn" onClick={(e) => { e.stopPropagation(); setCollapsed(false); }}>
-              展开进度 <span>&#x25BC;</span>
-            </button>
-          )}
-          {(!collapsed || !canCollapse) && (
-            <ProgressLog progress={todo.progress} todoId={todo.id} />
-          )}
-        </>
+        (!collapsed || !canCollapse) && (
+          <ProgressLog progress={todo.progress} todoId={todo.id} />
+        )
       )}
 
       {isArchive && todo.progress && todo.progress.length > 0 && (
