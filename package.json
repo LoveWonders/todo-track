@@ -1,13 +1,16 @@
 {
   "name": "todo-app",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "release:patch": "node scripts/updateVersion.js patch",
+    "release:minor": "node scripts/updateVersion.js minor",
+    "release:major": "node scripts/updateVersion.js major"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",
@@ -32,5 +35,8 @@
     "@vitejs/plugin-react": "^6.0.3",
     "oxlint": "^1.71.0",
     "vite": "^8.1.1"
+  },
+  "overrides": {
+    "brace-expansion": "5.0.8"
   }
 }

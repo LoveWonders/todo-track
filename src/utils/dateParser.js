@@ -3,11 +3,36 @@ import * as chrono from 'chrono-node';
 
 const TAG_REGEX = /#(\S+)/g;
 
+const CN_DATE_ALIASES = {
+  '年底': { month: 12, day: 31 },
+  '年初': { month: 1, day: 1 },
+  '年中': { month: 6, day: 30 },
+  '月底': ({ now }) => {
+    const d = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return { month: d.getMonth() + 1, day: d.getDate() };
+  },
+  '月末': ({ now }) => {
+    const d = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return { month: d.getMonth() + 1, day: d.getDate() };
+  },
+  '月初': { month: () => new Date().getMonth() + 1, day: 1 },
+};
+
 export { DATE_PATTERNS };
 
 export function parseDateText(text) {
   if (!text || !text.trim()) return null;
   const trimmed = text.trim();
+
+  const alias = CN_DATE_ALIASES[trimmed];
+  if (alias) {
+    const now = new Date();
+    const resolved = typeof alias === 'function' ? alias({ now }) : alias;
+    const month = typeof resolved.month === 'function' ? resolved.month() : resolved.month;
+    const day = typeof resolved.day === 'function' ? resolved.day() : resolved.day;
+    const year = now.getFullYear();
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T23:59:59`;
+  }
 
   try {
     const results = chrono.zh.parse(trimmed, new Date(), { forwardDate: true });
