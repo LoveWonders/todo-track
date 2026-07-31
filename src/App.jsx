@@ -19,7 +19,6 @@ import PerformanceTester from './components/PerformanceTester';
 import SettingsModal from './components/SettingsModal';
 import TaskBottomSheet from './components/TaskBottomSheet';
 import FloatingActionButton from './components/FloatingActionButton';
-import PullToRefresh from './components/PullToRefresh';
 import { loadArchive, saveArchive } from './utils/autoArchive';
 import { formatDate } from './utils/dateParser';
 
@@ -33,19 +32,10 @@ export default function App() {
   const [showArchivedHistory, setShowArchivedHistory] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const stored = loadArchive();
     if (stored.length > 0) setArchiveData(stored);
-  }, []);
-
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const stored = loadArchive();
-    if (stored.length > 0) setArchiveData(stored);
-    setIsRefreshing(false);
   }, []);
 
   const source = view === 'active' ? activeTodos : archivedTodos;
@@ -59,7 +49,7 @@ export default function App() {
   } = useBatchActions(filteredTodos, source, deleteTodo, toggleStatus, updateTodo, addProgress, updateCompletedAt);
 
   const exitPrompt = useBackButton({ view, setView, batchMode, exitBatch });
-  const { showCompleteDateModal, openCompleteDateModal: batchOpenCompleteDateModal, closeCompleteDateModal } = useModalManager();
+  const { showCompleteDateModal, openCompleteDateModal, closeCompleteDateModal } = useModalManager();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -122,144 +112,201 @@ export default function App() {
 
   return (
     <SettingsProvider>
-      <TodoProvider>
-        <PullToRefresh onRefresh={handleRefresh}>
-          <div className="app">
-            <header className="app-header">
-              <DataMenu
-                todos={todos}
-                activeTodos={activeTodos}
-                archivedTodos={archivedTodos}
-                importTodos={importTodos}
-                archiveData={archiveData}
-                setArchiveData={setArchiveData}
-                deleteTodo={deleteTodo}
-                toggleStatus={toggleStatus}
-                moveTodoTo={moveTodoTo}
-                addProgress={addProgress}
-                updateProgressCompletedAt={updateProgressCompletedAt}
-                deleteProgress={deleteProgress}
-                updateCompletedAt={updateCompletedAt}
-                showArchivedHistory={showArchivedHistory}
-                setShowArchivedHistory={setShowArchivedHistory}
-              />
-            </header>
+    <div className="app-shell">
+      <header className="app-header">
+        <h1>待办</h1>
+        <div className="app-header-right">
+          {dragId && (
+            <span style={{ fontSize: 12, color: 'var(--accent)' }}>拖动排序中...</span>
+          )}
+          {batchMode && (
+            <span style={{ fontSize: 12, color: 'var(--accent)' }}>批量操作</span>
+          )}
+          <DataMenu todos={todos} onImport={importTodos} devMode={devMode} onToggleDev={setDevMode} onOpenSettings={() => setSettingsOpen(true)} />
+        </div>
+      </header>
 
-            {view === 'report' ? (
-              <WeeklyReport todos={todos} onBack={() => setView('active')} />
-            ) : (
-              <div className="todo-list-container">
-                <TagFilterBar
-                  allTags={allTags}
-                  filterConfig={filterConfig}
-                  onFilterChange={setFilterConfig}
-                />
-                {batchMode && (
-                <BatchBar
-                  selectedCount={selectedIds.size}
-                  onExit={exitBatch}
-                  onDelete={batchDelete}
-                  onComplete={batchOpenCompleteDateModal}
-                  onCancel={batchCancel}
-                  onAddProgress={batchAddProgress}
-                  onSetDate={batchSetDate}
-                  onSetTags={batchSetTags}
-                  onSelectAll={selectAll}
-                  onInvert={invertSelection}
-                />
+      <div className="view-tabs">
+        <button
+          className={`view-tab ${view === 'active' ? 'active' : ''}`}
+          onClick={() => { setView('active'); exitBatch(); setShowArchivedHistory(false); }}
+        >
+          进行中 ({activeTodos.length})
+        </button>
+        <button
+          className={`view-tab ${view === 'archive' ? 'active' : ''}`}
+          onClick={() => { setView('archive'); exitBatch(); }}
+        >
+          归档 ({archivedTodos.length})
+        </button>
+        <button
+          className={`view-tab ${view === 'weekly' ? 'active' : ''}`}
+          onClick={() => { setView('weekly'); exitBatch(); setShowArchivedHistory(false); }}
+        >
+          周报
+        </button>
+      </div>
+
+      {allTags.length > 0 && !dragId && !batchMode && view !== 'weekly' && (
+        <TagFilterBar allTags={allTags} onFilterChange={setFilterConfig} />
+      )}
+
+      {view === 'weekly' ? (
+        <WeeklyReport todos={todos} />
+      ) : (
+        <TodoProvider actions={actionsValue} view={viewValue}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            <div className="todo-scroll">
+              <div className="todo-list">
+                {filteredTodos.length === 0 && !showArchivedHistory ? (
+                  <div className="empty-state">
+                    <div className="empty-icon">&#x1F4CB;</div>
+                    <p>{isArchive ? '暂无归档待办' : '暂无待办事项'}</p>
+                    {!isArchive && <p style={{ fontSize: 12, marginTop: 8 }}>长按待办可拖动排序</p>}
+                  </div>
+                ) : (
+                  <>
+                    {filteredTodos.length > 0 && (
+                      <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+                        {filteredTodos.map((todo) => (
+                          <TodoListItem
+                            key={todo.id}
+                            todo={todo}
+                            selectedIds={selectedIds}
+                          />
+                        ))}
+                      </SortableContext>
+                    )}
+
+                    {isArchive && showArchivedHistory && (
+                      <div className="archive-history-section">
+                        <div className="archive-history-header">
+                          <span>归档历史记录 ({archiveData.length})</span>
+                        </div>
+                        {archiveData.length === 0 ? (
+                          <div className="archive-history-empty">暂无已归档的待办记录</div>
+                        ) : (
+                          archiveData.map((item) => (
+                            <div key={item.id} className="archive-history-item">
+                              <div className="archive-history-content">
+                                <div className="archive-history-title">{item.title}</div>
+                                <div className="archive-history-meta">
+                                  <span className="archive-history-date">
+                                    {formatDate(item.completedAt || item.createdAt)}
+                                  </span>
+                                  <span className="archive-history-status">
+                                    {item.status === 'completed' ? '已完成' : '已作废'}
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                className="archive-history-restore"
+                                onClick={() => restoreFromArchive(item)}
+                                title="恢复"
+                              >
+                                &#x21A9;
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragStart={({ active }) => {
-                    if (batchMode) return;
-                    setDragId(active.id);
-                  }}
-                  onDragEnd={({ active, over }) => {
-                    setDragId(null);
-                    if (batchMode || !over) return;
-                    const activeId = active.id;
-                    const overId = over.id;
-                    if (activeId === overId) return;
-                    const fromIndex = source.findIndex(t => t.id === activeId);
-                    const toIndex = source.findIndex(t => t.id === overId);
-                    moveTodoTo(activeId, toIndex);
+
+                {isArchive && (
+                  <div className="archive-more-wrap">
+                    <button
+                      className="archive-more-btn"
+                      onClick={() => setShowArchivedHistory(!showArchivedHistory)}
+                    >
+                      {showArchivedHistory ? '收起归档历史' : `更多归档记录 (${archiveData.length})`}
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="scroll-spacer" />
+            </div>
+            <DragOverlay dropAnimation={null}>
+              {draggedTodo ? (
+                <div
+                  className="todo-item drag-flying"
+                  style={{
+                    width: 'calc(min(480px, 100vw) - 24px)',
+                    opacity: 0.92,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                    borderLeftColor: 'var(--accent)',
                   }}
                 >
-                  <SortableContext items={source.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                    <div className="todo-scroll">
-                      {filteredTodos.map(todo => (
-                        <TodoListItem
-                          key={todo.id}
-                          todo={todo}
-                          inBatch={batchMode}
-                          isSelected={selectedIds.has(todo.id)}
-                          onToggleBatch={() => handleBatchToggle(todo.id)}
-                          onUpdate={updateTodo}
-                          onDelete={deleteTodo}
-                          onToggleStatus={toggleStatus}
-                          onAddProgress={addProgress}
-                          onToggleProgressStatus={toggleProgressStatus}
-                          onDeleteProgress={deleteProgress}
-                          onUpdateProgress={updateProgress}
-                          onUpdateProgressCompletedAt={updateProgressCompletedAt}
-                          onUpdateCompletedAt={updateCompletedAt}
-                        />
-                      ))}
-                      {dragId && (
-                        <DragOverlay>
-                          <TodoListItem
-                            todo={source.find(t => t.id === dragId)}
-                          />
-                        </DragOverlay>
-                      )}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-                {batchMode ? (
-                  <div className="batch-bottom-spacer" />
-                ) : (
-                  <FloatingActionButton onClick={() => setBottomSheetOpen(true)} />
-                )}
-              </div>
-            )}
-
-            <TaskBottomSheet
-              isOpen={bottomSheetOpen}
-              onClose={() => setBottomSheetOpen(false)}
-              onAdd={addTodo}
-            />
-
-            {showCompleteDateModal && (
-              <CompleteDateModal
-                count={selectedIds.size}
-                onConfirm={(dateString) => { batchCompleteAt(dateString); closeCompleteDateModal(); }}
-                onCancel={closeCompleteDateModal}
-              />
-            )}
-
-            {exitPrompt && (
-              <div className="exit-toast-wrapper" onClick={() => {}}>
-                <div className="exit-toast">
-                  <span className="exit-toast-text">再按一次退出应用</span>
-                  <div className="exit-toast-bar">
-                    <div className="exit-toast-bar-inner" />
-                  </div>
+                  <div className="todo-text">{draggedTodo.title}</div>
                 </div>
-              </div>
-            )}
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        </TodoProvider>
+      )}
 
-            <PerformanceTester
-              todos={todos}
-              importTodos={importTodos}
-              deleteTodo={deleteTodo}
-              visible={devMode}
-            />
+      {view !== 'weekly' && (
+        batchMode ? (
+          <BatchBar
+            count={selectedIds.size}
+            total={filteredTodos.length}
+            onCancel={exitBatch}
+            onDelete={batchDelete}
+            onComplete={batchComplete}
+            onCancelItems={batchCancel}
+            onSetDate={batchSetDate}
+            onSetTags={batchSetTags}
+            onAddProgress={batchAddProgress}
+            onOpenCompleteDateModal={openCompleteDateModal}
+            onSelectAll={selectAll}
+            onInvertSelection={invertSelection}
+          />
+        ) : (
+          <FloatingActionButton onClick={() => setBottomSheetOpen(true)} />
+        )
+      )}
 
-            {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      <TaskBottomSheet
+        isOpen={bottomSheetOpen}
+        onClose={() => setBottomSheetOpen(false)}
+        onAdd={addTodo}
+      />
+
+      {showCompleteDateModal && (
+        <CompleteDateModal
+          count={selectedIds.size}
+          onConfirm={(dateString) => { batchCompleteAt(dateString); closeCompleteDateModal(); }}
+          onCancel={closeCompleteDateModal}
+        />
+      )}
+
+      {exitPrompt && (
+        <div className="exit-toast-wrapper" onClick={() => {}}>
+          <div className="exit-toast">
+            <span className="exit-toast-text">再按一次退出应用</span>
+            <div className="exit-toast-bar">
+              <div className="exit-toast-bar-inner" />
+            </div>
           </div>
-        </PullToRefresh>
-      </TodoProvider>
+        </div>
+      )}
+
+      <PerformanceTester
+        todos={todos}
+        importTodos={importTodos}
+        deleteTodo={deleteTodo}
+        visible={devMode}
+      />
+
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+    </div>
     </SettingsProvider>
   );
 }
