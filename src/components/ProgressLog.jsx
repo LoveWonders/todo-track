@@ -99,47 +99,50 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
     return null;
   }
 
-  // 安全渲染：无进度时显示添加界面
+  // 安全渲染：无进度时显示添加界面（与有进度时相同的布局结构）
   if (progressCount === 0) {
     return (
       <div className="progress-section">
         {!inBatch && (
           <div className="todo-progress-bar">
-            <div className="progress-empty-prompt">
-              {!showInput ? (
+            {!showInput ? (
+              <ProgressDefaultBar
+                showInput={false}
+                progressText=""
+                allCount={0}
+                onShowInput={() => setShowInput(true)}
+                onTextChange={setProgressText}
+                onKeyDown={handleKeyDown}
+                onSubmit={handleSubmit}
+                onCancelInput={() => setShowInput(false)}
+                onManage={() => {}}
+              />
+            ) : (
+              <>
+                <input
+                  type="text"
+                  className="progress-input-field-compact"
+                  value={progressText}
+                  onChange={(e) => setProgressText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="输入进度内容..."
+                  autoFocus
+                />
                 <button
-                  className="btn-add-progress"
-                  onClick={() => setShowInput(true)}
+                  className="btn-progress-submit-compact"
+                  onClick={handleSubmit}
+                  disabled={!progressText.trim()}
                 >
-                  + 添加进度
+                  确定
                 </button>
-              ) : (
-                <div className="progress-input-row">
-                  <input
-                    type="text"
-                    className="progress-input-field"
-                    value={progressText}
-                    onChange={(e) => setProgressText(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="输入进度内容..."
-                    autoFocus
-                  />
-                  <button
-                    className="btn-progress-submit"
-                    onClick={handleSubmit}
-                    disabled={!progressText.trim()}
-                  >
-                    确定
-                  </button>
-                  <button
-                    className="btn-progress-cancel"
-                    onClick={() => { setShowInput(false); setProgressText(''); }}
-                  >
-                    取消
-                  </button>
-                </div>
-              )}
-            </div>
+                <button
+                  className="btn-progress-cancel-compact"
+                  onClick={() => { setShowInput(false); setProgressText(''); }}
+                >
+                  取消
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

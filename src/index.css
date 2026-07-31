@@ -1232,6 +1232,58 @@ body {
   border-color: var(--accent);
 }
 
+.progress-input-field-compact {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  outline: none;
+  background: var(--bg);
+  color: var(--text);
+  height: 24px;
+}
+
+.progress-input-field-compact:focus {
+  border-color: var(--accent);
+}
+
+.btn-progress-submit-compact {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  font-weight: 500;
+  height: 24px;
+}
+
+.btn-progress-submit-compact:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-progress-submit-compact:active:not(:disabled) {
+  opacity: 0.8;
+}
+
+.btn-progress-cancel-compact {
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  height: 24px;
+}
+
+.btn-progress-cancel-compact:active {
+  opacity: 0.8;
+}
+
 .btn-mini {
   padding: 4px 10px;
   border-radius: 4px;
@@ -1253,57 +1305,6 @@ body {
   background: var(--bg);
   color: var(--text-secondary);
   border: 1px solid var(--border);
-}
-
-.btn-add-progress {
-  background: var(--bg);
-  color: var(--text-secondary);
-  border: 1px dashed var(--border);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-add-progress:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.btn-add-progress:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.progress-empty-prompt {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 0;
-}
-
-.progress-input-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex: 1;
-}
-
-.progress-input-field {
-  flex: 1;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 11px;
-  outline: none;
-  background: var(--bg);
-  color: var(--text);
-  height: 26px;
-}
-
-.progress-input-field:focus {
-  border-color: var(--accent);
 }
 
 .btn-progress-submit {
