@@ -2,14 +2,19 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { loadData, saveData, migrateFromLocalStorage } from '../utils/storage';
 import { mergeAndArchive } from '../utils/autoArchive';
 
+const REFRESH_THRESHOLD = 5 * 60 * 1000; // 5 分钟刷新阈值
+
 export function useTodos() {
   const [todos, setTodos] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const saveTimerRef = useRef(null);
   const todoIdRef = useRef(Date.now());
   const progressIdRef = useRef(Date.now());
+  const lastRefreshTimeRef = useRef(0);
+  const hasLoadedOnceRef = useRef(false);
 
   useEffect(() => {
+    // 首次加载：从 localStorage 恢复数据
     let cancelled = false;
     (async () => {
       await migrateFromLocalStorage();
@@ -43,9 +48,62 @@ export function useTodos() {
       }
       setTodos(afterArchive);
       setLoaded(true);
+      lastRefreshTimeRef.current = Date.now();
+      hasLoadedOnceRef.current = true;
     })();
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    // 页面可见性切换时的静默刷新策略
+    if (loaded && !hasLoadedOnceRef.current) return;
+    
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // 页面切出：不做任何操作，保持数据状态
+        return;
+      }
+      
+      // 页面切回：仅在数据过期时静默刷新
+      const now = Date.now();
+      const timeSinceLastRefresh = now - lastRefreshTimeRef.current;
+      
+      if (timeSinceLastRefresh > REFRESH_THRESHOLD) {
+        // 超过阈值，静默刷新
+        (async () => {
+          const data = await loadData();
+          const migrated = data.map(t => {
+            let dueDate = t.dueDate;
+            if (dueDate && /^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+              dueDate = dueDate + 'T23:59:59';
+            }
+            let startDate = t.startDate;
+            if (startDate == null && dueDate) {
+              startDate = dueDate;
+            }
+            return {
+              ...t,
+              dueDate,
+              startDate,
+              progress: t.progress || [],
+              tags: t.tags || [],
+              status: t.status || 'active',
+              completedAt: t.completedAt || null,
+              createdAt: t.createdAt || new Date().toISOString(),
+            };
+          });
+          const afterArchive = mergeAndArchive(migrated);
+          setTodos(afterArchive);
+          lastRefreshTimeRef.current = Date.now();
+        })();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [loaded]);
 
   useEffect(() => {
     if (!loaded) return;
