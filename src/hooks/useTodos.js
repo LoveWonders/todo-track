@@ -11,6 +11,7 @@ export function useTodos() {
 
   useEffect(() => {
     // 首次加载：从 localStorage 恢复数据（仅一次）
+    // 组件卸载时取消异步操作，防止内存泄漏
     let cancelled = false;
     (async () => {
       await migrateFromLocalStorage();
@@ -46,7 +47,7 @@ export function useTodos() {
       setLoaded(true);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, []);  // 空依赖数组，仅在组件首次挂载时执行
 
   useEffect(() => {
     if (!loaded) return;
