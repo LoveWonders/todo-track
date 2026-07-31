@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { toISODateTime } from '../utils/datePatterns';
-import { formatDateOnly } from '../utils/dateParser';
+import { formatDateOnly, formatDateTime } from '../utils/dateParser';
 import { useSmartInput } from '../hooks/useSmartInput';
 import { useTagLogic } from '../hooks/useTagLogic';
 import { URGENT_TAG } from '../constants';
@@ -57,6 +56,39 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
 
   const canSubmit = parsed.cleanContent.trim() || pickedEnd || submittedTags.length > 0;
 
+  const openCalendar = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'datetime-local';
+    if (pickedEnd) {
+      input.value = pickedEnd.slice(0, 16);
+    }
+    input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0';
+    document.body.appendChild(input);
+    input.addEventListener('change', (e) => {
+      const picked = e.target.value;
+      if (picked) {
+        const iso = picked + ':00';
+        onAdd({ 
+          title: text.trim() || formatDateOnly(iso) || '待办',
+          startDate: pickedStart,
+          dueDate: iso,
+          tags: submittedTags
+        });
+        clearSmart();
+        clearTags();
+        onClose();
+      }
+      if (document.body.contains(input)) document.body.removeChild(input);
+    }, { once: true });
+    requestAnimationFrame(() => {
+      if (typeof input.showPicker === 'function') {
+        input.showPicker();
+      } else {
+        input.focus();
+      }
+    });
+  }, [pickedEnd, pickedStart, submittedTags, text, onAdd, clearSmart, clearTags, onClose]);
+
   if (!isOpen) return null;
 
   return (
@@ -106,7 +138,11 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
 
         {(pickedEnd || submittedTags.length > 0) && (
           <div className="parsed-preview">
-            {pickedEnd && <span className="parsed-date-preview">📅 {formatDateOnly(pickedEnd)}</span>}
+            {pickedEnd && (
+              <span className="parsed-date-preview" onClick={openCalendar} title="点击修改日期">
+                📅 {formatDateOnly(pickedEnd)}
+              </span>
+            )}
             {submittedTags.map(tag => (
               <span key={tag} className="parsed-tag-preview">#{tag}</span>
             ))}
@@ -125,5 +161,10 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
 function makeDefaultDueDate(defaultDueMinute) {
   const now = new Date();
   now.setHours(21, defaultDueMinute, 0, 0);
-  return toISODateTime(now);
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mi = String(now.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}:00`;
 }

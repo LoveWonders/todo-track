@@ -3035,6 +3035,12 @@ body {
   font-size: var(--font-size-small);
   background: var(--bg);
   color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.parsed-date-preview:hover {
+  background: var(--border);
 }
 
 .parsed-tag-preview {
