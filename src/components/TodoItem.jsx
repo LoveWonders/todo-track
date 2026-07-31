@@ -253,14 +253,10 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
                   className="btn-action expand"
                   onClick={(e) => { e.stopPropagation(); setCollapsed(v => !v); }}
                   title={collapsed ? '展开进度' : '收起进度'}
-                  style={progressCount === 0 && collapsed ? { position: 'relative' } : undefined}
                 >
                   {collapsed ? '\u25BC' : '\u25B2'}
                   {progressCount > 0 && collapsed && (
                     <span className="expand-count">{progressCount}</span>
-                  )}
-                  {progressCount === 0 && collapsed && (
-                    <span className="expand-add-text">添加进度</span>
                   )}
                 </button>
               )}

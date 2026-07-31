@@ -106,7 +106,6 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
         {!inBatch && (
           <div className="todo-progress-bar">
             <div className="progress-empty-prompt">
-              <span className="progress-empty-text">暂无进度记录</span>
               {!showInput ? (
                 <button
                   className="btn-add-progress"

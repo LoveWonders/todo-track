@@ -1279,13 +1279,8 @@ body {
 .progress-empty-prompt {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
   padding: 8px 0;
-}
-
-.progress-empty-text {
-  font-size: 11px;
-  color: var(--text-secondary);
 }
 
 .progress-input-row {
@@ -3148,9 +3143,6 @@ body {
   color: var(--text-secondary);
   font-size: 12px;
   position: relative;
-  width: auto;
-  min-width: 28px;
-  padding: 0 6px;
 }
 
 .btn-action.expand:hover {
@@ -3174,12 +3166,6 @@ body {
   justify-content: center;
   padding: 0 3px;
   line-height: 1;
-}
-
-.expand-add-text {
-  margin-left: 4px;
-  font-size: 10px;
-  font-weight: 500;
 }
 
 /* ---------- Settings Tag Edit ---------- */
