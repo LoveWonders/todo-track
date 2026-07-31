@@ -28,7 +28,9 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
   const [isUrgent, setIsUrgent] = useState(false);
   const [presetTags, setPresetTags] = useState(() => {
     const loaded = loadPresetTags();
-    return loaded || settings.presetTags || DEFAULT_PRESET_TAGS;
+    if (Array.isArray(loaded)) return loaded;
+    if (Array.isArray(settings.presetTags)) return settings.presetTags;
+    return DEFAULT_PRESET_TAGS;
   });
   const [editMode, setEditMode] = useState(false);
   const [editingTagIndex, setEditingTagIndex] = useState(-1);
@@ -40,14 +42,10 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (!loaded && settings.presetTags) {
-      setPresetTags(settings.presetTags);
+    if (Array.isArray(presetTags)) {
+      savePresetTags(presetTags);
+      updateSetting('presetTags', presetTags);
     }
-  }, [settings.presetTags]);
-
-  useEffect(() => {
-    savePresetTags(presetTags);
-    updateSetting('presetTags', presetTags);
   }, [presetTags]);
 
   useEffect(() => {
@@ -79,7 +77,11 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
   }, [editMode, toggleTag]);
 
   const handleDeleteTag = useCallback((index) => {
-    setPresetTags(prev => prev.filter((_, i) => i !== index));
+    setPresetTags(prev => {
+      if (!Array.isArray(prev)) return prev;
+      return prev.filter((_, i) => i !== index);
+    });
+    setEditingTagIndex(-1);
   }, []);
 
   const handleStartEditTag = useCallback((index, currentText) => {
@@ -92,6 +94,7 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
     const trimmed = editText.trim();
     if (trimmed) {
       setPresetTags(prev => {
+        if (!Array.isArray(prev) || editingTagIndex >= prev.length) return prev;
         const updated = [...prev];
         updated[editingTagIndex] = trimmed;
         return updated;
@@ -159,6 +162,8 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
 
   const canSubmit = parsed.cleanContent.trim() || pickedEnd || submittedTags.length > 0;
 
+  const safePresetTags = Array.isArray(presetTags) ? presetTags : [];
+
   const openCalendar = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'datetime-local';
@@ -208,7 +213,7 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
             </button>
           </div>
           <div className="preset-tags-scroll">
-            {presetTags.map((tag, index) => (
+            {safePresetTags.map((tag, index) => (
               editingTagIndex === index ? (
                 <input
                   key={tag}
