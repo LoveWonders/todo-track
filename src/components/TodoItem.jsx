@@ -55,8 +55,9 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const dragRef = useRef(null);
 
   const canCollapse = !isArchive && todo.status === 'active';
+  const progressArr = Array.isArray(todo.progress) ? todo.progress : [];
+  const progressCount = progressArr.length;
 
-  // todo.id 变化时重置折叠状态为折叠
   const prevTodoIdRef = useRef(todo.id);
   if (prevTodoIdRef.current !== todo.id) {
     setCollapsed(true);
@@ -248,8 +249,15 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
                 !
               </button>
               {canCollapse && (
-                <button className="btn-action expand" onClick={(e) => { e.stopPropagation(); setCollapsed(v => !v); }} title={collapsed ? '展开进度' : '收起进度'}>
+                <button
+                  className="btn-action expand"
+                  onClick={(e) => { e.stopPropagation(); setCollapsed(v => !v); }}
+                  title={collapsed ? '展开进度' : '收起进度'}
+                >
                   {collapsed ? '\u25BC' : '\u25B2'}
+                  {progressCount > 0 && collapsed && (
+                    <span className="expand-count">{progressCount}</span>
+                  )}
                 </button>
               )}
             </div>
@@ -263,7 +271,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
       </div>
 
-      {!isArchive && todo.status === 'active' && canCollapse && (
+      {!isArchive && todo.status === 'active' && canCollapse && !collapsed && progressCount > 0 && (
         <ProgressLog progress={todo.progress} todoId={todo.id} collapsed={collapsed} />
       )}
 

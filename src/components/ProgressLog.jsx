@@ -17,33 +17,25 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
   const [editing, setEditing] = useState(null);
 
   const items = Array.isArray(progress) ? progress : [];
+  const progressCount = items.length;
 
   if (collapsed) {
-    const activeCount = items.filter(p => p.status === 'active').length;
-    const archivedCount = items.filter(p => p.status !== 'active').length;
-    return (
-      <div className="progress-log-collapsed">
-        {items.length > 0 ? (
-          <>
-            <span className="progress-count">{activeCount} 进行中</span>
-            {archivedCount > 0 && <span className="progress-count-archived"> &middot; {archivedCount} 已归档</span>}
-          </>
-        ) : (
-          <span className="progress-count">暂无进度</span>
-        )}
-      </div>
-    );
+    return null;
+  }
+
+  if (progressCount === 0) {
+    return null;
   }
 
   const inBatch = batchMode;
 
-  const { activeProgress, archivedProgress, allCount } = useMemo(() => {
+  const { activeProgress, archivedProgress } = useMemo(() => {
     const active = [];
     const archived = [];
     for (const p of items) {
       (p.status === 'active' ? active : archived).push(p);
     }
-    return { activeProgress: active, archivedProgress: archived, allCount: items.length };
+    return { activeProgress: active, archivedProgress: archived };
   }, [items]);
 
   const toggleSelect = useCallback((pid) => {
@@ -123,7 +115,7 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
                 </span>
               )}
               <span className="progress-date">{new Date(p.createdAt ?? p.time).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span>
-              <span className="progress-text">{p.text}</span>
+              <span className="progress-text">{String(p.text)}</span>
             </div>
           ))}
         </div>
@@ -142,7 +134,7 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
           ) : (
             <ProgressDefaultBar
               showInput={showInput} progressText={progressText}
-              allCount={allCount}
+              allCount={progressCount}
               onShowInput={() => setShowInput(true)} onTextChange={setProgressText}
               onKeyDown={handleKeyDown} onSubmit={handleSubmit}
               onCancelInput={() => setShowInput(false)}
@@ -176,7 +168,7 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
                   )}
                   <span className="progress-status-tag">{p.status === 'completed' ? '已完成' : '已作废'}</span>
                   <span className="progress-date">{new Date(p.createdAt ?? p.time).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span>
-                  {p.text}
+                  {String(p.text)}
                 </div>
               ))}
             </div>
