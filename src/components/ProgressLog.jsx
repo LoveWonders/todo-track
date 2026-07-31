@@ -7,6 +7,8 @@ import ProgressDefaultBar from './ProgressDefaultBar';
 export default function ProgressLog({ progress, todoId, collapsed }) {
   const { toggleProgressStatus, deleteProgress, addProgress, updateProgress, updateProgressCompletedAt } = useTodoActions();
   const { batchMode } = useTodoView();
+  
+  // 状态定义
   const [progressText, setProgressText] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -16,15 +18,88 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
   const [showDateModal, setShowDateModal] = useState(false);
   const [editing, setEditing] = useState(null);
 
+  // 数据预处理（所有变量定义必须在条件 return 之前）
   const items = Array.isArray(progress) ? progress : [];
   const progressCount = items.length;
+  const inBatch = batchMode;
 
-  // 折叠时不渲染
+  // 事件处理函数（必须在条件 return 之前定义）
+  const exitManage = useCallback(() => {
+    setManageMode(false);
+    setSelectedPIds(new Set());
+    setConfirmDelete(false);
+    setShowDateModal(false);
+  }, []);
+
+  const handleSubmit = useCallback(() => {
+    const trimmed = progressText.trim();
+    if (!trimmed) return;
+    addProgress(todoId, trimmed);
+    setProgressText('');
+    setShowInput(false);
+  }, [progressText, todoId, addProgress]);
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
+    }
+  }, [handleSubmit]);
+
+  const toggleSelect = useCallback((pid) => {
+    setSelectedPIds(prev => {
+      const next = new Set(prev);
+      next.has(pid) ? next.delete(pid) : next.add(pid);
+      return next;
+    });
+  }, []);
+
+  const handleOpenEdit = useCallback((p) => {
+    setEditing({ progress: p, text: p.text ?? '' });
+  }, []);
+
+  const handleSaveEdit = useCallback(() => {
+    if (!editing) return;
+    const trimmed = editing.text.trim();
+    if (trimmed && trimmed !== editing.progress.text) {
+      updateProgress(todoId, editing.progress.id, trimmed);
+    }
+    setEditing(null);
+  }, [editing, todoId, updateProgress]);
+
+  const handleBatchDelete = useCallback(() => {
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    selectedPIds.forEach(pid => deleteProgress(todoId, pid));
+    exitManage();
+  }, [confirmDelete, selectedPIds, todoId, deleteProgress, exitManage]);
+
+  const handleBatchComplete = useCallback(() => {
+    selectedPIds.forEach(pid => toggleProgressStatus(todoId, pid, 'completed'));
+    exitManage();
+  }, [selectedPIds, todoId, toggleProgressStatus, exitManage]);
+
+  const handleBatchCancel = useCallback(() => {
+    selectedPIds.forEach(pid => toggleProgressStatus(todoId, pid, 'cancelled'));
+    exitManage();
+  }, [selectedPIds, todoId, toggleProgressStatus, exitManage]);
+
+  const hasSelection = selectedPIds.size > 0;
+
+  const { activeProgress, archivedProgress } = useMemo(() => {
+    const active = [];
+    const archived = [];
+    for (const p of items) {
+      (p.status === 'active' ? active : archived).push(p);
+    }
+    return { activeProgress: active, archivedProgress: archived };
+  }, [items]);
+
+  // 安全渲染：折叠时不渲染
   if (collapsed) {
     return null;
   }
 
-  // 无进度时显示"添加进度"按钮
+  // 安全渲染：无进度时显示添加界面
   if (progressCount === 0) {
     return (
       <div className="progress-section">
@@ -36,7 +111,6 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
                 <button
                   className="btn-add-progress"
                   onClick={() => setShowInput(true)}
-                  disabled={!!inBatch}
                 >
                   + 添加进度
                 </button>
@@ -73,75 +147,7 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
     );
   }
 
-  const inBatch = batchMode;
-
-  const { activeProgress, archivedProgress } = useMemo(() => {
-    const active = [];
-    const archived = [];
-    for (const p of items) {
-      (p.status === 'active' ? active : archived).push(p);
-    }
-    return { activeProgress: active, archivedProgress: archived };
-  }, [items]);
-
-  const toggleSelect = useCallback((pid) => {
-    setSelectedPIds(prev => {
-      const next = new Set(prev);
-      next.has(pid) ? next.delete(pid) : next.add(pid);
-      return next;
-    });
-  }, []);
-
-  const exitManage = useCallback(() => {
-    setManageMode(false);
-    setSelectedPIds(new Set());
-    setConfirmDelete(false);
-    setShowDateModal(false);
-  }, []);
-
-  const handleBatchDelete = useCallback(() => {
-    if (!confirmDelete) { setConfirmDelete(true); return; }
-    selectedPIds.forEach(pid => deleteProgress(todoId, pid));
-    exitManage();
-  }, [confirmDelete, selectedPIds, todoId, deleteProgress, exitManage]);
-
-  const handleBatchComplete = useCallback(() => {
-    selectedPIds.forEach(pid => toggleProgressStatus(todoId, pid, 'completed'));
-    exitManage();
-  }, [selectedPIds, todoId, toggleProgressStatus, exitManage]);
-
-  const handleBatchCancel = useCallback(() => {
-    selectedPIds.forEach(pid => toggleProgressStatus(todoId, pid, 'cancelled'));
-    exitManage();
-  }, [selectedPIds, todoId, toggleProgressStatus, exitManage]);
-
-  const handleSubmit = useCallback(() => {
-    const trimmed = progressText.trim();
-    if (!trimmed) return;
-    addProgress(todoId, trimmed);
-    setProgressText('');
-    setShowInput(false);
-  }, [progressText, todoId, addProgress]);
-
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Enter') { e.preventDefault(); handleSubmit(); }
-  }, [handleSubmit]);
-
-  const handleOpenEdit = useCallback((p) => {
-    setEditing({ progress: p, text: p.text ?? '' });
-  }, []);
-
-  const handleSaveEdit = useCallback(() => {
-    if (!editing) return;
-    const trimmed = editing.text.trim();
-    if (trimmed && trimmed !== editing.progress.text) {
-      updateProgress(todoId, editing.progress.id, trimmed);
-    }
-    setEditing(null);
-  }, [editing, todoId, updateProgress]);
-
-  const hasSelection = selectedPIds.size > 0;
-
+  // 安全渲染：有进度时显示列表
   return (
     <div className="progress-section" onClick={inBatch ? e => e.stopPropagation() : undefined}>
       {activeProgress.length > 0 && (
