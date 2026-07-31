@@ -32,11 +32,18 @@ export default function App() {
   const [showArchivedHistory, setShowArchivedHistory] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
+  const scrollRef = useRef(null);
 
   useEffect(() => {
     const stored = loadArchive();
     if (stored.length > 0) setArchiveData(stored);
   }, []);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [view]);
 
   const source = view === 'active' ? activeTodos : archivedTodos;
   const isArchive = view === 'archive';
@@ -162,7 +169,7 @@ export default function App() {
             onDragEnd={handleDragEnd}
             onDragCancel={handleDragCancel}
           >
-            <div className="todo-scroll">
+            <div className="todo-scroll" ref={scrollRef}>
               <div className="todo-list">
                 {filteredTodos.length === 0 && !showArchivedHistory ? (
                   <div className="empty-state">

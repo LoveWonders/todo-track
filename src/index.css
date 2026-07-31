@@ -312,6 +312,7 @@ body {
 /* ---------- Scrollable List ---------- */
 .todo-scroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 70px !important;
