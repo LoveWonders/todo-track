@@ -51,10 +51,17 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const [moreOpen, setMoreOpen] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({});
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const dragRef = useRef(null);
 
   const canCollapse = !isArchive && todo.status === 'active';
+
+  // todo.id 变化时重置折叠状态为折叠
+  const prevTodoIdRef = useRef(todo.id);
+  if (prevTodoIdRef.current !== todo.id) {
+    setCollapsed(true);
+    prevTodoIdRef.current = todo.id;
+  }
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -78,7 +85,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
     setShowEditModal(false);
   };
 
-  const isUrgent = todo.tags.includes(URGENT_TAG);
+  const isUrgent = (todo.tags || []).includes(URGENT_TAG);
 
   const handleItemClick = () => {
     if (!batchMode) return;
@@ -103,10 +110,11 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
   const handleUrgent = (e) => {
     e.stopPropagation();
+    const currentTags = todo.tags || [];
     if (isUrgent) {
-      updateTodo(todo.id, { tags: todo.tags.filter(t => t !== URGENT_TAG) });
+      updateTodo(todo.id, { tags: currentTags.filter(t => t !== URGENT_TAG) });
     } else {
-      updateTodo(todo.id, { tags: [...todo.tags, URGENT_TAG] });
+      updateTodo(todo.id, { tags: [...currentTags, URGENT_TAG] });
     }
   };
 

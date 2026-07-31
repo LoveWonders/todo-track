@@ -16,18 +16,25 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
   const [showDateModal, setShowDateModal] = useState(false);
   const [editing, setEditing] = useState(null);
 
-  const items = progress ?? [];
+  const items = Array.isArray(progress) ? progress : [];
 
   if (collapsed) {
     const activeCount = items.filter(p => p.status === 'active').length;
     const archivedCount = items.filter(p => p.status !== 'active').length;
     return (
       <div className="progress-log-collapsed">
-        <span className="progress-count">{activeCount} 进行中</span>
-        {archivedCount > 0 && <span className="progress-count-archived"> · {archivedCount} 已归档</span>}
+        {items.length > 0 ? (
+          <>
+            <span className="progress-count">{activeCount} 进行中</span>
+            {archivedCount > 0 && <span className="progress-count-archived"> &middot; {archivedCount} 已归档</span>}
+          </>
+        ) : (
+          <span className="progress-count">暂无进度</span>
+        )}
       </div>
     );
   }
+
   const inBatch = batchMode;
 
   const { activeProgress, archivedProgress, allCount } = useMemo(() => {
