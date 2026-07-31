@@ -1262,6 +1262,87 @@ body {
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-add-progress:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-add-progress:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.progress-empty-prompt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.progress-empty-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.progress-input-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.progress-input-field {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  outline: none;
+  background: var(--bg);
+  color: var(--text);
+  height: 26px;
+}
+
+.progress-input-field:focus {
+  border-color: var(--accent);
+}
+
+.btn-progress-submit {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-progress-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-progress-submit:active:not(:disabled) {
+  opacity: 0.8;
+}
+
+.btn-progress-cancel {
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.btn-progress-cancel:active {
+  opacity: 0.8;
 }
 
 /* ---------- Progress Archive Collapse ---------- */

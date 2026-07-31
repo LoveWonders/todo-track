@@ -271,7 +271,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
       </div>
 
-      {!isArchive && todo.status === 'active' && canCollapse && !collapsed && progressCount > 0 && (
+      {!isArchive && todo.status === 'active' && canCollapse && !collapsed && (
         <ProgressLog progress={todo.progress} todoId={todo.id} collapsed={collapsed} />
       )}
 

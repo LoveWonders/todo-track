@@ -19,12 +19,58 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
   const items = Array.isArray(progress) ? progress : [];
   const progressCount = items.length;
 
+  // 折叠时不渲染
   if (collapsed) {
     return null;
   }
 
+  // 无进度时显示"添加进度"按钮
   if (progressCount === 0) {
-    return null;
+    return (
+      <div className="progress-section">
+        {!inBatch && (
+          <div className="todo-progress-bar">
+            <div className="progress-empty-prompt">
+              <span className="progress-empty-text">暂无进度记录</span>
+              {!showInput ? (
+                <button
+                  className="btn-add-progress"
+                  onClick={() => setShowInput(true)}
+                  disabled={!!inBatch}
+                >
+                  + 添加进度
+                </button>
+              ) : (
+                <div className="progress-input-row">
+                  <input
+                    type="text"
+                    className="progress-input-field"
+                    value={progressText}
+                    onChange={(e) => setProgressText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="输入进度内容..."
+                    autoFocus
+                  />
+                  <button
+                    className="btn-progress-submit"
+                    onClick={handleSubmit}
+                    disabled={!progressText.trim()}
+                  >
+                    确定
+                  </button>
+                  <button
+                    className="btn-progress-cancel"
+                    onClick={() => { setShowInput(false); setProgressText(''); }}
+                  >
+                    取消
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   }
 
   const inBatch = batchMode;
