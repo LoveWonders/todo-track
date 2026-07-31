@@ -23,7 +23,9 @@
 | PWA | vite-plugin-pwa (Workbox) |
 | 原生壳 | Capacitor 8 (Android) |
 | 存储 | @capacitor/filesystem + localStorage |
-| 语言 | TypeScript / JSX |
+| 状态管理 | React Hooks (useState, useEffect, useCallback) |
+| 拖拽 | @dnd-kit/core |
+| 语言 | JavaScript (JSX) |
 
 ## 本地运行
 
