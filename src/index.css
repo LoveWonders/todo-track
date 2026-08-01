@@ -3243,7 +3243,14 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.3s ease;
+  opacity: 1;
+}
+
+.fab-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.8);
 }
 
 .fab:hover {

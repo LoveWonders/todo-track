@@ -32,6 +32,7 @@ export default function App() {
   const [showArchivedHistory, setShowArchivedHistory] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
+  const [fabHidden, setFabHidden] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -119,10 +120,10 @@ export default function App() {
   const actionsValue = useMemo(() => ({
     updateTodo, toggleStatus, addProgress, toggleProgressStatus,
     deleteProgress, updateProgress, updateProgressCompletedAt,
-    handleBatchToggle, setPinStatus,
+    handleBatchToggle, setPinStatus, setFabHidden,
   }), [updateTodo, toggleStatus, addProgress, toggleProgressStatus,
     deleteProgress, updateProgress, updateProgressCompletedAt,
-    handleBatchToggle, setPinStatus]);
+    handleBatchToggle, setPinStatus, setFabHidden]);
 
   const viewValue = useMemo(() => ({
     batchMode, isArchive, devMode,
@@ -300,7 +301,7 @@ export default function App() {
             onInvertSelection={invertSelection}
           />
         ) : (
-          <FloatingActionButton onClick={() => setBottomSheetOpen(true)} />
+          <FloatingActionButton onClick={() => setBottomSheetOpen(true)} hidden={fabHidden} />
         )
       )}
 

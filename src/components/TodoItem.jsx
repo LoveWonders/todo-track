@@ -37,7 +37,7 @@ function getStatusClass(todo) {
 }
 
 const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragListeners }) {
-  const { toggleStatus, updateTodo, handleBatchToggle, setPinStatus } = useTodoActions();
+  const { toggleStatus, updateTodo, handleBatchToggle, setPinStatus, setFabHidden } = useTodoActions();
   const { batchMode, isArchive, devMode } = useTodoView();
   const statusClass = getStatusClass(todo);
   const tier = getTaskTier(todo);
@@ -83,6 +83,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const handleSaveEdit = () => {
     const trimmed = editText.trim();
     if (trimmed && trimmed !== todo.title) updateTodo(todo.id, { title: trimmed });
+    setFabHidden(false);
     setShowEditModal(false);
   };
 
@@ -302,14 +303,14 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
       {showEditModal && (
         <div
           className="modal-full-overlay"
-          onClick={(e) => { e.stopPropagation(); setShowEditModal(false); }}
+          onClick={(e) => { e.stopPropagation(); setFabHidden(false); setShowEditModal(false); }}
         >
           <div className="modal-full-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="modal-full-header">
               <span className="modal-full-title">编辑内容</span>
               <button
                 className="modal-full-close"
-                onClick={(e) => { e.stopPropagation(); setShowEditModal(false); }}
+                onClick={(e) => { e.stopPropagation(); setFabHidden(false); setShowEditModal(false); }}
               >
                 &times;
               </button>
@@ -319,13 +320,15 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
                 className="modal-edit-textarea"
                 value={editText}
                 onChange={(e) => setEditText(e.target.value)}
+                onFocus={() => setFabHidden(true)}
+                onBlur={() => setFabHidden(false)}
                 autoFocus
               />
             </div>
             <div className="modal-full-footer">
               <button
                 className="btn-cancel"
-                onClick={(e) => { e.stopPropagation(); setShowEditModal(false); }}
+                onClick={(e) => { e.stopPropagation(); setFabHidden(false); setShowEditModal(false); }}
               >
                 取消
               </button>
