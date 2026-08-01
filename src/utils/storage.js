@@ -202,6 +202,7 @@ export async function clearAllData() {
     }
   }
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem('todo_manual_sort');
   addLog('info', '[清除] localStorage 已清空');
 }
 
