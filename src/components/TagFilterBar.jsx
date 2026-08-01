@@ -37,6 +37,7 @@ export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) 
   const [slots, setSlots] = useState(loadSlots);
   const [activeSlotId, setActiveSlotId] = useState(null);
   const [wpsTags, setWpsTags] = useState([]);
+  const [draftTags, setDraftTags] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [tooltipSlot, setTooltipSlot] = useState(null);
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
@@ -121,17 +122,24 @@ export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) 
     if (dropdownOpen) {
       setDropdownOpen(false);
     } else {
-      setActiveSlotId(null);
+      setDraftTags([...(filterConfig.includeTags || [])]);
       setDropdownOpen(true);
     }
   };
 
   const handleWpsCheck = (tag) => {
-    setWpsTags(prev => {
-      const next = prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag];
-      emitFilter('wps', next, []);
-      return next;
-    });
+    setDraftTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+  };
+
+  const handleConfirmWps = () => {
+    setActiveSlotId(null);
+    setWpsTags(draftTags);
+    setDropdownOpen(false);
+    emitFilter('wps', draftTags, []);
+  };
+
+  const handleCancelWps = () => {
+    setDropdownOpen(false);
   };
 
   const handleSlotClick = (slot) => {
@@ -171,7 +179,7 @@ export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) 
   };
 
   const handleSaveToSlot = (targetId) => {
-    const newSlot = { id: targetId, name: wpsTags.join('+'), ruleType: 'include', tags: [...wpsTags] };
+    const newSlot = { id: targetId, name: draftTags.join('+'), ruleType: 'include', tags: [...draftTags] };
     setSlots(prev => prev.map(s => s.id === targetId ? newSlot : s));
     setSaveMenuOpen(false);
     setDropdownOpen(false);
@@ -213,7 +221,7 @@ export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) 
     );
   };
 
-  const hasWpsTags = wpsTags.length > 0;
+  const hasWpsTags = draftTags.length > 0;
 
   return (
     <div className="filter-bar-v2" ref={barRef}>
@@ -245,7 +253,7 @@ export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) 
                   <label key={tag} className="filter-dropdown-item">
                     <input
                       type="checkbox"
-                      checked={wpsTags.includes(tag)}
+                      checked={draftTags.includes(tag)}
                       onChange={() => handleWpsCheck(tag)}
                     />
                     <span className="filter-dropdown-label">#{tag}</span>
@@ -256,7 +264,19 @@ export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) 
             {allTags.length > 0 && (
               <div className="filter-dropdown-footer">
                 <button
-                  className="btn-mini btn-add-progress"
+                  className="btn-mini btn-mini-cancel filter-footer-btn"
+                  onClick={handleCancelWps}
+                >
+                  取消
+                </button>
+                <button
+                  className="btn-mini btn-mini-save filter-footer-btn"
+                  onClick={handleConfirmWps}
+                >
+                  确定
+                </button>
+                <button
+                  className="btn-mini btn-add-progress filter-footer-btn"
                   disabled={!hasWpsTags}
                   onClick={() => {
                     const emptyIds = slots.filter(s => s.tags.length === 0).map(s => s.id);
@@ -268,7 +288,7 @@ export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) 
                   }}
                   style={{ opacity: hasWpsTags ? 1 : 0.4, fontSize: 11 }}
                 >
-                  固定当前筛选
+                  固定
                 </button>
                 {saveMenuOpen && (
                   <div className="filter-save-menu" ref={saveMenuRef}>

@@ -699,6 +699,13 @@ body {
   position: relative;
 }
 
+.filter-footer-btn {
+  flex-shrink: 0;
+  padding: 3px 12px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
 .filter-save-menu {
   position: absolute;
   bottom: 100%;
