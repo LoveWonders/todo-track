@@ -34,6 +34,27 @@ export function parseDateText(text) {
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T23:59:59`;
   }
 
+  // 处理"今年"前缀：chrono 无法识别"今年"，会把已过去的月份推到明年
+  if (trimmed.startsWith('今年')) {
+    const now = new Date();
+    const rest = trimmed.slice(2).trim();
+    if (!rest) return `${now.getFullYear()}-12-31T23:59:59`;
+    try {
+      const results = chrono.zh.parse(rest, now, { forwardDate: true });
+      if (results.length > 0 && results[0].start) {
+        const date = (results[0].end || results[0].start).date();
+        date.setFullYear(now.getFullYear());
+        return toDateString(date);
+      }
+    } catch { /* fall through */ }
+    const localDate = parseLocalDate(rest);
+    if (localDate) {
+      localDate.setFullYear(now.getFullYear());
+      return toDateString(localDate);
+    }
+    return null;
+  }
+
   try {
     const results = chrono.zh.parse(trimmed, new Date(), { forwardDate: true });
     if (results.length > 0) {
