@@ -148,9 +148,9 @@ export default function App() {
             <button
               className="sort-mode-btn"
               onClick={() => setManualMode(false)}
-              title="当前为手动排序，点击恢复自动排序"
+              title="重置为自动排序（置顶/置底保留，其余按紧急度与截止日期重排）"
             >
-              手动排序
+              重置排序
             </button>
           )}
           <DataMenu todos={todos} onImport={importTodos} devMode={devMode} onToggleDev={setDevMode} onOpenSettings={() => setSettingsOpen(true)} />
