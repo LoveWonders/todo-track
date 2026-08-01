@@ -39,11 +39,35 @@ export default function App() {
     if (stored.length > 0) setArchiveData(stored);
   }, []);
 
+  const forceRelayout = useCallback(() => {
+    requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        void scrollRef.current.scrollHeight;
+        void scrollRef.current.clientHeight;
+      }
+    });
+  }, []);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
     }
-  }, [view]);
+    forceRelayout();
+  }, [view, forceRelayout]);
+
+  useEffect(() => {
+    forceRelayout();
+  }, [todos, forceRelayout]);
+
+  useEffect(() => {
+    const onViewportChange = () => forceRelayout();
+    window.addEventListener('resize', onViewportChange);
+    window.addEventListener('orientationchange', onViewportChange);
+    return () => {
+      window.removeEventListener('resize', onViewportChange);
+      window.removeEventListener('orientationchange', onViewportChange);
+    };
+  }, [forceRelayout]);
 
   const source = view === 'active' ? activeTodos : archivedTodos;
   const isArchive = view === 'archive';
