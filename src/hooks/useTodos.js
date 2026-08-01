@@ -99,16 +99,31 @@ export function useTodos() {
     setTodos(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  const moveTodoTo = useCallback((id, toIndex) => {
+  const commitReorder = useCallback((idOrder, movedId, manual) => {
+    const orderSet = new Set(idOrder);
     setTodos(prev => {
-      const fromIdx = prev.findIndex(t => t.id === id);
-      if (fromIdx === -1 || fromIdx === toIndex) return prev;
-      const next = [...prev];
-      const [item] = next.splice(fromIdx, 1);
-      next.splice(toIndex, 0, { ...item, pinStatus: null });
-      return next;
+      const prevById = new Map(prev.map(t => [t.id, t]));
+      const next = [];
+      let ptr = 0;
+      for (const t of prev) {
+        if (orderSet.has(t.id)) {
+          const targetId = idOrder[ptr];
+          const target = prevById.get(targetId);
+          next.push(target ? { ...target, pinStatus: target.id === movedId ? null : target.pinStatus } : null);
+          ptr++;
+        } else {
+          next.push(t);
+        }
+      }
+      if (ptr < idOrder.length) {
+        for (let i = ptr; i < idOrder.length; i++) {
+          const target = prevById.get(idOrder[i]);
+          if (target) next.push({ ...target, pinStatus: target.id === movedId ? null : target.pinStatus });
+        }
+      }
+      return next.filter(Boolean);
     });
-    setIsManualMode(true);
+    if (manual) setIsManualMode(true);
   }, []);
 
   const setPinStatus = useCallback((id, pinStatus) => {
@@ -236,5 +251,5 @@ export function useTodos() {
   const archivedTodos = todos.filter(t => t.status !== 'active');
   const allTags = [...new Set(todos.flatMap(t => t.tags))].sort();
 
-  return { todos, activeTodos, archivedTodos, loaded, isManualMode, setManualMode, addTodo, updateTodo, deleteTodo, moveTodoTo, setPinStatus, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
+  return { todos, activeTodos, archivedTodos, loaded, isManualMode, setManualMode, addTodo, updateTodo, deleteTodo, commitReorder, setPinStatus, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
 }

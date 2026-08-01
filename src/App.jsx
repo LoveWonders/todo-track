@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { DndContext, DragOverlay, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { useTodos } from './hooks/useTodos';
 import { useBackButton } from './hooks/useBackButton';
 import useFilteredTodos from './hooks/useFilteredTodos';
@@ -23,7 +23,7 @@ import { loadArchive, saveArchive } from './utils/autoArchive';
 import { formatDate } from './utils/dateParser';
 
 export default function App() {
-  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, setPinStatus, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags, isManualMode, setManualMode } = useTodos();
+  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, commitReorder, setPinStatus, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags, isManualMode, setManualMode } = useTodos();
   const [filterConfig, setFilterConfig] = useState({ includeTags: [], excludeTags: [] });
   const [view, setView] = useState('active');
   const [dragId, setDragId] = useState(null);
@@ -88,9 +88,6 @@ export default function App() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const todosRef = useRef(todos);
-  todosRef.current = todos;
-
   const handleDragStart = useCallback((event) => {
     setDragId(event.active.id);
   }, []);
@@ -99,10 +96,12 @@ export default function App() {
     setDragId(null);
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const newIndex = todosRef.current.findIndex(t => t.id === over.id);
-    if (newIndex === -1) return;
-    moveTodoTo(active.id, newIndex);
-  }, [moveTodoTo]);
+    const oldIndex = filteredTodos.findIndex(t => t.id === active.id);
+    const newIndex = filteredTodos.findIndex(t => t.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(filteredTodos, oldIndex, newIndex);
+    commitReorder(reordered.map(t => t.id), active.id, true);
+  }, [filteredTodos, commitReorder]);
 
   const handleDragCancel = useCallback(() => {
     setDragId(null);
@@ -120,10 +119,10 @@ export default function App() {
   const actionsValue = useMemo(() => ({
     updateTodo, toggleStatus, addProgress, toggleProgressStatus,
     deleteProgress, updateProgress, updateProgressCompletedAt,
-    handleBatchToggle, moveTodoTo, setPinStatus,
+    handleBatchToggle, setPinStatus,
   }), [updateTodo, toggleStatus, addProgress, toggleProgressStatus,
     deleteProgress, updateProgress, updateProgressCompletedAt,
-    handleBatchToggle, moveTodoTo, setPinStatus]);
+    handleBatchToggle, setPinStatus]);
 
   const viewValue = useMemo(() => ({
     batchMode, isArchive, devMode,
