@@ -8,7 +8,7 @@ import ProgressLog from './ProgressLog';
 import { useTodoActions } from '../hooks/TodoContext';
 
 export default function TodoDetail({ todo, onClose }) {
-  const { updateTodo, toggleStatus, moveTodoToTop, moveTodoToBottom } = useTodoActions();
+  const { updateTodo, toggleStatus, setPinStatus } = useTodoActions();
   const [editTitle, setEditTitle] = useState(false);
   const [title, setTitle] = useState(todo.title);
 
@@ -123,11 +123,11 @@ export default function TodoDetail({ todo, onClose }) {
             )}
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
-            <button className="btn-mini btn-mini-cancel" onClick={() => { moveTodoToTop(todo.id); onClose(); }}>
-              置顶
+            <button className="btn-mini btn-mini-cancel" onClick={() => { setPinStatus(todo.id, todo.pinStatus === 'top' ? null : 'top'); onClose(); }}>
+              {todo.pinStatus === 'top' ? '取消置顶' : '置顶'}
             </button>
-            <button className="btn-mini btn-mini-cancel" onClick={() => { moveTodoToBottom(todo.id); onClose(); }}>
-              置底
+            <button className="btn-mini btn-mini-cancel" onClick={() => { setPinStatus(todo.id, todo.pinStatus === 'bottom' ? null : 'bottom'); onClose(); }}>
+              {todo.pinStatus === 'bottom' ? '取消置底' : '置底'}
             </button>
           </div>
         </div>

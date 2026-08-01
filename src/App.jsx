@@ -23,7 +23,7 @@ import { loadArchive, saveArchive } from './utils/autoArchive';
 import { formatDate } from './utils/dateParser';
 
 export default function App() {
-  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags } = useTodos();
+  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, moveTodoTo, setPinStatus, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags, isManualMode, setManualMode } = useTodos();
   const [filterConfig, setFilterConfig] = useState({ includeTags: [], excludeTags: [] });
   const [view, setView] = useState('active');
   const [dragId, setDragId] = useState(null);
@@ -71,7 +71,7 @@ export default function App() {
 
   const source = view === 'active' ? activeTodos : archivedTodos;
   const isArchive = view === 'archive';
-  const filteredTodos = useFilteredTodos(source, filterConfig);
+  const filteredTodos = useFilteredTodos(source, filterConfig, isManualMode);
 
   const {
     batchMode, selectedIds, exitBatch, handleBatchToggle,
@@ -108,14 +108,6 @@ export default function App() {
     setDragId(null);
   }, []);
 
-  const moveTodoToTop = useCallback((id) => {
-    moveTodoTo(id, 0);
-  }, [moveTodoTo]);
-
-  const moveTodoToBottom = useCallback((id) => {
-    moveTodoTo(id, todosRef.current.length - 1);
-  }, [moveTodoTo]);
-
   const restoreFromArchive = useCallback((item) => {
     const archive = loadArchive();
     const updated = archive.filter(a => a.id !== item.id);
@@ -128,10 +120,10 @@ export default function App() {
   const actionsValue = useMemo(() => ({
     updateTodo, toggleStatus, addProgress, toggleProgressStatus,
     deleteProgress, updateProgress, updateProgressCompletedAt,
-    handleBatchToggle, moveTodoToTop, moveTodoToBottom,
+    handleBatchToggle, moveTodoTo, setPinStatus,
   }), [updateTodo, toggleStatus, addProgress, toggleProgressStatus,
     deleteProgress, updateProgress, updateProgressCompletedAt,
-    handleBatchToggle, moveTodoToTop, moveTodoToBottom]);
+    handleBatchToggle, moveTodoTo, setPinStatus]);
 
   const viewValue = useMemo(() => ({
     batchMode, isArchive, devMode,
@@ -152,6 +144,15 @@ export default function App() {
           )}
           {batchMode && (
             <span style={{ fontSize: 12, color: 'var(--accent)' }}>批量操作</span>
+          )}
+          {isManualMode && !batchMode && (
+            <button
+              className="sort-mode-btn"
+              onClick={() => setManualMode(false)}
+              title="当前为手动排序，点击恢复自动排序"
+            >
+              手动排序
+            </button>
           )}
           <DataMenu todos={todos} onImport={importTodos} devMode={devMode} onToggleDev={setDevMode} onOpenSettings={() => setSettingsOpen(true)} />
         </div>

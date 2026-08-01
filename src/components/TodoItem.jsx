@@ -37,7 +37,7 @@ function getStatusClass(todo) {
 }
 
 const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragListeners }) {
-  const { toggleStatus, updateTodo, handleBatchToggle, moveTodoToTop, moveTodoToBottom } = useTodoActions();
+  const { toggleStatus, updateTodo, handleBatchToggle, setPinStatus } = useTodoActions();
   const { batchMode, isArchive, devMode } = useTodoView();
   const statusClass = getStatusClass(todo);
   const tier = getTaskTier(todo);
@@ -124,15 +124,15 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
     toggleStatus(todo.id, todo.status);
   };
 
-  const handleMoveTop = (e) => {
+  const handlePinTop = (e) => {
     e.stopPropagation();
-    moveTodoToTop(todo.id);
+    setPinStatus(todo.id, todo.pinStatus === 'top' ? null : 'top');
     setMoreOpen(false);
   };
 
-  const handleMoveBottom = (e) => {
+  const handlePinBottom = (e) => {
     e.stopPropagation();
-    moveTodoToBottom(todo.id);
+    setPinStatus(todo.id, todo.pinStatus === 'bottom' ? null : 'bottom');
     setMoreOpen(false);
   };
 
@@ -188,11 +188,11 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
             <button className="more-item" onClick={handleEnterBatch}>
               选择
             </button>
-            <button className="more-item" onClick={handleMoveTop}>
-              置顶
+            <button className="more-item" onClick={handlePinTop}>
+              {todo.pinStatus === 'top' ? '取消置顶' : '置顶'}
             </button>
-            <button className="more-item" onClick={handleMoveBottom}>
-              置底
+            <button className="more-item" onClick={handlePinBottom}>
+              {todo.pinStatus === 'bottom' ? '取消置底' : '置底'}
             </button>
           </div>,
           document.body
@@ -200,6 +200,11 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
         <div className="todo-content">
           <div style={{ marginBottom: 3 }}>
+            {todo.pinStatus && (
+              <span className={`pin-badge ${todo.pinStatus === 'top' ? 'pin-top' : 'pin-bottom'}`}>
+                {todo.pinStatus === 'top' ? '置顶' : '置底'}
+              </span>
+            )}
             <span
               className="todo-title-text"
               onClick={(e) => { e.stopPropagation(); handleOpenEdit(); }}

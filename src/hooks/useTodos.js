@@ -2,9 +2,18 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { loadData, saveData, migrateFromLocalStorage } from '../utils/storage';
 import { mergeAndArchive } from '../utils/autoArchive';
 
+const MANUAL_SORT_KEY = 'todo_manual_sort';
+
 export function useTodos() {
   const [todos, setTodos] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [isManualMode, setIsManualMode] = useState(() => {
+    try {
+      return localStorage.getItem(MANUAL_SORT_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
   const saveTimerRef = useRef(null);
   const todoIdRef = useRef(Date.now());
   const progressIdRef = useRef(Date.now());
@@ -33,6 +42,7 @@ export function useTodos() {
           progress: t.progress || [],
           tags: t.tags || [],
           status: t.status || 'active',
+          pinStatus: t.pinStatus || null,
           completedAt: t.completedAt || null,
           createdAt: t.createdAt || new Date().toISOString(),
         };
@@ -58,6 +68,12 @@ export function useTodos() {
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [todos, loaded]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(MANUAL_SORT_KEY, isManualMode ? '1' : '0');
+    } catch { /* ignore */ }
+  }, [isManualMode]);
+
   const addTodo = useCallback(({ title, startDate, dueDate, tags }) => {
     const todo = {
       id: todoIdRef.current++,
@@ -66,6 +82,7 @@ export function useTodos() {
       dueDate: dueDate || null,
       tags: tags || [],
       status: 'active',
+      pinStatus: null,
       createdAt: new Date().toISOString(),
       progress: [],
     };
@@ -88,9 +105,20 @@ export function useTodos() {
       if (fromIdx === -1 || fromIdx === toIndex) return prev;
       const next = [...prev];
       const [item] = next.splice(fromIdx, 1);
-      next.splice(toIndex, 0, item);
+      next.splice(toIndex, 0, { ...item, pinStatus: null });
       return next;
     });
+    setIsManualMode(true);
+  }, []);
+
+  const setPinStatus = useCallback((id, pinStatus) => {
+    setTodos(prev => prev.map(t =>
+      t.id === id ? { ...t, pinStatus } : t
+    ));
+  }, []);
+
+  const setManualMode = useCallback((mode) => {
+    setIsManualMode(!!mode);
   }, []);
 
   const toggleStatus = useCallback((id, newStatus) => {
@@ -185,12 +213,18 @@ export function useTodos() {
   const importTodos = useCallback((importData, strategy) => {
     setTodos(prev => {
       const existingIds = new Set(prev.map(t => t.id));
+      const normalized = importData.map(t => ({
+        ...t,
+        pinStatus: t.pinStatus || null,
+        progress: t.progress || [],
+        tags: t.tags || [],
+      }));
       let merged;
       if (strategy === 'overwrite') {
-        const overwriteSet = new Set(importData.filter(t => existingIds.has(t.id)).map(t => t.id));
-        merged = [...prev.filter(t => !overwriteSet.has(t.id)), ...importData];
+        const overwriteSet = new Set(normalized.filter(t => existingIds.has(t.id)).map(t => t.id));
+        merged = [...prev.filter(t => !overwriteSet.has(t.id)), ...normalized];
       } else {
-        merged = [...prev, ...importData.filter(t => !existingIds.has(t.id))];
+        merged = [...prev, ...normalized.filter(t => !existingIds.has(t.id))];
       }
       const maxId = Math.max(...merged.map(t => t.id), 0);
       todoIdRef.current = maxId + 1;
@@ -202,5 +236,5 @@ export function useTodos() {
   const archivedTodos = todos.filter(t => t.status !== 'active');
   const allTags = [...new Set(todos.flatMap(t => t.tags))].sort();
 
-  return { todos, activeTodos, archivedTodos, loaded, addTodo, updateTodo, deleteTodo, moveTodoTo, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
+  return { todos, activeTodos, archivedTodos, loaded, isManualMode, setManualMode, addTodo, updateTodo, deleteTodo, moveTodoTo, setPinStatus, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
 }
