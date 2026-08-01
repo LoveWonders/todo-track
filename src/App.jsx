@@ -179,7 +179,7 @@ export default function App() {
       </div>
 
       {allTags.length > 0 && !dragId && !batchMode && view !== 'weekly' && (
-        <TagFilterBar allTags={allTags} onFilterChange={setFilterConfig} />
+        <TagFilterBar allTags={allTags} filterConfig={filterConfig} onFilterChange={setFilterConfig} />
       )}
 
       {view === 'weekly' ? (

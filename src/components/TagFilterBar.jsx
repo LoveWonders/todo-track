@@ -27,7 +27,13 @@ function buildSlotLabel(slot) {
   return slot.tags.map(t => prefix + t).join(' + ');
 }
 
-export default function TagFilterBar({ allTags, onFilterChange }) {
+function sameTags(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+  const set = new Set(b);
+  return a.every(t => set.has(t));
+}
+
+export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) {
   const [slots, setSlots] = useState(loadSlots);
   const [activeSlotId, setActiveSlotId] = useState(null);
   const [wpsTags, setWpsTags] = useState([]);
@@ -43,6 +49,29 @@ export default function TagFilterBar({ allTags, onFilterChange }) {
   useEffect(() => {
     saveSlots(slots);
   }, [slots]);
+
+  const { includeTags, excludeTags } = filterConfig;
+
+  useEffect(() => {
+    if (includeTags.length === 0 && excludeTags.length === 0) {
+      setActiveSlotId(null);
+      setWpsTags([]);
+      return;
+    }
+    const matched = slots.find(s => {
+      if (s.ruleType === 'include') {
+        return excludeTags.length === 0 && sameTags(s.tags, includeTags);
+      }
+      return includeTags.length === 0 && sameTags(s.tags, excludeTags);
+    });
+    if (matched) {
+      setActiveSlotId(matched.id);
+      setWpsTags([]);
+    } else {
+      setActiveSlotId(null);
+      setWpsTags([...includeTags]);
+    }
+  }, [includeTags, excludeTags, slots]);
 
   useEffect(() => {
     return () => {
