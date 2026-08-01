@@ -1,5 +1,13 @@
 # 更新日志
 
+## v1.5.1 - 2026-07-31
+### 修复
+- 根治刷新后主界面无法滑动问题
+  - 根源：.app-shell 使用 height: 100vh，移动端地址栏收起时视口高度变化导致滚动区域异常；异步数据加载后 flex 高度未强制重排
+  - html/body/#root/.app-shell 增加 100dvh（带 100vh fallback）适配动态视口
+  - .todo-scroll 改为 flex: 1 1 0 + height: 0 可靠滚动模式
+  - 新增 forceRelayout()：数据加载完成、视图切换、resize/orientationchange 时强制重排
+
 ## v1.5.0 - 2026-07-31
 ### 新增
 - 快捷标签内联编辑功能
