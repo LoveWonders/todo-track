@@ -1,9 +1,13 @@
+import { useTodoActions } from '../hooks/TodoContext';
+
 export default function ProgressDefaultBar({ showInput, progressText, allCount, onShowInput, onTextChange, onKeyDown, onSubmit, onCancelInput, onManage }) {
+  const { setFabHidden } = useTodoActions();
   if (showInput) {
     return (
       <>
         <input type="text" placeholder="输入工作进度..." value={progressText}
-          onChange={e => onTextChange(e.target.value)} onKeyDown={onKeyDown} autoFocus />
+          onChange={e => onTextChange(e.target.value)} onKeyDown={onKeyDown}
+          onFocus={() => setFabHidden(true)} onBlur={() => setFabHidden(false)} autoFocus />
         <button className="btn-mini btn-mini-save" onClick={onSubmit}>保存</button>
         <button className="btn-mini btn-mini-cancel" onClick={onCancelInput}>&times;</button>
       </>

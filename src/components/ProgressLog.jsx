@@ -5,7 +5,7 @@ import ProgressManageBar from './ProgressManageBar';
 import ProgressDefaultBar from './ProgressDefaultBar';
 
 export default function ProgressLog({ progress, todoId, collapsed }) {
-  const { toggleProgressStatus, deleteProgress, addProgress, updateProgress, updateProgressCompletedAt } = useTodoActions();
+  const { toggleProgressStatus, deleteProgress, addProgress, updateProgress, updateProgressCompletedAt, setFabHidden } = useTodoActions();
   const { batchMode } = useTodoView();
   
   // 状态定义
@@ -37,7 +37,8 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
     addProgress(todoId, trimmed);
     setProgressText('');
     setShowInput(false);
-  }, [progressText, todoId, addProgress]);
+    setFabHidden(false);
+  }, [progressText, todoId, addProgress, setFabHidden]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
@@ -65,7 +66,8 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
       updateProgress(todoId, editing.progress.id, trimmed);
     }
     setEditing(null);
-  }, [editing, todoId, updateProgress]);
+    setFabHidden(false);
+  }, [editing, todoId, updateProgress, setFabHidden]);
 
   const handleBatchDelete = useCallback(() => {
     if (!confirmDelete) { setConfirmDelete(true); return; }
@@ -125,6 +127,8 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
                   value={progressText}
                   onChange={(e) => setProgressText(e.target.value)}
                   onKeyDown={handleKeyDown}
+                  onFocus={() => setFabHidden(true)}
+                  onBlur={() => setFabHidden(false)}
                   placeholder="输入进度内容..."
                   autoFocus
                 />
@@ -137,7 +141,7 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
                 </button>
                 <button
                   className="btn-progress-cancel-compact"
-                  onClick={() => { setShowInput(false); setProgressText(''); }}
+                  onClick={() => { setShowInput(false); setProgressText(''); setFabHidden(false); }}
                 >
                   取消
                 </button>
@@ -191,7 +195,7 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
               allCount={progressCount}
               onShowInput={() => setShowInput(true)} onTextChange={setProgressText}
               onKeyDown={handleKeyDown} onSubmit={handleSubmit}
-              onCancelInput={() => setShowInput(false)}
+              onCancelInput={() => { setShowInput(false); setFabHidden(false); }}
               onManage={() => { setManageMode(true); setConfirmDelete(false); }}
             />
           )}
@@ -237,17 +241,24 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
       )}
 
       {editing && (
-        <div className="modal-full-overlay" onClick={() => setEditing(null)}>
+        <div className="modal-full-overlay" onClick={() => { setEditing(null); setFabHidden(false); }}>
           <div className="modal-full-sheet" onClick={e => e.stopPropagation()}>
             <div className="modal-full-header">
               <span className="modal-full-title">编辑进度</span>
-              <button className="modal-full-close" onClick={() => setEditing(null)}>&times;</button>
+              <button className="modal-full-close" onClick={() => { setEditing(null); setFabHidden(false); }}>&times;</button>
             </div>
             <div className="modal-full-body">
-              <textarea className="modal-edit-textarea" value={editing.text} onChange={e => setEditing(prev => ({ ...prev, text: e.target.value }))} autoFocus />
+              <textarea
+                className="modal-edit-textarea"
+                value={editing.text}
+                onChange={e => setEditing(prev => ({ ...prev, text: e.target.value }))}
+                onFocus={() => setFabHidden(true)}
+                onBlur={() => setFabHidden(false)}
+                autoFocus
+              />
             </div>
             <div className="modal-full-footer">
-              <button className="btn-cancel" onClick={() => setEditing(null)}>取消</button>
+              <button className="btn-cancel" onClick={() => { setEditing(null); setFabHidden(false); }}>取消</button>
               <button className="btn-save" onClick={handleSaveEdit}>保存</button>
             </div>
           </div>
