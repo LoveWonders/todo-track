@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatDateTime, isOverdue } from '../utils/dateParser';
 import { URGENT_TAG } from '../constants';
 import Countdown from './Countdown';
@@ -8,9 +8,14 @@ import ProgressLog from './ProgressLog';
 import { useTodoActions } from '../hooks/TodoContext';
 
 export default function TodoDetail({ todo, onClose }) {
-  const { updateTodo, toggleStatus, setPinStatus } = useTodoActions();
+  const { updateTodo, toggleStatus, setPinStatus, setFabHidden } = useTodoActions();
   const [editTitle, setEditTitle] = useState(false);
   const [title, setTitle] = useState(todo.title);
+
+  useEffect(() => {
+    setFabHidden(true);
+    return () => setFabHidden(false);
+  }, [setFabHidden]);
 
   const handleSaveTitle = () => {
     const trimmed = title.trim();
