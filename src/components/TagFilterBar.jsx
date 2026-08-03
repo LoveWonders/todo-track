@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { load, save } from '../utils/storage';
 import { URGENT_TAG } from '../constants';
+import { getTagColor } from '../utils/tagMeta';
+import { useTagMeta } from '../hooks/useTagMeta';
 
 const SLOTS_KEY = 'todo_filter_slots';
 
@@ -42,6 +44,7 @@ export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) 
   const [tooltipSlot, setTooltipSlot] = useState(null);
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
   const [undoSlot, setUndoSlot] = useState(null);
+  const { tagMeta } = useTagMeta();
   const saveMenuRef = useRef(null);
   const slotRefs = useRef({});
   const barRef = useRef(null);
@@ -249,16 +252,20 @@ export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) 
               {allTags.length === 0 ? (
                 <div className="filter-dropdown-empty">暂无标签</div>
               ) : (
-                allTags.map(tag => (
-                  <label key={tag} className="filter-dropdown-item">
-                    <input
-                      type="checkbox"
-                      checked={draftTags.includes(tag)}
-                      onChange={() => handleWpsCheck(tag)}
-                    />
-                    <span className="filter-dropdown-label">#{tag}</span>
-                  </label>
-                ))
+                allTags.map(tag => {
+                  const color = tag === URGENT_TAG ? { bg: '#ffebee', fg: '#d32f2f' } : getTagColor(tag, tagMeta);
+                  return (
+                    <label key={tag} className="filter-dropdown-item">
+                      <input
+                        type="checkbox"
+                        checked={draftTags.includes(tag)}
+                        onChange={() => handleWpsCheck(tag)}
+                      />
+                      <span className="filter-dropdown-dot" style={{ background: color.bg, color: color.fg }}>#</span>
+                      <span className="filter-dropdown-label">#{tag}</span>
+                    </label>
+                  );
+                })
               )}
             </div>
             {allTags.length > 0 && (

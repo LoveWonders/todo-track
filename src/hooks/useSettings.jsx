@@ -5,6 +5,7 @@ const SETTINGS_KEY = 'todo_app_settings';
 const defaultSettings = {
   defaultDueMinute: 0,
   presetTags: undefined,
+  compactMode: false,
 };
 
 function loadSettings() {
@@ -29,6 +30,10 @@ export function SettingsProvider({ children }) {
   useEffect(() => {
     saveSettings(settings);
   }, [settings]);
+
+  useEffect(() => {
+    document.body.classList.toggle('compact-mode', !!settings.compactMode);
+  }, [settings.compactMode]);
 
   const updateSetting = useCallback((key, value) => {
     setSettings(prev => ({ ...prev, [key]: value }));

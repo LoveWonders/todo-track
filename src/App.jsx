@@ -8,6 +8,7 @@ import useBatchActions from './hooks/useBatchActions';
 import useModalManager from './hooks/useModalManager';
 import { TodoProvider } from './hooks/TodoContext';
 import { SettingsProvider } from './hooks/useSettings';
+import { TagMetaProvider } from './hooks/useTagMeta';
 import TodoInput from './components/TodoInput';
 import TodoListItem from './components/TodoListItem';
 import TagFilterBar from './components/TagFilterBar';
@@ -133,7 +134,33 @@ export default function App() {
 
   const draggedTodo = dragId ? todos.find(t => t.id === dragId) : null;
 
+  const handleRenameTag = useCallback((oldName, newName) => {
+    todos.forEach(t => {
+      if (t.tags && t.tags.includes(oldName)) {
+        updateTodo(t.id, { tags: t.tags.map(x => x === oldName ? newName : x) });
+      }
+    });
+  }, [todos, updateTodo]);
+
+  const handleDeleteTag = useCallback((tag, removeFromTodos) => {
+    if (!removeFromTodos) return;
+    todos.forEach(t => {
+      if (t.tags && t.tags.includes(tag)) {
+        updateTodo(t.id, { tags: t.tags.filter(x => x !== tag) });
+      }
+    });
+  }, [todos, updateTodo]);
+
+  const handleMergeTag = useCallback((canonical, duplicate) => {
+    todos.forEach(t => {
+      if (t.tags && t.tags.includes(duplicate)) {
+        updateTodo(t.id, { tags: t.tags.map(x => x === duplicate ? canonical : x) });
+      }
+    });
+  }, [todos, updateTodo]);
+
   return (
+    <TagMetaProvider>
     <SettingsProvider>
     <div className="app-shell">
       <header className="app-header">
@@ -154,7 +181,7 @@ export default function App() {
               重置排序
             </button>
           )}
-          <DataMenu todos={todos} onImport={importTodos} devMode={devMode} onToggleDev={setDevMode} onOpenSettings={() => setSettingsOpen(true)} />
+          <DataMenu todos={todos} onImport={importTodos} devMode={devMode} onToggleDev={setDevMode} onOpenSettings={() => { setSettingsOpen(true); setFabHidden(true); }} />
         </div>
       </header>
 
@@ -337,8 +364,17 @@ export default function App() {
         visible={devMode}
       />
 
-      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <SettingsModal
+          onClose={() => { setSettingsOpen(false); setFabHidden(false); }}
+          todos={todos}
+          onRenameTag={handleRenameTag}
+          onDeleteTag={handleDeleteTag}
+          onMergeTag={handleMergeTag}
+        />
+      )}
     </div>
     </SettingsProvider>
+    </TagMetaProvider>
   );
 }

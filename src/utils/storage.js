@@ -203,6 +203,7 @@ export async function clearAllData() {
   }
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem('todo_manual_sort');
+  localStorage.removeItem('todo_tag_meta');
   addLog('info', '[清除] localStorage 已清空');
 }
 

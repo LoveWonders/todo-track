@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { URGENT_TAG } from '../constants';
+import { getTagColor } from '../utils/tagMeta';
+import { useTagMeta } from '../hooks/useTagMeta';
 
 export default function TagsEdit({ tags = [], onSave, inBatch }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState('');
   const [showAll, setShowAll] = useState(false);
   const inputRef = useRef(null);
+  const { tagMeta } = useTagMeta();
 
   const MAX_VISIBLE = 3;
   const shouldCollapse = tags.length > MAX_VISIBLE;
@@ -48,12 +51,15 @@ export default function TagsEdit({ tags = [], onSave, inBatch }) {
   if (editing) {
     return (
       <span className="tags-edit" onClick={e => e.stopPropagation()}>
-        {tags.map(tag => (
-          <span key={tag} className="tag-chip edit-mode">
-            #{tag}
-            <span className="tag-remove" onMouseDown={(e) => { e.preventDefault(); removeTag(tag); }}>&times;</span>
-          </span>
-        ))}
+        {tags.map(tag => {
+          const color = getTagColor(tag, tagMeta);
+          return (
+            <span key={tag} className="tag-chip edit-mode" style={tag === URGENT_TAG ? undefined : { background: color.bg, color: color.fg }}>
+              #{tag}
+              <span className="tag-remove" onMouseDown={(e) => { e.preventDefault(); removeTag(tag); }}>&times;</span>
+            </span>
+          );
+        })}
         <input ref={inputRef} className="tag-input" placeholder="+ 标签" value={text}
           onChange={e => setText(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleBlur} />
       </span>
@@ -64,11 +70,19 @@ export default function TagsEdit({ tags = [], onSave, inBatch }) {
     <span className="todo-tags clickable" onClick={handleClick} title="点击编辑标签">
       {tags.length > 0 ? (
         <>
-          {visibleTags.map(tag => (
-            <span key={tag} className={`todo-tag ${tag === URGENT_TAG ? 'urgent' : ''}`}>
-              #{tag}
-            </span>
-          ))}
+          {visibleTags.map(tag => {
+            const color = getTagColor(tag, tagMeta);
+            const isUrgent = tag === URGENT_TAG;
+            return (
+              <span
+                key={tag}
+                className={`todo-tag ${isUrgent ? 'urgent' : ''}`}
+                style={isUrgent ? undefined : { background: color.bg, color: color.fg }}
+              >
+                #{tag}
+              </span>
+            );
+          })}
           {hiddenCount > 0 && (
             <span
               className="todo-tag tag-expander"
