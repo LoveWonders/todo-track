@@ -4,6 +4,12 @@ import CompleteDateModal from './CompleteDateModal';
 import ProgressManageBar from './ProgressManageBar';
 import ProgressDefaultBar from './ProgressDefaultBar';
 
+const LONG_TEXT_THRESHOLD = 20;
+
+function isLongProgressText(text) {
+  return String(text).length > LONG_TEXT_THRESHOLD;
+}
+
 export default function ProgressLog({ progress, todoId, collapsed }) {
   const { toggleProgressStatus, deleteProgress, addProgress, updateProgress, updateProgressCompletedAt, setFabHidden } = useTodoActions();
   const { batchMode } = useTodoView();
@@ -160,7 +166,7 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
         <div className="progress-active-row">
           {activeProgress.map(p => (
             <div key={p.id}
-              className={`progress-entry active progress-card ${manageMode ? 'progress-manage' : 'progress-clickable'} ${selectedPIds.has(p.id) ? 'progress-selected' : ''}`}
+              className={`progress-entry active progress-card ${isLongProgressText(p.text) ? 'progress-long' : 'progress-short'} ${manageMode ? 'progress-manage' : 'progress-clickable'} ${selectedPIds.has(p.id) ? 'progress-selected' : ''}`}
               onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenEdit(p)}>
               {!inBatch && !manageMode && (
                 <span className="progress-actions">

@@ -1657,6 +1657,18 @@ body {
   white-space: nowrap;
 }
 
+/* 长文本进度卡片：占满整行并完整换行显示 */
+.progress-active-row .progress-entry.active.progress-long {
+  flex: 1 1 100%;
+}
+
+.progress-active-row .progress-entry.active.progress-long .progress-text {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  word-break: break-word;
+}
+
 /* ---------- Batch Mode ---------- */
 .todo-item.batch-mode {
   cursor: pointer;
