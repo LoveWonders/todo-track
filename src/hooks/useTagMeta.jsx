@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { loadTagMeta, saveTagMeta } from '../utils/tagMeta';
+import { loadTagMeta, saveTagMeta, isSafeTagName } from '../utils/tagMeta';
 
 const TagMetaContext = createContext(null);
 
@@ -11,6 +11,7 @@ export function TagMetaProvider({ children }) {
   }, [tagMeta]);
 
   const setTagColor = useCallback((tag, color) => {
+    if (!isSafeTagName(tag)) return;
     setTagMeta(prev => ({
       ...prev,
       [tag]: { ...(prev[tag] || {}), ...color },
@@ -18,6 +19,7 @@ export function TagMetaProvider({ children }) {
   }, []);
 
   const removeTagMeta = useCallback((tag) => {
+    if (!isSafeTagName(tag)) return;
     setTagMeta(prev => {
       const next = { ...prev };
       delete next[tag];
@@ -26,6 +28,7 @@ export function TagMetaProvider({ children }) {
   }, []);
 
   const renameTagMeta = useCallback((oldName, newName) => {
+    if (!isSafeTagName(oldName) || !isSafeTagName(newName)) return;
     setTagMeta(prev => {
       const next = { ...prev };
       const entry = next[oldName];

@@ -13,6 +13,12 @@ export const TAG_COLOR_PALETTE = [
 
 const TAG_META_KEY = 'todo_tag_meta';
 
+export const RESERVED_TAG_NAMES = new Set(['__proto__', 'constructor', 'prototype']);
+
+export function isSafeTagName(tag) {
+  return typeof tag === 'string' && !RESERVED_TAG_NAMES.has(tag);
+}
+
 export function hashTag(str) {
   let h = 0;
   for (let i = 0; i < str.length; i++) {

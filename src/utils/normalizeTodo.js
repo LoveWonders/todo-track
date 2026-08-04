@@ -1,3 +1,5 @@
+import { isSafeTagName } from './tagMeta';
+
 const VALID_STATUSES = ['active', 'completed', 'cancelled'];
 const VALID_PIN_STATUSES = ['top', 'bottom', null];
 const MAX_TITLE_LEN = 500;
@@ -33,7 +35,7 @@ export function normalizeImportedTodo(t) {
     startDate: validIsoOrNull(t.startDate),
     dueDate: validIsoOrNull(t.dueDate),
     tags: Array.isArray(t.tags)
-      ? [...new Set(t.tags.filter(x => typeof x === 'string').slice(0, MAX_TAGS))]
+      ? [...new Set(t.tags.filter(x => typeof x === 'string' && isSafeTagName(x)).slice(0, MAX_TAGS))]
       : [],
     progress: Array.isArray(t.progress) ? t.progress.map(normalizeProgress).filter(Boolean).slice(0, MAX_PROGRESS) : [],
     status: VALID_STATUSES.includes(t.status) ? t.status : 'active',

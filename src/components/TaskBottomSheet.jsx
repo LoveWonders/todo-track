@@ -4,6 +4,7 @@ import { useSmartInput } from '../hooks/useSmartInput';
 import { useTagLogic } from '../hooks/useTagLogic';
 import { URGENT_TAG } from '../constants';
 import { useSettings } from '../hooks/useSettings';
+import { isSafeTagName } from '../utils/tagMeta';
 
 const DEFAULT_PRESET_TAGS = ['工作', '长期', '个人'];
 const PRESET_TAGS_STORAGE_KEY = 'todo_preset_tags';
@@ -92,7 +93,7 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
   const handleSaveEditTag = useCallback(() => {
     if (editingTagIndex < 0) return;
     const trimmed = editText.trim();
-    if (trimmed) {
+    if (trimmed && isSafeTagName(trimmed)) {
       setPresetTags(prev => {
         if (!Array.isArray(prev) || editingTagIndex >= prev.length) return prev;
         const updated = [...prev];
@@ -116,7 +117,9 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
 
   const handleAddTag = useCallback(() => {
     const trimmed = newTagText.trim();
-    if (trimmed && !presetTags.includes(trimmed)) {
+    if (!trimmed) return;
+    if (!isSafeTagName(trimmed)) { setNewTagText(''); return; }
+    if (!presetTags.includes(trimmed)) {
       setPresetTags(prev => [...prev, trimmed]);
       setNewTagText('');
     }

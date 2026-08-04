@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { TAG_COLOR_PALETTE, getTagColor, findDuplicateGroups } from '../utils/tagMeta';
+import { TAG_COLOR_PALETTE, getTagColor, findDuplicateGroups, isSafeTagName } from '../utils/tagMeta';
 import { useTagMeta } from '../hooks/useTagMeta';
 
 export default function TagManager({ todos, onClose, onRenameTag, onDeleteTag, onMergeTag }) {
@@ -54,6 +54,10 @@ export default function TagManager({ todos, onClose, onRenameTag, onDeleteTag, o
   const handleSaveRename = () => {
     const newName = editingName.trim();
     if (!newName || newName === editingTag) { closeEdit(); return; }
+    if (!isSafeTagName(newName)) {
+      setRenameError('该标签名不可用');
+      return;
+    }
     if (definedTags.some(t => t !== editingTag && t === newName)) {
       setRenameError('该标签已存在');
       return;
@@ -90,6 +94,7 @@ export default function TagManager({ todos, onClose, onRenameTag, onDeleteTag, o
   const handleSaveCreate = () => {
     const name = createName.trim();
     if (!name) { setCreateError('请输入标签名称'); return; }
+    if (!isSafeTagName(name)) { setCreateError('该标签名不可用'); return; }
     if (definedTags.includes(name)) { setCreateError('该标签已存在'); return; }
     setTagColor(name, createColor);
     setCreating(false);
