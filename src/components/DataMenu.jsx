@@ -218,9 +218,11 @@ export default function DataMenu({ todos, onImport, devMode, onToggleDev, onOpen
             <button className="data-menu-item" onClick={() => { setMenuOpen(false); onOpenSettings(); }}>
               设置
             </button>
-            <button className="data-menu-item" onClick={handleDevToggle}>
-              {devMode ? '关闭开发者模式' : '开发者测试模式'}
-            </button>
+            {!import.meta.env.PROD && (
+              <button className="data-menu-item" onClick={handleDevToggle}>
+                {devMode ? '关闭开发者模式' : '开发者测试模式'}
+              </button>
+            )}
             <button className="data-menu-item data-menu-item-danger" onClick={handleClearData}>
               清除本地缓存并重置
             </button>

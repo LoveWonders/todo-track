@@ -1,5 +1,5 @@
-import { getIsNative } from './storage';
 import { addLog } from './logger';
+import { normalizeImportedTodo } from './normalizeTodo';
 
 function getExportFilename() {
   const now = new Date();
@@ -36,7 +36,7 @@ export async function exportTodosNative(todos) {
     throw new Error('data 参数无效：空字符串');
   }
 
-  addLog('info', '开始导出', { filename, dataLength: json.length, preview: json.slice(0, 80) });
+  addLog('info', '开始导出', { filename, dataLength: json.length });
 
   try {
     const { DownloadPlugin } = await import('./downloadPlugin');
@@ -99,12 +99,11 @@ export function parseImportFile(file) {
           reject(new Error('文件格式错误：待办数据缺少 id 或 title 字段'));
           return;
         }
-        resolve(data);
+        resolve(data.map(normalizeImportedTodo).filter(Boolean));
       } catch (err) {
         addLog('error', 'JSON 解析失败', {
           filename: file.name,
           fileSize: file.size,
-          preview: raw.slice(0, 100),
           parseError: err.message,
         });
         reject(new Error('文件解析失败：不是有效的 JSON 格式'));

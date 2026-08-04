@@ -357,12 +357,14 @@ export default function App() {
         </div>
       )}
 
-      <PerformanceTester
-        todos={todos}
-        importTodos={importTodos}
-        deleteTodo={deleteTodo}
-        visible={devMode}
-      />
+      {!import.meta.env.PROD && (
+        <PerformanceTester
+          todos={todos}
+          importTodos={importTodos}
+          deleteTodo={deleteTodo}
+          visible={devMode}
+        />
+      )}
 
       {settingsOpen && (
         <SettingsModal

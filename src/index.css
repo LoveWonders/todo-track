@@ -2666,6 +2666,12 @@ body.compact-mode .todo-tag {
   height: 38px;
 }
 
+.modal-date-error {
+  font-size: 12px;
+  color: var(--danger);
+  margin-top: 6px;
+}
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;

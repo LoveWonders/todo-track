@@ -10,6 +10,7 @@ function todayStr() {
 
 export default function CompleteDateModal({ count, onConfirm, onCancel }) {
   const [dateVal, setDateVal] = useState(todayStr());
+  const [error, setError] = useState('');
   const dynamicInputRef = useRef(null);
 
   useEffect(() => {
@@ -24,6 +25,15 @@ export default function CompleteDateModal({ count, onConfirm, onCancel }) {
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) onCancel();
+  };
+
+  const handleConfirm = () => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+      setError('日期格式应为 YYYY-MM-DD');
+      return;
+    }
+    setError('');
+    onConfirm(dateVal);
   };
 
   const openCalendar = useCallback(() => {
@@ -79,15 +89,16 @@ export default function CompleteDateModal({ count, onConfirm, onCancel }) {
               type="text"
               className="modal-date-input"
               value={dateVal}
-              onChange={e => setDateVal(e.target.value)}
+              onChange={e => { setDateVal(e.target.value); setError(''); }}
               placeholder="YYYY-MM-DD"
             />
             <button type="button" className="calendar-btn" onClick={openCalendar} title="选择日期">&#x1F4C5;</button>
           </div>
+          {error && <p className="modal-date-error">{error}</p>}
         </div>
         <div className="modal-footer">
           <button className="btn-mini btn-mini-cancel" onClick={onCancel}>取消</button>
-          <button className="btn-mini btn-mini-save" onClick={() => onConfirm(dateVal)}>确认</button>
+          <button className="btn-mini btn-mini-save" onClick={handleConfirm}>确认</button>
         </div>
       </div>
     </div>

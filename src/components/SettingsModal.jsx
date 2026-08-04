@@ -7,13 +7,13 @@ const DEFAULT_TAG_NAMES = ['长期', '个人', '总结'];
 export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag, onMergeTag }) {
   const { settings, updateSetting } = useSettings();
   const [minute, setMinute] = useState(String(settings.defaultDueMinute));
-  const [presetTags, setPresetTags] = useState(settings.presetTags || DEFAULT_TAG_NAMES);
+  const [presetTags, setPresetTags] = useState(Array.isArray(settings.presetTags) ? settings.presetTags : DEFAULT_TAG_NAMES);
   const [newTag, setNewTag] = useState('');
   const [compactDraft, setCompactDraft] = useState(!!settings.compactMode);
   const [showTagManager, setShowTagManager] = useState(false);
 
   useEffect(() => {
-    if (settings.presetTags) setPresetTags(settings.presetTags);
+    if (Array.isArray(settings.presetTags)) setPresetTags(settings.presetTags);
   }, [settings.presetTags]);
 
   const handleSave = () => {

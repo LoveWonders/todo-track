@@ -1,8 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { loadData, saveData, migrateFromLocalStorage } from '../utils/storage';
 import { mergeAndArchive } from '../utils/autoArchive';
+import { normalizeImportedTodo } from '../utils/normalizeTodo';
 
 const MANUAL_SORT_KEY = 'todo_manual_sort';
+
+function toSafeIso(dateString) {
+  const d = new Date(String(dateString) + 'T12:00:00');
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
 
 export function useTodos() {
   const [todos, setTodos] = useState([]);
@@ -26,7 +33,7 @@ export function useTodos() {
       await migrateFromLocalStorage();
       const data = await loadData();
       if (cancelled) return;
-      const migrated = data.map(t => {
+      const migrated = data.map(normalizeImportedTodo).filter(Boolean).map(t => {
         let dueDate = t.dueDate;
         if (dueDate && /^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
           dueDate = dueDate + 'T23:59:59';
@@ -39,12 +46,6 @@ export function useTodos() {
           ...t,
           dueDate,
           startDate,
-          progress: t.progress || [],
-          tags: t.tags || [],
-          status: t.status || 'active',
-          pinStatus: t.pinStatus || null,
-          completedAt: t.completedAt || null,
-          createdAt: t.createdAt || new Date().toISOString(),
         };
       });
       const afterArchive = mergeAndArchive(migrated);
@@ -207,7 +208,8 @@ export function useTodos() {
   }, []);
 
   const updateProgressCompletedAt = useCallback((todoId, progressId, dateString) => {
-    const isoString = new Date(dateString + 'T12:00:00').toISOString();
+    const isoString = toSafeIso(dateString);
+    if (!isoString) return;
     setTodos(prev => prev.map(t =>
       t.id === todoId ? {
         ...t,
@@ -219,7 +221,8 @@ export function useTodos() {
   }, []);
 
   const updateCompletedAt = useCallback((id, dateString) => {
-    const isoString = new Date(dateString + 'T12:00:00').toISOString();
+    const isoString = toSafeIso(dateString);
+    if (!isoString) return;
     setTodos(prev => prev.map(t =>
       t.id === id ? { ...t, status: 'completed', completedAt: isoString } : t
     ));
@@ -228,12 +231,7 @@ export function useTodos() {
   const importTodos = useCallback((importData, strategy) => {
     setTodos(prev => {
       const existingIds = new Set(prev.map(t => t.id));
-      const normalized = importData.map(t => ({
-        ...t,
-        pinStatus: t.pinStatus || null,
-        progress: t.progress || [],
-        tags: t.tags || [],
-      }));
+      const normalized = importData.map(normalizeImportedTodo).filter(Boolean);
       let merged;
       if (strategy === 'overwrite') {
         const overwriteSet = new Set(normalized.filter(t => existingIds.has(t.id)).map(t => t.id));
