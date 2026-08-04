@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect, memo, useCallback } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { isOverdue } from '../utils/dateParser';
+import { getTaskTier } from '../utils/taskTier';
 import { URGENT_TAG } from '../constants';
 import { useTodoActions, useTodoView } from '../hooks/TodoContext';
 import Countdown from './Countdown';
@@ -8,26 +9,6 @@ import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
 import ProgressLog from './ProgressLog';
 import TodoDetail from './TodoDetail';
-
-function getTaskTier(todo) {
-  const now = new Date();
-  const threeDaysLater = new Date(now);
-  threeDaysLater.setDate(threeDaysLater.getDate() + 3);
-  const sevenDaysLater = new Date(now);
-  sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
-
-  const tags = todo.tags || [];
-  const isUrgent = tags.includes(URGENT_TAG);
-  const isLongTerm = tags.includes('长期');
-  const dueDate = todo.dueDate ? new Date(todo.dueDate) : null;
-  const isOverdueTask = dueDate && dueDate < now;
-  const isDueSoon = dueDate && dueDate <= threeDaysLater;
-  const isDueInWeek = dueDate && dueDate <= sevenDaysLater;
-
-  if (isUrgent || isOverdueTask || isDueSoon) return 1;
-  if (!isLongTerm && isDueInWeek) return 2;
-  return 3;
-}
 
 function getStatusClass(todo) {
   if (todo.status === 'completed') return 'completed';

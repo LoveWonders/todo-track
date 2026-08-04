@@ -1,4 +1,4 @@
-import { URGENT_TAG } from '../constants';
+import { getTaskTier } from './taskTier';
 
 const TOP = 'top';
 const BOTTOM = 'bottom';
@@ -19,10 +19,6 @@ export default function sortTodos(list, isManualMode) {
 
   if (!isManualMode) {
     const now = new Date();
-    const threeDaysLater = new Date(now);
-    threeDaysLater.setDate(threeDaysLater.getDate() + 3);
-    const sevenDaysLater = new Date(now);
-    sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
 
     const byDue = (a, b) => {
       const aDue = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
@@ -35,21 +31,10 @@ export default function sortTodos(list, isManualMode) {
     const tier3 = [];
 
     for (const t of normal) {
-      const tags = t.tags || [];
-      const isUrgent = tags.includes(URGENT_TAG);
-      const isLongTerm = tags.includes('长期');
-      const dueDate = t.dueDate ? new Date(t.dueDate) : null;
-      const isOverdueTask = dueDate && dueDate < now;
-      const isDueSoon = dueDate && dueDate <= threeDaysLater;
-      const isDueInWeek = dueDate && dueDate <= sevenDaysLater;
-
-      if (isUrgent || isOverdueTask || isDueSoon) {
-        tier1.push(t);
-      } else if (!isLongTerm && isDueInWeek) {
-        tier2.push(t);
-      } else {
-        tier3.push(t);
-      }
+      const tier = getTaskTier(t, now);
+      if (tier === 1) tier1.push(t);
+      else if (tier === 2) tier2.push(t);
+      else tier3.push(t);
     }
 
     tier1.sort(byDue);

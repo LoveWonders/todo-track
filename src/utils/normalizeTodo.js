@@ -5,17 +5,21 @@ const MAX_PROGRESS_TEXT_LEN = 2000;
 const MAX_TAGS = 20;
 const MAX_PROGRESS = 200;
 
+function validIsoOrNull(value) {
+  if (typeof value !== 'string') return null;
+  if (!isNaN(new Date(value).getTime())) return value;
+  return null;
+}
+
 function normalizeProgress(p, index) {
   if (!p || typeof p !== 'object') return null;
-  const createdAt = typeof p.createdAt === 'string' ? p.createdAt
-    : typeof p.time === 'string' ? p.time
-    : new Date().toISOString();
+  const createdAt = validIsoOrNull(p.createdAt) || validIsoOrNull(p.time) || new Date().toISOString();
   return {
     id: Number.isFinite(p.id) ? p.id : Date.now() + index,
     text: typeof p.text === 'string' ? p.text.slice(0, MAX_PROGRESS_TEXT_LEN) : '',
     createdAt,
     status: p.status === 'completed' ? 'completed' : p.status === 'cancelled' ? 'cancelled' : 'active',
-    completedAt: typeof p.completedAt === 'string' ? p.completedAt : null,
+    completedAt: validIsoOrNull(p.completedAt),
   };
 }
 
@@ -26,15 +30,15 @@ export function normalizeImportedTodo(t) {
   return {
     id,
     title: typeof t.title === 'string' ? t.title.slice(0, MAX_TITLE_LEN) : '',
-    startDate: typeof t.startDate === 'string' ? t.startDate : null,
-    dueDate: typeof t.dueDate === 'string' ? t.dueDate : null,
+    startDate: validIsoOrNull(t.startDate),
+    dueDate: validIsoOrNull(t.dueDate),
     tags: Array.isArray(t.tags)
       ? [...new Set(t.tags.filter(x => typeof x === 'string').slice(0, MAX_TAGS))]
       : [],
     progress: Array.isArray(t.progress) ? t.progress.map(normalizeProgress).filter(Boolean).slice(0, MAX_PROGRESS) : [],
     status: VALID_STATUSES.includes(t.status) ? t.status : 'active',
     pinStatus: VALID_PIN_STATUSES.includes(t.pinStatus) ? t.pinStatus : null,
-    completedAt: typeof t.completedAt === 'string' ? t.completedAt : null,
-    createdAt: typeof t.createdAt === 'string' ? t.createdAt : new Date().toISOString(),
+    completedAt: validIsoOrNull(t.completedAt),
+    createdAt: validIsoOrNull(t.createdAt) || new Date().toISOString(),
   };
 }

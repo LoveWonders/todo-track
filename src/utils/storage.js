@@ -1,4 +1,4 @@
-import { addLog } from './logger';
+import { addLog, clearLogs } from './logger';
 
 const STORAGE_KEY = 'todo_app_data';
 const FILE_NAME = 'todo_data.json';
@@ -204,6 +204,11 @@ export async function clearAllData() {
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem('todo_manual_sort');
   localStorage.removeItem('todo_tag_meta');
+  localStorage.removeItem('todo_app_settings');
+  localStorage.removeItem('todo_preset_tags');
+  localStorage.removeItem('todo_filter_slots');
+  localStorage.removeItem('todo_archive_data');
+  clearLogs();
   addLog('info', '[清除] localStorage 已清空');
 }
 
