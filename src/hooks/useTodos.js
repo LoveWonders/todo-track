@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { loadData, saveData, migrateFromLocalStorage } from '../utils/storage';
 import { mergeAndArchive } from '../utils/autoArchive';
 import { normalizeImportedTodo } from '../utils/normalizeTodo';
+import { removeProgressCollapsed } from '../utils/progressViewState';
 
 const MANUAL_SORT_KEY = 'todo_manual_sort';
 
@@ -97,6 +98,7 @@ export function useTodos() {
   }, []);
 
   const deleteTodo = useCallback((id) => {
+    removeProgressCollapsed(id);
     setTodos(prev => prev.filter(t => t.id !== id));
   }, []);
 

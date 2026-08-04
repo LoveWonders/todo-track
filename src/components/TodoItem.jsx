@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { isOverdue } from '../utils/dateParser';
 import { getTaskTier } from '../utils/taskTier';
+import { loadProgressCollapsed, saveProgressCollapsed } from '../utils/progressViewState';
 import { URGENT_TAG } from '../constants';
 import { useTodoActions, useTodoView } from '../hooks/TodoContext';
 import Countdown from './Countdown';
@@ -32,18 +33,18 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const [moreOpen, setMoreOpen] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({});
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(() => loadProgressCollapsed(todo.id));
   const dragRef = useRef(null);
 
   const canCollapse = !isArchive && todo.status === 'active';
   const progressArr = Array.isArray(todo.progress) ? todo.progress : [];
   const progressCount = progressArr.length;
 
-  const prevTodoIdRef = useRef(todo.id);
-  if (prevTodoIdRef.current !== todo.id) {
-    setCollapsed(true);
-    prevTodoIdRef.current = todo.id;
-  }
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    saveProgressCollapsed(todo.id, next);
+  };
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -238,7 +239,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
               {canCollapse && (
                 <button
                   className="btn-action expand"
-                  onClick={(e) => { e.stopPropagation(); setCollapsed(v => !v); }}
+                  onClick={(e) => { e.stopPropagation(); toggleCollapsed(); }}
                   title={collapsed ? '展开进度' : '收起进度'}
                 >
                   {collapsed ? '\u25BC' : '\u25B2'}
