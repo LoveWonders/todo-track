@@ -1,8 +1,6 @@
 import { DATE_PATTERNS, parseLocalDate } from './datePatterns';
 import * as chrono from 'chrono-node';
 
-const TAG_REGEX = /#(\S+)/g;
-
 const CN_DATE_ALIASES = {
   '年底': { month: 12, day: 31 },
   '年初': { month: 1, day: 1 },

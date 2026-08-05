@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { parseDateText } from '../utils/dateParser';
 
-export default function BatchBar({ count, total, onCancel, onDelete, onComplete, onCancelItems, onSetDate, onSetTags, onAddProgress, onOpenCompleteDateModal, onSelectAll, onInvertSelection }) {
+export default function BatchBar({ count, onCancel, onDelete, onComplete, onCancelItems, onSetDate, onSetTags, onAddProgress, onOpenCompleteDateModal, onSelectAll, onInvertSelection }) {
   const [activeAction, setActiveAction] = useState(null);
   const [inputText, setInputText] = useState('');
   const [dateText, setDateText] = useState('');

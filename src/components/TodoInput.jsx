@@ -3,7 +3,7 @@ import * as chrono from 'chrono-node';
 import { useSmartInput } from '../hooks/useSmartInput';
 import { useTagLogic } from '../hooks/useTagLogic';
 import { formatDateRange, formatDateOnly } from '../utils/dateParser';
-import { toISODateTime, extractDatePart, parseLocalDate } from '../utils/datePatterns';
+import { toISODateTime, parseLocalDate } from '../utils/datePatterns';
 import { URGENT_TAG } from '../constants';
 import { useSettings } from '../hooks/useSettings';
 
@@ -68,7 +68,11 @@ export default function TodoInput({ onAdd }) {
     const current = target === 'start' ? effectiveStart : effectiveEnd;
     input.value = current ? isoToDatetimeLocal(current) : '';
     requestAnimationFrame(() => {
-      typeof input.showPicker === 'function' ? input.showPicker() : input.focus();
+      if (typeof input.showPicker === 'function') {
+        input.showPicker();
+      } else {
+        input.focus();
+      }
     });
   }, [effectiveStart, effectiveEnd]);
 

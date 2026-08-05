@@ -56,7 +56,11 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
   const toggleSelect = useCallback((pid) => {
     setSelectedPIds(prev => {
       const next = new Set(prev);
-      next.has(pid) ? next.delete(pid) : next.add(pid);
+      if (next.has(pid)) {
+        next.delete(pid);
+      } else {
+        next.add(pid);
+      }
       return next;
     });
   }, []);

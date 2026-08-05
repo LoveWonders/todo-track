@@ -72,7 +72,11 @@ export default function DateEdit({ value, onSave, overdue, inBatch }) {
     input.addEventListener('blur', () => { setTimeout(cleanup, 200); }, { once: true });
 
     requestAnimationFrame(() => {
-      typeof input.showPicker === 'function' ? input.showPicker() : input.focus();
+      if (typeof input.showPicker === 'function') {
+        input.showPicker();
+      } else {
+        input.focus();
+      }
     });
   }, [value, onSave]);
 
