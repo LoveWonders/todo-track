@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { exportTodos, exportTodosNative, shareExportedFile, parseImportFile, findConflicts } from '../utils/exportImport';
-import { getIsNative, clearAllData } from '../utils/storage';
+import { getIsNative } from '../utils/storage';
 import LogViewer from './LogViewer';
 
 export default function DataMenu({ todos, onImport, devMode, onToggleDev, onOpenSettings }) {
@@ -9,7 +9,6 @@ export default function DataMenu({ todos, onImport, devMode, onToggleDev, onOpen
   const [pendingImport, setPendingImport] = useState(null);
   const [toast, setToast] = useState(null);
   const [logModal, setLogModal] = useState(false);
-  const [clearConfirm, setClearConfirm] = useState(false);
   const [devConfirm, setDevConfirm] = useState(false);
   const menuRef = useRef(null);
   const fileRef = useRef(null);
@@ -85,17 +84,6 @@ export default function DataMenu({ todos, onImport, devMode, onToggleDev, onOpen
     setLogModal(true);
   };
 
-  const handleClearData = () => {
-    setMenuOpen(false);
-    setClearConfirm(true);
-  };
-
-  const confirmClearData = async () => {
-    await clearAllData();
-    setClearConfirm(false);
-    window.location.reload();
-  };
-
   const handleDevToggle = () => {
     setMenuOpen(false);
     setDevConfirm(true);
@@ -136,9 +124,6 @@ export default function DataMenu({ todos, onImport, devMode, onToggleDev, onOpen
                 {devMode ? '关闭开发者模式' : '开发者测试模式'}
               </button>
             )}
-            <button className="data-menu-item data-menu-item-danger" onClick={handleClearData}>
-              清除本地缓存并重置
-            </button>
             <input
               ref={fileRef}
               type="file"
@@ -191,25 +176,6 @@ export default function DataMenu({ todos, onImport, devMode, onToggleDev, onOpen
               <button className="btn-mini btn-mini-cancel" onClick={() => setConflictModal(null)}>取消</button>
               <button className="btn-mini btn-mini-save" onClick={() => handleConflictResolve('skip')}>跳过重复</button>
               <button className="btn-mini btn-mini-save" onClick={() => handleConflictResolve('overwrite')} style={{ background: 'var(--warn)' }}>覆盖</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {clearConfirm && (
-        <div className="modal-overlay" onClick={() => setClearConfirm(false)}>
-          <div className="modal-card" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <span className="modal-title">危险操作</span>
-            </div>
-            <div className="modal-body">
-              <p className="modal-desc">
-                此操作将清空所有待办数据且无法恢复，是否继续？
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-mini btn-mini-cancel" onClick={() => setClearConfirm(false)}>取消</button>
-              <button className="btn-mini btn-mini-save" onClick={confirmClearData} style={{ background: 'var(--danger)' }}>确认清除</button>
             </div>
           </div>
         </div>
