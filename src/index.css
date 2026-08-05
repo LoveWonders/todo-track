@@ -2207,7 +2207,16 @@ body {
   color: var(--accent);
   font-size: var(--font-size);
   cursor: pointer;
-  transition: border-color 0.15s, opacity 0.15s;
+}
+
+.settings-version-copy {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+}
+
+.settings-link-row.copied,
+.settings-version-copy.copied {
+  color: var(--accent);
 }
 
 .settings-link-row:active {

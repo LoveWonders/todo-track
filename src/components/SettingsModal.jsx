@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSettings } from '../hooks/useSettings';
 import TagManager from './TagManager';
+import pkg from '../../package.json';
 
 const DEFAULT_TAG_NAMES = ['长期', '个人', '总结'];
+const APP_VERSION = pkg.version;
 
 export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag, onMergeTag }) {
   const { settings, updateSetting } = useSettings();
@@ -11,10 +13,32 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
   const [newTag, setNewTag] = useState('');
   const [compactDraft, setCompactDraft] = useState(!!settings.compactMode);
   const [showTagManager, setShowTagManager] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef(null);
 
   useEffect(() => {
     if (Array.isArray(settings.presetTags)) setPresetTags(settings.presetTags);
   }, [settings.presetTags]);
+
+  useEffect(() => () => clearTimeout(copyTimerRef.current), []);
+
+  const copyVersion = async () => {
+    const text = `v${APP_VERSION}`;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;top:-9999px;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopied(false), 1500);
+  };
 
   const handleSave = () => {
     const num = parseInt(minute, 10);
@@ -139,6 +163,23 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
               <span className="settings-row-label">每日晨报推送</span>
               <span className="settings-row-soon">即将推出</span>
             </div>
+          </div>
+
+          <div className="settings-section-title">关于</div>
+          <div className="settings-group">
+            <div className="settings-field">
+              <label className="settings-label">TodoTrack</label>
+              <p className="settings-desc">轻量待办管理工具，数据仅存储在本设备，不上传任何服务器。</p>
+            </div>
+            <button
+              className={`settings-link-row settings-version-row ${copied ? 'copied' : ''}`}
+              onClick={copyVersion}
+            >
+              <span>版本 v{APP_VERSION}</span>
+              <span className={`settings-version-copy ${copied ? 'copied' : ''}`}>
+                {copied ? '已复制' : '点击复制'}
+              </span>
+            </button>
           </div>
         </div>
 
