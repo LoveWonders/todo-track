@@ -7,7 +7,8 @@ let logs = [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      logs = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) logs = parsed;
     }
   } catch {
     logs = [];

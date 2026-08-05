@@ -15,7 +15,12 @@ const DEFAULT_SLOTS = [
 function loadSlots() {
   try {
     const raw = load(SLOTS_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(s => s && typeof s === 'object' && Array.isArray(s.tags));
+      }
+    }
   } catch { /* ignore */ }
   return DEFAULT_SLOTS;
 }

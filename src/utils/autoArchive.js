@@ -6,7 +6,8 @@ export function loadArchive() {
   try {
     const raw = storageLoad(ARCHIVE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }

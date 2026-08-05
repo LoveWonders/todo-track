@@ -36,7 +36,10 @@ export function getTagColor(tag, tagMeta) {
 export function loadTagMeta() {
   try {
     const raw = localStorage.getItem(TAG_META_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+    }
   } catch { /* ignore */ }
   return {};
 }

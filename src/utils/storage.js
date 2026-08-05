@@ -43,6 +43,10 @@ function loadFromLocalStorage() {
   }
 }
 
+function toArray(data) {
+  return Array.isArray(data) ? data : [];
+}
+
 function saveToLocalStorage(data) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -70,7 +74,7 @@ export async function loadData() {
     try {
       const data = JSON.parse(raw);
       addLog('info', '[加载] JSON 解析成功，获取到数据', { count: data.length });
-      return data;
+      return toArray(data);
     } catch (e) {
       addLog('error', '[加载] JSON 解析失败！原始内容前50个字符预览', {
         preview: raw.substring(0, 50),
@@ -97,7 +101,7 @@ export async function loadData() {
     try {
       const data = JSON.parse(lsRaw);
       addLog('info', '[加载] localStorage 回退成功', { count: data.length });
-      return data;
+      return toArray(data);
     } catch (pe) {
       addLog('error', '[加载] localStorage JSON 解析失败！原始内容前50个字符预览', {
         preview: lsRaw.substring(0, 50),
@@ -110,7 +114,7 @@ export async function loadData() {
   try {
     const data = JSON.parse(rawText);
     addLog('info', '[加载] JSON 解析成功，获取到数据', { count: data.length });
-    return data;
+    return toArray(data);
   } catch (e) {
     addLog('error', '[加载] JSON 解析失败！原始内容前50个字符预览', {
       preview: rawText.substring(0, 50),
@@ -125,7 +129,7 @@ export async function loadData() {
     try {
       const data = JSON.parse(lsRaw);
       addLog('info', '[加载] 解析 Filesystem 失败，回退 localStorage 成功', { count: data.length });
-      return data;
+      return toArray(data);
     } catch (pe) {
       addLog('error', '[加载] localStorage 也解析失败', { error: pe.message });
       return [];

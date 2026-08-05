@@ -11,7 +11,12 @@ const defaultSettings = {
 function loadSettings() {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw) return { ...defaultSettings, ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return { ...defaultSettings, ...parsed };
+      }
+    }
   } catch { /* ignore */ }
   return { ...defaultSettings };
 }
