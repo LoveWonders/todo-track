@@ -13,15 +13,27 @@ function validIsoOrNull(value) {
   return null;
 }
 
+function normalizeIso(value) {
+  if (typeof value !== 'string') return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) value = `${value}T00:00:00`;
+  return validIsoOrNull(value);
+}
+
+function normalizeDueIso(value) {
+  if (typeof value !== 'string') return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) value = `${value}T23:59:59`;
+  return validIsoOrNull(value);
+}
+
 function normalizeProgress(p, index) {
   if (!p || typeof p !== 'object') return null;
-  const createdAt = validIsoOrNull(p.createdAt) || validIsoOrNull(p.time) || new Date().toISOString();
+  const createdAt = normalizeIso(p.createdAt) || normalizeIso(p.time) || new Date().toISOString();
   return {
     id: Number.isFinite(p.id) ? p.id : Date.now() + index,
     text: typeof p.text === 'string' ? p.text.slice(0, MAX_PROGRESS_TEXT_LEN) : '',
     createdAt,
     status: p.status === 'completed' ? 'completed' : p.status === 'cancelled' ? 'cancelled' : 'active',
-    completedAt: validIsoOrNull(p.completedAt),
+    completedAt: normalizeIso(p.completedAt),
   };
 }
 
@@ -32,15 +44,15 @@ export function normalizeImportedTodo(t) {
   return {
     id,
     title: typeof t.title === 'string' ? t.title.slice(0, MAX_TITLE_LEN) : '',
-    startDate: validIsoOrNull(t.startDate),
-    dueDate: validIsoOrNull(t.dueDate),
+    startDate: normalizeDueIso(t.startDate),
+    dueDate: normalizeDueIso(t.dueDate),
     tags: Array.isArray(t.tags)
       ? [...new Set(t.tags.filter(x => typeof x === 'string' && isSafeTagName(x)).slice(0, MAX_TAGS))]
       : [],
     progress: Array.isArray(t.progress) ? t.progress.map(normalizeProgress).filter(Boolean).slice(0, MAX_PROGRESS) : [],
     status: VALID_STATUSES.includes(t.status) ? t.status : 'active',
     pinStatus: VALID_PIN_STATUSES.includes(t.pinStatus) ? t.pinStatus : null,
-    completedAt: validIsoOrNull(t.completedAt),
-    createdAt: validIsoOrNull(t.createdAt) || new Date().toISOString(),
+    completedAt: normalizeIso(t.completedAt),
+    createdAt: normalizeIso(t.createdAt) || new Date().toISOString(),
   };
 }
