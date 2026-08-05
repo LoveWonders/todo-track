@@ -2,8 +2,18 @@ const MAX_LOGS = 200;
 const STORAGE_KEY = 'todotrack_debug_logs';
 
 let logs = [];
+let autoTrim = true;
 
 (function init() {
+  try {
+    const settingsRaw = localStorage.getItem('todo_app_settings');
+    if (settingsRaw) {
+      const settings = JSON.parse(settingsRaw);
+      if (settings && typeof settings === 'object') {
+        autoTrim = settings.autoClearLogs !== false;
+      }
+    }
+  } catch { /* keep default */ }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -14,6 +24,10 @@ let logs = [];
     logs = [];
   }
 })();
+
+export function setAutoTrim(enabled) {
+  autoTrim = !!enabled;
+}
 
 function persist() {
   try {
@@ -30,7 +44,7 @@ export function addLog(type, message, detail) {
     detail: detail !== undefined ? detail : null,
   };
   logs.unshift(entry);
-  if (logs.length > MAX_LOGS) {
+  if (autoTrim && logs.length > MAX_LOGS) {
     logs.length = MAX_LOGS;
   }
   persist();

@@ -5,6 +5,18 @@ import { normalizeImportedTodo } from '../utils/normalizeTodo';
 import { removeProgressCollapsed } from '../utils/progressViewState';
 
 const MANUAL_SORT_KEY = 'todo_manual_sort';
+const SETTINGS_KEY = 'todo_app_settings';
+
+function autoArchiveEnabled() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) {
+      const settings = JSON.parse(raw);
+      if (settings && typeof settings === 'object') return settings.autoArchive !== false;
+    }
+  } catch { /* ignore */ }
+  return true;
+}
 
 function toSafeIso(dateString) {
   const d = new Date(String(dateString) + 'T12:00:00');
@@ -49,7 +61,7 @@ export function useTodos() {
           startDate,
         };
       });
-      const afterArchive = mergeAndArchive(migrated);
+      const afterArchive = autoArchiveEnabled() ? mergeAndArchive(migrated) : migrated;
       if (afterArchive.length > 0) {
         todoIdRef.current = Math.max(...afterArchive.map(t => t.id), todoIdRef.current) + 1;
         const maxProgressId = Math.max(...afterArchive.flatMap(t => (t.progress || []).map(p => p.id)), 0);

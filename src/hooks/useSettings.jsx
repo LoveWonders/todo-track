@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { setAutoTrim } from '../utils/logger';
 
 const SETTINGS_KEY = 'todo_app_settings';
 
@@ -6,6 +7,8 @@ const defaultSettings = {
   defaultDueMinute: 0,
   presetTags: undefined,
   compactMode: false,
+  autoArchive: true,
+  autoClearLogs: true,
 };
 
 function loadSettings() {
@@ -39,6 +42,10 @@ export function SettingsProvider({ children }) {
   useEffect(() => {
     document.body.classList.toggle('compact-mode', !!settings.compactMode);
   }, [settings.compactMode]);
+
+  useEffect(() => {
+    setAutoTrim(settings.autoClearLogs !== false);
+  }, [settings.autoClearLogs]);
 
   const updateSetting = useCallback((key, value) => {
     setSettings(prev => ({ ...prev, [key]: value }));

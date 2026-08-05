@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useSettings } from '../hooks/useSettings';
 import TagManager from './TagManager';
 import pkg from '../../package.json';
+import { clearAllData } from '../utils/storage';
+import { checkDataIntegrity } from '../utils/dataIntegrity';
 
 const DEFAULT_TAG_NAMES = ['长期', '个人', '总结'];
 const APP_VERSION = pkg.version;
@@ -12,8 +14,12 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
   const [presetTags, setPresetTags] = useState(Array.isArray(settings.presetTags) ? settings.presetTags : DEFAULT_TAG_NAMES);
   const [newTag, setNewTag] = useState('');
   const [compactDraft, setCompactDraft] = useState(!!settings.compactMode);
+  const [autoArchiveDraft, setAutoArchiveDraft] = useState(settings.autoArchive !== false);
+  const [autoClearLogsDraft, setAutoClearLogsDraft] = useState(settings.autoClearLogs !== false);
   const [showTagManager, setShowTagManager] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [integrityReport, setIntegrityReport] = useState(null);
+  const [factoryResetConfirm, setFactoryResetConfirm] = useState(false);
   const copyTimerRef = useRef(null);
 
   useEffect(() => {
@@ -46,7 +52,19 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
     updateSetting('defaultDueMinute', num);
     updateSetting('presetTags', presetTags.filter(t => t.trim()));
     updateSetting('compactMode', compactDraft);
+    updateSetting('autoArchive', autoArchiveDraft);
+    updateSetting('autoClearLogs', autoClearLogsDraft);
     onClose();
+  };
+
+  const runIntegrityCheck = () => {
+    setIntegrityReport(checkDataIntegrity());
+  };
+
+  const confirmFactoryReset = async () => {
+    setFactoryResetConfirm(false);
+    await clearAllData();
+    window.location.reload();
   };
 
   const handleAddTag = () => {
@@ -165,6 +183,62 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
             </div>
           </div>
 
+          <div className="settings-section-title">数据安全</div>
+          <div className="settings-group">
+            <div className="settings-row">
+              <span className="settings-row-label">自动归档</span>
+              <div className="settings-segmented">
+                <button
+                  className={`settings-seg-item ${autoArchiveDraft ? 'active' : ''}`}
+                  onClick={() => setAutoArchiveDraft(true)}
+                >
+                  开启
+                </button>
+                <button
+                  className={`settings-seg-item ${!autoArchiveDraft ? 'active' : ''}`}
+                  onClick={() => setAutoArchiveDraft(false)}
+                >
+                  关闭
+                </button>
+              </div>
+            </div>
+            <p className="settings-desc">开启后，完成超过 30 天的待办在下次启动时自动移入归档。关闭则全部保留。</p>
+
+            <div className="settings-row">
+              <span className="settings-row-label">日志自动清理</span>
+              <div className="settings-segmented">
+                <button
+                  className={`settings-seg-item ${autoClearLogsDraft ? 'active' : ''}`}
+                  onClick={() => setAutoClearLogsDraft(true)}
+                >
+                  开启
+                </button>
+                <button
+                  className={`settings-seg-item ${!autoClearLogsDraft ? 'active' : ''}`}
+                  onClick={() => setAutoClearLogsDraft(false)}
+                >
+                  关闭
+                </button>
+              </div>
+            </div>
+            <p className="settings-desc">开启后调试日志最多保留 200 条，自动清理最旧记录。关闭则不限制数量。</p>
+          </div>
+
+          <div className="settings-section-title">数据管理</div>
+          <div className="settings-group">
+            <button className="settings-link-row" onClick={runIntegrityCheck}>
+              <span>检查数据完整性</span>
+              <span className="settings-link-arrow">&rsaquo;</span>
+            </button>
+            <button
+              className="settings-link-row settings-danger-row"
+              onClick={() => setFactoryResetConfirm(true)}
+            >
+              <span>恢复出厂设置</span>
+              <span className="settings-link-arrow">&rsaquo;</span>
+            </button>
+          </div>
+
           <div className="settings-section-title">关于</div>
           <div className="settings-group">
             <div className="settings-field">
@@ -196,6 +270,63 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
             onDeleteTag={onDeleteTag}
             onMergeTag={onMergeTag}
           />
+        )}
+
+        {integrityReport && (
+          <div className="modal-overlay" onClick={() => setIntegrityReport(null)}>
+            <div className="modal-card" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <span className="modal-title">数据完整性检查</span>
+              </div>
+              <div className="modal-body">
+                <p className="modal-desc">
+                  已检查：{integrityReport.checked['待办数据'] ?? 0} 条待办、
+                  {integrityReport.checked['归档数据'] ?? 0} 条归档、
+                  {integrityReport.checked['设置'] ?? 0} 份设置。
+                </p>
+                {integrityReport.problems.length === 0 ? (
+                  <p className="modal-desc">未发现异常，数据完整。</p>
+                ) : (
+                  <div className="integrity-list">
+                    {integrityReport.problems.map((p, i) => (
+                      <div key={i} className="integrity-item">
+                        <span className="integrity-item-title">
+                          {p.source}
+                          {p.title ? `：${p.title}` : ''}
+                          {p.id != null ? `（id:${p.id}）` : ''}
+                        </span>
+                        {p.issues.map((issue, j) => (
+                          <span key={j} className="integrity-item-issue">- {issue}</span>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button className="btn-mini btn-mini-save" onClick={() => setIntegrityReport(null)}>知道了</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {factoryResetConfirm && (
+          <div className="modal-overlay" onClick={() => setFactoryResetConfirm(false)}>
+            <div className="modal-card" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <span className="modal-title">恢复出厂设置</span>
+              </div>
+              <div className="modal-body">
+                <p className="modal-desc">
+                  此操作将清空全部待办、归档、标签设置与调试日志，且无法恢复。确定继续？
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button className="btn-mini btn-mini-cancel" onClick={() => setFactoryResetConfirm(false)}>取消</button>
+                <button className="btn-mini btn-mini-save" onClick={confirmFactoryReset} style={{ background: 'var(--danger)' }}>确认重置</button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
