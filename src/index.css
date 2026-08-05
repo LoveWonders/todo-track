@@ -174,7 +174,7 @@ body {
 }
 
 .toast-card {
-  background: var(--card-bg);
+  background: var(--card);
   border-radius: 12px;
   padding: 14px 20px;
   display: flex;
@@ -211,10 +211,9 @@ body {
 }
 
 .toast-msg-path {
-  font-size: 10px;
-  color: var(--text2);
+  font-size: 11px;
+  color: var(--text-secondary);
   word-break: break-all;
-  opacity: 0.7;
 }
 
 .toast-btn {
@@ -238,7 +237,7 @@ body {
   background: none;
   border: none;
   font-size: 20px;
-  color: var(--text2);
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 0 2px;
   line-height: 1;
@@ -2564,7 +2563,7 @@ body.compact-mode .todo-tag {
   background: none;
   border: none;
   font-size: 20px;
-  color: var(--text2);
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 0 4px;
   line-height: 1;
@@ -2645,7 +2644,7 @@ body.compact-mode .todo-tag {
 
 .log-ts {
   font-size: 11px;
-  color: var(--text2);
+  color: var(--text-secondary);
 }
 
 .log-msg {
