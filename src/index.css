@@ -2090,6 +2090,23 @@ body {
   background: var(--card);
 }
 
+.settings-time-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-time-input {
+  width: 88px;
+  text-align: center;
+}
+
+.settings-time-colon {
+  font-size: var(--font-size);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
 /* ---------- Settings Groups ---------- */
 .settings-scroll {
   max-height: 60vh;

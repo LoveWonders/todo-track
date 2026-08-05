@@ -5,6 +5,7 @@ import { useTagLogic } from '../hooks/useTagLogic';
 import { URGENT_TAG } from '../constants';
 import { useSettings } from '../hooks/useSettings';
 import { isSafeTagName } from '../utils/tagMeta';
+import { makeDefaultDueDate } from '../utils/defaultDue';
 
 const DEFAULT_PRESET_TAGS = ['工作', '长期', '个人'];
 const PRESET_TAGS_STORAGE_KEY = 'todo_preset_tags';
@@ -146,7 +147,7 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
     const final = parsed.cleanContent.trim();
     let finalDueDate = pickedEnd;
     if (!finalDueDate) {
-      finalDueDate = makeDefaultDueDate(settings.defaultDueMinute);
+      finalDueDate = makeDefaultDueDate(settings.defaultDueHour, settings.defaultDueMinute);
     }
     const title = final || formatDateOnly(finalDueDate) || '待办';
     onAdd({ title, startDate: pickedStart, dueDate: finalDueDate, tags: submittedTags });
@@ -154,7 +155,7 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
     clearTags();
     setIsUrgent(false);
     onClose();
-  }, [pickedStart, pickedEnd, submittedTags, parsed, onAdd, clearSmart, clearTags, settings.defaultDueMinute, onClose]);
+  }, [pickedStart, pickedEnd, submittedTags, parsed, onAdd, clearSmart, clearTags, settings.defaultDueHour, settings.defaultDueMinute, onClose]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -305,15 +306,4 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
       </div>
     </>
   );
-}
-
-function makeDefaultDueDate(defaultDueMinute) {
-  const now = new Date();
-  now.setHours(21, defaultDueMinute, 0, 0);
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  const hh = String(now.getHours()).padStart(2, '0');
-  const mi = String(now.getMinutes()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}T${hh}:${mi}:00`;
 }

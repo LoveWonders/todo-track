@@ -4,6 +4,7 @@ import { useSmartInput } from '../hooks/useSmartInput';
 import { useTagLogic } from '../hooks/useTagLogic';
 import { formatDateRange, formatDateOnly } from '../utils/dateParser';
 import { toISODateTime, parseLocalDate } from '../utils/datePatterns';
+import { makeDefaultDueDate } from '../utils/defaultDue';
 import { URGENT_TAG } from '../constants';
 import { useSettings } from '../hooks/useSettings';
 
@@ -32,12 +33,6 @@ function tryParseDateText(text) {
 function isoToDatetimeLocal(iso) {
   if (!iso) return '';
   return iso.length >= 16 ? iso.slice(0, 16) : iso.slice(0, 10);
-}
-
-function makeDefaultDueDate(defaultDueMinute) {
-  const now = new Date();
-  now.setHours(21, defaultDueMinute, 0, 0);
-  return toISODateTime(now);
 }
 
 export default function TodoInput({ onAdd }) {
@@ -115,7 +110,7 @@ export default function TodoInput({ onAdd }) {
 
     let finalDueDate = effectiveEnd;
     if (!finalDueDate) {
-      finalDueDate = makeDefaultDueDate(settings.defaultDueMinute);
+      finalDueDate = makeDefaultDueDate(settings.defaultDueHour, settings.defaultDueMinute);
     }
 
     const title = final || formatDateRange(null, finalDueDate) || '待办';
@@ -126,7 +121,7 @@ export default function TodoInput({ onAdd }) {
     setIsUrgent(false);
     setPickedStart(null);
     setPickedEnd(null);
-  }, [canSubmit, parsed, effectiveStart, effectiveEnd, submittedTags, onAdd, clearSmart, clearTags, settings.defaultDueMinute]);
+  }, [canSubmit, parsed, effectiveStart, effectiveEnd, submittedTags, onAdd, clearSmart, clearTags, settings.defaultDueHour, settings.defaultDueMinute]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
