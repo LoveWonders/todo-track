@@ -39,6 +39,8 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const canCollapse = !isArchive && todo.status === 'active';
   const progressArr = Array.isArray(todo.progress) ? todo.progress : [];
   const progressCount = progressArr.length;
+  const completedCount = progressArr.filter(p => p.status === 'completed').length;
+  const progressAllDone = progressCount > 0 && completedCount === progressCount;
 
   const toggleCollapsed = () => {
     const next = !collapsed;
@@ -194,6 +196,18 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
             >
               {todo.title || '待办内容'}
             </span>
+            {progressCount > 0 && (
+              <span
+                className={`progress-badge ${progressAllDone ? 'all-done' : ''}`}
+                title={progressAllDone ? '全部子项已完成，点击完成待办' : `子项进度 ${completedCount}/${progressCount}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (progressAllDone) toggleStatus(todo.id, 'completed');
+                }}
+              >
+                {completedCount}/{progressCount}
+              </span>
+            )}
             {devRenderLabel != null && !isDragging && (
               <span className="render-counter-badge" title={`渲染次数: ${devRenderLabel}`}>
                 {devRenderLabel}

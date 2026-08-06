@@ -11,7 +11,7 @@ function isLongProgressText(text) {
 }
 
 export default function ProgressLog({ progress, todoId, collapsed }) {
-  const { toggleProgressStatus, deleteProgress, addProgress, updateProgress, updateProgressCompletedAt, setFabHidden } = useTodoActions();
+  const { toggleProgressStatus, toggleStatus, deleteProgress, addProgress, updateProgress, updateProgressCompletedAt, setFabHidden } = useTodoActions();
   const { batchMode } = useTodoView();
   
   // 状态定义
@@ -106,6 +106,21 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
     return { activeProgress: active, archivedProgress: archived };
   }, [items]);
 
+  const completedCount = items.filter(p => p.status === 'completed').length;
+  const allCompleted = progressCount > 0 && completedCount === progressCount;
+  const summaryPct = progressCount > 0 ? Math.round((completedCount / progressCount) * 100) : 0;
+
+  const sortedArchived = useMemo(() => {
+    const completed = [];
+    const cancelled = [];
+    for (const p of archivedProgress) {
+      (p.status === 'completed' ? completed : cancelled).push(p);
+    }
+    const ts = p => new Date(p.completedAt ?? p.createdAt ?? p.time ?? 0).getTime();
+    completed.sort((a, b) => ts(b) - ts(a));
+    return [...completed, ...cancelled];
+  }, [archivedProgress]);
+
   // 安全渲染：折叠时不渲染
   if (collapsed) {
     return null;
@@ -166,6 +181,24 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
   // 安全渲染：有进度时显示列表
   return (
     <div className="progress-section" onClick={inBatch ? e => e.stopPropagation() : undefined}>
+      {!inBatch && progressCount > 0 && (
+        <div className={`progress-summary ${allCompleted ? 'all-done' : ''}`}>
+          <span className="progress-summary-text">已完成 {completedCount}/{progressCount}</span>
+          <div className="progress-summary-bar">
+            <div className="progress-summary-fill" style={{ width: `${summaryPct}%` }} />
+          </div>
+          {allCompleted && (
+            <button
+              className="btn-mini btn-mini-save progress-finish-btn"
+              onClick={(e) => { e.stopPropagation(); toggleStatus(todoId, 'completed'); }}
+              title="全部子项已完成，一键完成待办"
+            >
+              完成待办
+            </button>
+          )}
+        </div>
+      )}
+
       {activeProgress.length > 0 && (
         <div className="progress-active-row">
           {activeProgress.map(p => (
@@ -220,7 +253,7 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
           </div>
           {showArchived && (
             <div className="progress-log archived">
-              {archivedProgress.map(p => (
+              {sortedArchived.map(p => (
                 <div key={p.id}
                   className={`progress-entry ${p.status} ${manageMode ? 'progress-manage' : 'progress-clickable'} ${selectedPIds.has(p.id) ? 'progress-selected' : ''}`}
                   onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenEdit(p)}>
@@ -235,7 +268,7 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
                     </span>
                   )}
                   <span className="progress-status-tag">{p.status === 'completed' ? '已完成' : '已作废'}</span>
-                  <span className="progress-date">{new Date(p.createdAt ?? p.time).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span>
+                  <span className="progress-date">{new Date(p.completedAt ?? p.createdAt ?? p.time).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span>
                   {String(p.text)}
                 </div>
               ))}

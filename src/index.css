@@ -1110,6 +1110,71 @@ body {
   border-top: 1px solid var(--border);
 }
 
+.progress-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.progress-summary-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.progress-summary-bar {
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.progress-summary-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.progress-summary.all-done .progress-summary-fill {
+  background: var(--success);
+}
+
+.progress-summary.all-done .progress-summary-text {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.progress-finish-btn {
+  flex-shrink: 0;
+}
+
+.progress-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: rgba(52, 152, 219, 0.1);
+  color: var(--accent);
+  margin-left: 6px;
+  vertical-align: middle;
+  cursor: default;
+}
+
+.progress-badge.all-done {
+  background: rgba(46, 204, 113, 0.15);
+  color: var(--success);
+  cursor: pointer;
+}
+
+.progress-badge.all-done:active {
+  opacity: 0.7;
+}
+
 .progress-entry {
   display: flex;
   align-items: center;
