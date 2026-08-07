@@ -3118,6 +3118,40 @@ body.compact-mode .todo-tag {
   transform: scale(0.97);
 }
 
+.autosave-toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10001;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  animation: autosave-pop 0.2s ease-out;
+  pointer-events: none;
+}
+
+@keyframes autosave-pop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.detail-toggle:active {
+  transform: scale(0.92);
+}
+
+.repeat-opt:active {
+  transform: scale(0.94);
+}
+
 .detail-title-edit {
   display: flex;
   gap: 6px;

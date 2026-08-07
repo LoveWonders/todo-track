@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatDateTime, isOverdue } from '../utils/dateParser';
 import { URGENT_TAG } from '../constants';
 import { CYCLE_LABELS } from '../utils/repeat';
@@ -13,6 +13,20 @@ export default function TodoDetail({ todo, onClose }) {
   const [editTitle, setEditTitle] = useState(false);
   const [title, setTitle] = useState(todo.title);
   const [showPinActions, setShowPinActions] = useState(false);
+  const [autoSaved, setAutoSaved] = useState(false);
+  const autoSaveTimerRef = useRef(null);
+
+  const triggerAutoSave = useCallback(() => {
+    setAutoSaved(true);
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => setAutoSaved(false), 1500);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     setFabHidden(true);
@@ -22,6 +36,7 @@ export default function TodoDetail({ todo, onClose }) {
   const handleSaveTitle = () => {
     const trimmed = title.trim();
     if (trimmed && trimmed !== todo.title) updateTodo(todo.id, { title: trimmed });
+    triggerAutoSave();
     setEditTitle(false);
   };
 
@@ -33,6 +48,11 @@ export default function TodoDetail({ todo, onClose }) {
 
   return (
     <div className="modal-full-overlay" onClick={onClose}>
+      {autoSaved && (
+        <div className="autosave-toast">
+          <span>已自动保存</span>
+        </div>
+      )}
       <div className="modal-full-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
         <div className="modal-full-header">
           <span className="modal-full-title">待办详情</span>
@@ -68,7 +88,7 @@ export default function TodoDetail({ todo, onClose }) {
                   <div className={`detail-pin-actions ${showPinActions ? 'visible' : ''}`}>
                     <button
                       className={`pin-btn ${todo.pinStatus === 'top' ? 'active' : ''}`}
-                      onClick={(e) => { e.stopPropagation(); setPinStatus(todo.id, todo.pinStatus === 'top' ? null : 'top'); }}
+                      onClick={(e) => { e.stopPropagation(); setPinStatus(todo.id, todo.pinStatus === 'top' ? null : 'top'); triggerAutoSave(); }}
                       title={todo.pinStatus === 'top' ? '取消置顶' : '置顶'}
                     >
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
@@ -77,7 +97,7 @@ export default function TodoDetail({ todo, onClose }) {
                     </button>
                     <button
                       className={`pin-btn ${todo.pinStatus === 'bottom' ? 'active' : ''}`}
-                      onClick={(e) => { e.stopPropagation(); setPinStatus(todo.id, todo.pinStatus === 'bottom' ? null : 'bottom'); }}
+                      onClick={(e) => { e.stopPropagation(); setPinStatus(todo.id, todo.pinStatus === 'bottom' ? null : 'bottom'); triggerAutoSave(); }}
                       title={todo.pinStatus === 'bottom' ? '取消置底' : '置底'}
                     >
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
@@ -108,7 +128,7 @@ export default function TodoDetail({ todo, onClose }) {
               <span className="detail-value" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <DateEdit
                   value={todo.dueDate}
-                  onSave={(val) => updateTodo(todo.id, { dueDate: val })}
+                  onSave={(val) => { updateTodo(todo.id, { dueDate: val }); triggerAutoSave(); }}
                   overdue={isOverdue(todo.dueDate)}
                 />
                 {todo.dueDate && <Countdown dueDate={todo.dueDate} />}
@@ -120,7 +140,7 @@ export default function TodoDetail({ todo, onClose }) {
               <span className="detail-value">
                 <TagsEdit
                   tags={todo.tags}
-                  onSave={(tags) => updateTodo(todo.id, { tags })}
+                  onSave={(tags) => { updateTodo(todo.id, { tags }); triggerAutoSave(); }}
                 />
               </span>
             </div>
@@ -130,7 +150,7 @@ export default function TodoDetail({ todo, onClose }) {
               <span className="detail-value">
                 <span
                   className={`detail-toggle ${todo.checklistMode ? 'on' : ''}`}
-                  onClick={() => updateTodo(todo.id, { checklistMode: !todo.checklistMode })}
+                  onClick={() => { updateTodo(todo.id, { checklistMode: !todo.checklistMode }); triggerAutoSave(); }}
                   role="switch"
                   aria-checked={!!todo.checklistMode}
                 >
@@ -150,7 +170,7 @@ export default function TodoDetail({ todo, onClose }) {
                     <button
                       key={rule}
                       className={`repeat-opt ${todo.repeatRule === rule ? 'active' : ''}`}
-                      onClick={() => setRepeatRule(todo.id, todo.repeatRule === rule ? null : rule)}
+                      onClick={() => { setRepeatRule(todo.id, todo.repeatRule === rule ? null : rule); triggerAutoSave(); }}
                     >
                       {CYCLE_LABELS[rule]}
                     </button>
