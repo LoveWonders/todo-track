@@ -12,6 +12,7 @@ export default function TodoDetail({ todo, onClose }) {
   const { updateTodo, toggleStatus, completeTodo, setRepeatRule, setPinStatus, setFabHidden } = useTodoActions();
   const [editTitle, setEditTitle] = useState(false);
   const [title, setTitle] = useState(todo.title);
+  const [showPinActions, setShowPinActions] = useState(false);
 
   useEffect(() => {
     setFabHidden(true);
@@ -40,25 +41,53 @@ export default function TodoDetail({ todo, onClose }) {
 
         <div className="modal-full-body" style={{ padding: '12px 16px' }}>
           <div className="detail-section">
-            {editTitle ? (
-              <div className="detail-title-edit">
-                <input
-                  className="detail-title-input"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleSaveTitle(); }}
-                  autoFocus
-                />
-                <button className="btn-mini btn-mini-save" onClick={handleSaveTitle}>保存</button>
-              </div>
-            ) : (
-              <div
-                className="detail-title"
-                onClick={() => { setEditTitle(true); setTitle(todo.title); }}
-              >
-                {todo.title || '待办内容'}
-              </div>
-            )}
+            <div
+              className="detail-title-area"
+              onMouseEnter={() => setShowPinActions(true)}
+              onMouseLeave={() => setShowPinActions(false)}
+            >
+              {editTitle ? (
+                <div className="detail-title-edit">
+                  <input
+                    className="detail-title-input"
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSaveTitle(); }}
+                    autoFocus
+                  />
+                  <button className="btn-mini btn-mini-save" onClick={handleSaveTitle}>保存</button>
+                </div>
+              ) : (
+                <div className="detail-title-row">
+                  <div
+                    className="detail-title"
+                    onClick={() => { setEditTitle(true); setTitle(todo.title); }}
+                  >
+                    {todo.title || '待办内容'}
+                  </div>
+                  <div className={`detail-pin-actions ${showPinActions ? 'visible' : ''}`}>
+                    <button
+                      className={`pin-btn ${todo.pinStatus === 'top' ? 'active' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); setPinStatus(todo.id, todo.pinStatus === 'top' ? null : 'top'); }}
+                      title={todo.pinStatus === 'top' ? '取消置顶' : '置顶'}
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+                        <path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z" />
+                      </svg>
+                    </button>
+                    <button
+                      className={`pin-btn ${todo.pinStatus === 'bottom' ? 'active' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); setPinStatus(todo.id, todo.pinStatus === 'bottom' ? null : 'bottom'); }}
+                      title={todo.pinStatus === 'bottom' ? '取消置底' : '置底'}
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+                        <path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="detail-grid">
@@ -147,32 +176,21 @@ export default function TodoDetail({ todo, onClose }) {
           </div>
         </div>
 
-        <div className="modal-full-footer" style={{ justifyContent: 'space-between', padding: '10px 16px' }}>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {todo.status === 'active' && (
-              <>
-                <button className="btn-mini btn-mini-save" onClick={() => { completeTodo(todo.id); onClose(); }}>
-                  完成
-                </button>
-                <button className="btn-mini btn-mini-cancel" onClick={() => { toggleStatus(todo.id, 'cancelled'); onClose(); }}>
-                  作废
-                </button>
-              </>
-            )}
-            {todo.status !== 'active' && (
-              <button className="btn-mini btn-mini-save" onClick={() => { toggleStatus(todo.id, todo.status); onClose(); }}>
-                恢复
+        <div className="modal-full-footer" style={{ justifyContent: 'center', gap: 10, padding: '12px 16px' }}>
+          {todo.status === 'active' ? (
+            <>
+              <button className="btn-primary-lg" onClick={() => { completeTodo(todo.id); onClose(); }}>
+                标记完成
               </button>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button className="btn-mini btn-mini-cancel" onClick={() => { setPinStatus(todo.id, todo.pinStatus === 'top' ? null : 'top'); onClose(); }}>
-              {todo.pinStatus === 'top' ? '取消置顶' : '置顶'}
+              <button className="btn-danger-lg" onClick={() => { toggleStatus(todo.id, 'cancelled'); onClose(); }}>
+                作废
+              </button>
+            </>
+          ) : (
+            <button className="btn-primary-lg" onClick={() => { toggleStatus(todo.id, todo.status); onClose(); }}>
+              恢复
             </button>
-            <button className="btn-mini btn-mini-cancel" onClick={() => { setPinStatus(todo.id, todo.pinStatus === 'bottom' ? null : 'bottom'); onClose(); }}>
-              {todo.pinStatus === 'bottom' ? '取消置底' : '置底'}
-            </button>
-          </div>
+          )}
         </div>
       </div>
     </div>

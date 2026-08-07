@@ -3014,6 +3014,110 @@ body.compact-mode .todo-tag {
   border-radius: 4px;
 }
 
+.detail-title-area {
+  display: flex;
+  align-items: center;
+}
+
+.detail-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.detail-title-row .detail-title {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.detail-pin-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+  padding: 0 2px;
+}
+
+.detail-title-area:hover .detail-pin-actions,
+.detail-pin-actions.visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .detail-pin-actions {
+    opacity: 1;
+  }
+}
+
+.pin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #bbb;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.pin-btn:hover {
+  background: var(--primary-light);
+  color: var(--accent);
+}
+
+.pin-btn:active {
+  transform: scale(0.9);
+}
+
+.pin-btn.active {
+  color: var(--accent);
+  background: var(--primary-light);
+}
+
+.btn-primary-lg {
+  min-width: 110px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-primary-lg:active {
+  opacity: 0.8;
+  transform: scale(0.97);
+}
+
+.btn-danger-lg {
+  min-width: 110px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 8px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-danger-lg:active {
+  opacity: 0.8;
+  transform: scale(0.97);
+}
+
 .detail-title-edit {
   display: flex;
   gap: 6px;
