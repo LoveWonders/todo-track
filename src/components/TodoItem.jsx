@@ -5,6 +5,7 @@ import { getTaskTier } from '../utils/taskTier';
 import { loadProgressCollapsed, saveProgressCollapsed } from '../utils/progressViewState';
 import { URGENT_TAG } from '../constants';
 import { useTodoActions, useTodoView } from '../hooks/TodoContext';
+import { CYCLE_LABELS } from '../utils/repeat';
 import Countdown from './Countdown';
 import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
@@ -19,7 +20,7 @@ function getStatusClass(todo) {
 }
 
 const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragListeners }) {
-  const { toggleStatus, updateTodo, handleBatchToggle, setPinStatus, setFabHidden } = useTodoActions();
+  const { toggleStatus, completeTodo, updateTodo, handleBatchToggle, setPinStatus, setFabHidden } = useTodoActions();
   const { batchMode, isArchive, devMode } = useTodoView();
   const statusClass = getStatusClass(todo);
   const tier = getTaskTier(todo);
@@ -41,6 +42,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const progressCount = progressArr.length;
   const completedCount = progressArr.filter(p => p.status === 'completed').length;
   const progressAllDone = progressCount > 0 && completedCount === progressCount;
+  const checklistMode = todo.checklistMode === true;
 
   const toggleCollapsed = () => {
     const next = !collapsed;
@@ -86,7 +88,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
   const handleComplete = (e) => {
     e.stopPropagation();
-    toggleStatus(todo.id, 'completed');
+    completeTodo(todo.id);
   };
 
   const handleCancel = (e) => {
@@ -196,13 +198,18 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
             >
               {todo.title || '待办内容'}
             </span>
-            {progressCount > 0 && (
+            {todo.repeatRule && (
+              <span className={`repeat-badge repeat-${todo.repeatRule}`}>
+                {CYCLE_LABELS[todo.repeatRule]}
+              </span>
+            )}
+            {checklistMode && progressCount > 0 && (
               <span
                 className={`progress-badge ${progressAllDone ? 'all-done' : ''}`}
                 title={progressAllDone ? '全部子项已完成，点击完成待办' : `子项进度 ${completedCount}/${progressCount}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (progressAllDone) toggleStatus(todo.id, 'completed');
+                  if (progressAllDone) completeTodo(todo.id);
                 }}
               >
                 {completedCount}/{progressCount}
@@ -274,7 +281,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
       </div>
 
       {!isArchive && todo.status === 'active' && canCollapse && !collapsed && (
-        <ProgressLog progress={todo.progress} todoId={todo.id} collapsed={collapsed} />
+        <ProgressLog progress={todo.progress} todoId={todo.id} collapsed={collapsed} checklistMode={checklistMode} />
       )}
 
       {isArchive && todo.progress && todo.progress.length > 0 && (

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { formatDateTime, isOverdue } from '../utils/dateParser';
 import { URGENT_TAG } from '../constants';
+import { CYCLE_LABELS } from '../utils/repeat';
 import Countdown from './Countdown';
 import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
@@ -8,7 +9,7 @@ import ProgressLog from './ProgressLog';
 import { useTodoActions } from '../hooks/TodoContext';
 
 export default function TodoDetail({ todo, onClose }) {
-  const { updateTodo, toggleStatus, setPinStatus, setFabHidden } = useTodoActions();
+  const { updateTodo, toggleStatus, completeTodo, setRepeatRule, setPinStatus, setFabHidden } = useTodoActions();
   const [editTitle, setEditTitle] = useState(false);
   const [title, setTitle] = useState(todo.title);
 
@@ -95,6 +96,43 @@ export default function TodoDetail({ todo, onClose }) {
               </span>
             </div>
 
+            <div className="detail-row">
+              <span className="detail-label">清单模式</span>
+              <span className="detail-value">
+                <span
+                  className={`detail-toggle ${todo.checklistMode ? 'on' : ''}`}
+                  onClick={() => updateTodo(todo.id, { checklistMode: !todo.checklistMode })}
+                  role="switch"
+                  aria-checked={!!todo.checklistMode}
+                >
+                  <span className="detail-toggle-knob" />
+                </span>
+                <span className="detail-toggle-hint">
+                  {todo.checklistMode ? '拆解勾选' : '流水账'}
+                </span>
+              </span>
+            </div>
+
+            <div className="detail-row">
+              <span className="detail-label">设为重复</span>
+              <span className="detail-value">
+                <div className="repeat-selector">
+                  {['daily', 'weekly', 'monthly'].map(rule => (
+                    <button
+                      key={rule}
+                      className={`repeat-opt ${todo.repeatRule === rule ? 'active' : ''}`}
+                      onClick={() => setRepeatRule(todo.id, todo.repeatRule === rule ? null : rule)}
+                    >
+                      {CYCLE_LABELS[rule]}
+                    </button>
+                  ))}
+                </div>
+                <span className="detail-toggle-hint">
+                  {todo.repeatRule ? `重复任务 · ${CYCLE_LABELS[todo.repeatRule]}` : '不重复'}
+                </span>
+              </span>
+            </div>
+
             {todo.tags.includes(URGENT_TAG) && (
               <div className="detail-row">
                 <span className="detail-label" />
@@ -105,7 +143,7 @@ export default function TodoDetail({ todo, onClose }) {
 
           <div className="detail-section" style={{ marginTop: 12 }}>
             <div className="detail-section-title">进度记录</div>
-            <ProgressLog progress={todo.progress} todoId={todo.id} />
+            <ProgressLog progress={todo.progress} todoId={todo.id} checklistMode={todo.checklistMode === true} />
           </div>
         </div>
 
@@ -113,7 +151,7 @@ export default function TodoDetail({ todo, onClose }) {
           <div style={{ display: 'flex', gap: 6 }}>
             {todo.status === 'active' && (
               <>
-                <button className="btn-mini btn-mini-save" onClick={() => { toggleStatus(todo.id, 'completed'); onClose(); }}>
+                <button className="btn-mini btn-mini-save" onClick={() => { completeTodo(todo.id); onClose(); }}>
                   完成
                 </button>
                 <button className="btn-mini btn-mini-cancel" onClick={() => { toggleStatus(todo.id, 'cancelled'); onClose(); }}>

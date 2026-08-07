@@ -3,6 +3,7 @@ import { loadData, saveData, migrateFromLocalStorage } from '../utils/storage';
 import { mergeAndArchive } from '../utils/autoArchive';
 import { normalizeImportedTodo } from '../utils/normalizeTodo';
 import { removeProgressCollapsed } from '../utils/progressViewState';
+import { getCycleKey, isRepeatRule } from '../utils/repeat';
 
 const MANUAL_SORT_KEY = 'todo_manual_sort';
 const SETTINGS_KEY = 'todo_app_settings';
@@ -22,6 +23,38 @@ function toSafeIso(dateString) {
   const d = new Date(String(dateString) + 'T12:00:00');
   if (isNaN(d.getTime())) return null;
   return d.toISOString();
+}
+
+function applyRepeatTick(list, now, allocateId) {
+  const nowIso = now.toISOString();
+  let mutated = false;
+  const next = list.map(t => {
+    if (t.status !== 'active' || !isRepeatRule(t.repeatRule)) return t;
+    const key = getCycleKey(t.repeatRule, now);
+    if (t.cycleKey === key) return t;
+    mutated = true;
+    if (!t.cycleKey) {
+      return { ...t, cycleKey: key };
+    }
+    let progress = (t.progress || []).map(p =>
+      p.status === 'active' ? { ...p, status: 'cancelled', completedAt: nowIso } : p
+    );
+    if (t.checklistMode) {
+      const templates = [...new Set(
+        progress.filter(p => p.status === 'completed' && p.kind !== 'cycle-done').map(p => p.text)
+      )];
+      if (templates.length > 0) {
+        progress = [...progress, ...templates.map(text => ({
+          id: allocateId(),
+          text,
+          createdAt: nowIso,
+          status: 'active',
+        }))];
+      }
+    }
+    return { ...t, cycleKey: key, progress };
+  });
+  return mutated ? next : list;
 }
 
 export function useTodos() {
@@ -67,7 +100,7 @@ export function useTodos() {
         const maxProgressId = Math.max(...afterArchive.flatMap(t => (t.progress || []).map(p => p.id)), 0);
         if (maxProgressId > 0) progressIdRef.current = maxProgressId + 1;
       }
-      setTodos(afterArchive);
+      setTodos(applyRepeatTick(afterArchive, new Date(), () => progressIdRef.current++));
       setLoaded(true);
     })();
     return () => { cancelled = true; };
@@ -99,6 +132,9 @@ export function useTodos() {
       pinStatus: null,
       createdAt: new Date().toISOString(),
       progress: [],
+      checklistMode: false,
+      repeatRule: null,
+      cycleKey: null,
     };
     setTodos(prev => [...prev, todo]);
   }, []);
@@ -163,6 +199,50 @@ export function useTodos() {
           : willBeRestored ? null
           : t.completedAt,
       };
+    }));
+  }, []);
+
+  const completeTodo = useCallback((id) => {
+    setTodos(prev => prev.map(t => {
+      if (t.id !== id) return t;
+      const now = new Date();
+      const nowIso = now.toISOString();
+      if (isRepeatRule(t.repeatRule)) {
+        const ws = getWindowStart(t.repeatRule, now);
+        const hasCycleDone = (t.progress || []).some(p =>
+          p.kind === 'cycle-done' && new Date(p.completedAt ?? p.createdAt).getTime() >= ws.getTime()
+        );
+        let progress = (t.progress || []).map(p =>
+          p.status === 'active' ? { ...p, status: 'completed', completedAt: nowIso } : p
+        );
+        if (!hasCycleDone) {
+          progress = [...progress, {
+            id: progressIdRef.current++,
+            text: '✓ 本期完成',
+            createdAt: nowIso,
+            status: 'completed',
+            completedAt: nowIso,
+            kind: 'cycle-done',
+          }];
+        }
+        return { ...t, status: 'active', completedAt: nowIso, progress };
+      }
+      const willBeArchived = t.status === 'active';
+      return {
+        ...t,
+        status: t.status === 'completed' ? 'active' : 'completed',
+        completedAt: willBeArchived ? nowIso : null,
+      };
+    }));
+  }, []);
+
+  const setRepeatRule = useCallback((id, rule) => {
+    setTodos(prev => prev.map(t => {
+      if (t.id !== id) return t;
+      if (!isRepeatRule(rule)) {
+        return { ...t, repeatRule: null, cycleKey: null };
+      }
+      return { ...t, repeatRule: rule, cycleKey: t.cycleKey || getCycleKey(rule) };
     }));
   }, []);
 
@@ -263,5 +343,5 @@ export function useTodos() {
   const archivedTodos = todos.filter(t => t.status !== 'active');
   const allTags = [...new Set(todos.flatMap(t => t.tags))].sort();
 
-  return { todos, activeTodos, archivedTodos, loaded, isManualMode, setManualMode, addTodo, updateTodo, deleteTodo, commitReorder, setPinStatus, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
+  return { todos, activeTodos, archivedTodos, loaded, isManualMode, setManualMode, addTodo, updateTodo, deleteTodo, commitReorder, setPinStatus, toggleStatus, completeTodo, setRepeatRule, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
 }

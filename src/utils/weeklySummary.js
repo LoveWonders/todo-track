@@ -37,13 +37,15 @@ function isInRange(isoString, range) {
 
 export function getCompletedLastWeek(todos, range) {
   return todos.filter(t =>
-    t.status === 'completed' && isInRange(t.completedAt, range)
+    isInRange(t.completedAt, range) && (t.status === 'completed' || !!t.repeatRule)
   );
 }
 
 export function getProgressedLastWeek(todos, range) {
   return todos.filter(t => {
     if (t.status !== 'active') return false;
+
+    if (t.repeatRule && isInRange(t.completedAt, range)) return false;
 
     if (isInRange(t.createdAt, range)) return true;
 

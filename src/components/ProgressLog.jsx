@@ -10,8 +10,8 @@ function isLongProgressText(text) {
   return String(text).length > LONG_TEXT_THRESHOLD;
 }
 
-export default function ProgressLog({ progress, todoId, collapsed }) {
-  const { toggleProgressStatus, toggleStatus, deleteProgress, addProgress, updateProgress, updateProgressCompletedAt, setFabHidden } = useTodoActions();
+export default function ProgressLog({ progress, todoId, collapsed, checklistMode }) {
+  const { toggleProgressStatus, completeTodo, deleteProgress, addProgress, updateProgress, updateProgressCompletedAt, setFabHidden } = useTodoActions();
   const { batchMode } = useTodoView();
   
   // 状态定义
@@ -181,7 +181,7 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
   // 安全渲染：有进度时显示列表
   return (
     <div className="progress-section" onClick={inBatch ? e => e.stopPropagation() : undefined}>
-      {!inBatch && progressCount > 0 && (
+      {!inBatch && checklistMode && progressCount > 0 && (
         <div className={`progress-summary ${allCompleted ? 'all-done' : ''}`}>
           <span className="progress-summary-text">已完成 {completedCount}/{progressCount}</span>
           <div className="progress-summary-bar">
@@ -190,7 +190,7 @@ export default function ProgressLog({ progress, todoId, collapsed }) {
           {allCompleted && (
             <button
               className="btn-mini btn-mini-save progress-finish-btn"
-              onClick={(e) => { e.stopPropagation(); toggleStatus(todoId, 'completed'); }}
+              onClick={(e) => { e.stopPropagation(); completeTodo(todoId); }}
               title="全部子项已完成，一键完成待办"
             >
               完成待办
