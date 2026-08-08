@@ -189,13 +189,14 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
 
           <div className="settings-section-title">提醒与通知</div>
           <div className="settings-group">
-            <div className="settings-row settings-row-disabled">
-              <span className="settings-row-label">任务到期提醒</span>
-              <span className="settings-row-soon">即将推出</span>
+            <div className="settings-row">
+              <span className="settings-row-label">重复任务提醒</span>
+              <span className="settings-row-status">已上线</span>
             </div>
+            <p className="settings-desc">为重复任务设置提醒时间后，Android 端到期自动推送本地通知；网页端打开应用时到点补发浏览器通知。</p>
             <div className="settings-row settings-row-disabled">
               <span className="settings-row-label">每日晨报推送</span>
-              <span className="settings-row-soon">即将推出</span>
+              <span className="settings-row-soon">规划中</span>
             </div>
           </div>
 

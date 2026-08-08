@@ -4,6 +4,7 @@ import { mergeAndArchive } from '../utils/autoArchive';
 import { normalizeImportedTodo } from '../utils/normalizeTodo';
 import { removeProgressCollapsed } from '../utils/progressViewState';
 import { getCycleKey, isRepeatRule } from '../utils/repeat';
+import { scheduleReminder, cancelReminder, rescheduleAll, checkDueReminders, requestNotificationPermission } from '../utils/notification';
 
 const MANUAL_SORT_KEY = 'todo_manual_sort';
 const SETTINGS_KEY = 'todo_app_settings';
@@ -70,6 +71,8 @@ export function useTodos() {
   const saveTimerRef = useRef(null);
   const todoIdRef = useRef(Date.now());
   const progressIdRef = useRef(Date.now());
+  const todosRef = useRef(todos);
+  todosRef.current = todos;
 
   useEffect(() => {
     // 首次加载：从 localStorage 恢复数据（仅一次）
@@ -100,7 +103,10 @@ export function useTodos() {
         const maxProgressId = Math.max(...afterArchive.flatMap(t => (t.progress || []).map(p => p.id)), 0);
         if (maxProgressId > 0) progressIdRef.current = maxProgressId + 1;
       }
-      setTodos(applyRepeatTick(afterArchive, new Date(), () => progressIdRef.current++));
+      const afterTick = applyRepeatTick(afterArchive, new Date(), () => progressIdRef.current++);
+      setTodos(afterTick);
+      rescheduleAll(afterTick);
+      checkDueReminders(afterTick);
       setLoaded(true);
     })();
     return () => { cancelled = true; };
@@ -135,6 +141,7 @@ export function useTodos() {
       checklistMode: false,
       repeatRule: null,
       cycleKey: null,
+      reminderTime: null,
     };
     setTodos(prev => [...prev, todo]);
   }, []);
@@ -200,6 +207,14 @@ export function useTodos() {
           : t.completedAt,
       };
     }));
+    const target = todosRef.current.find(t => t.id === id);
+    if (target?.repeatRule) {
+      if (target.status === 'active' && newStatus !== 'active') {
+        cancelReminder(id);
+      } else if (target.status !== 'active' && newStatus !== target.status) {
+        scheduleReminder(target);
+      }
+    }
   }, []);
 
   const completeTodo = useCallback((id) => {
@@ -234,6 +249,10 @@ export function useTodos() {
         completedAt: willBeArchived ? nowIso : null,
       };
     }));
+    const target = todosRef.current.find(t => t.id === id);
+    if (target?.repeatRule && target.reminderTime) {
+      scheduleReminder(target);
+    }
   }, []);
 
   const setRepeatRule = useCallback((id, rule) => {
@@ -244,6 +263,30 @@ export function useTodos() {
       }
       return { ...t, repeatRule: rule, cycleKey: t.cycleKey || getCycleKey(rule) };
     }));
+    const target = todosRef.current.find(t => t.id === id);
+    if (!target) return;
+    if (!isRepeatRule(rule)) {
+      cancelReminder(id);
+    } else if (target.reminderTime) {
+      scheduleReminder(target);
+    }
+  }, []);
+
+  const setReminderTime = useCallback(async (id, timeStr) => {
+    const normalized = timeStr ? String(timeStr) : null;
+    setTodos(prev => prev.map(t =>
+      t.id === id ? { ...t, reminderTime: normalized } : t
+    ));
+    const target = todosRef.current.find(t => t.id === id);
+    if (!target) return;
+    if (!normalized) {
+      cancelReminder(id);
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (granted && isRepeatRule(target.repeatRule)) {
+      scheduleReminder({ ...target, reminderTime: normalized });
+    }
   }, []);
 
   const addProgress = useCallback((id, text) => {
@@ -343,5 +386,5 @@ export function useTodos() {
   const archivedTodos = todos.filter(t => t.status !== 'active');
   const allTags = [...new Set(todos.flatMap(t => t.tags))].sort();
 
-  return { todos, activeTodos, archivedTodos, loaded, isManualMode, setManualMode, addTodo, updateTodo, deleteTodo, commitReorder, setPinStatus, toggleStatus, completeTodo, setRepeatRule, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
+  return { todos, activeTodos, archivedTodos, loaded, isManualMode, setManualMode, addTodo, updateTodo, deleteTodo, commitReorder, setPinStatus, toggleStatus, completeTodo, setRepeatRule, setReminderTime, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
 }

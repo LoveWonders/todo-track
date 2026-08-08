@@ -9,7 +9,7 @@ import ProgressLog from './ProgressLog';
 import { useTodoActions } from '../hooks/TodoContext';
 
 export default function TodoDetail({ todo, onClose }) {
-  const { updateTodo, toggleStatus, completeTodo, setRepeatRule, setPinStatus, setFabHidden } = useTodoActions();
+  const { updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime, setPinStatus, setFabHidden } = useTodoActions();
   const [editTitle, setEditTitle] = useState(false);
   const [title, setTitle] = useState(todo.title);
   const [showPinActions, setShowPinActions] = useState(false);
@@ -181,6 +181,21 @@ export default function TodoDetail({ todo, onClose }) {
                 </span>
               </span>
             </div>
+
+            {todo.repeatRule && (
+              <div className="detail-row">
+                <span className="detail-label">提醒时间</span>
+                <span className="detail-value">
+                  <input
+                    type="time"
+                    className="detail-time-input"
+                    value={todo.reminderTime || ''}
+                    onChange={(e) => { setReminderTime(todo.id, e.target.value || null); triggerAutoSave(); }}
+                  />
+                  <span className="detail-toggle-hint">到点本地通知</span>
+                </span>
+              </div>
+            )}
 
             {todo.tags.includes(URGENT_TAG) && (
               <div className="detail-row">

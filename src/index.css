@@ -3256,6 +3256,30 @@ body.compact-mode .todo-tag {
   color: #fff;
 }
 
+.detail-time-input {
+  width: 110px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+}
+
+.detail-time-input:focus {
+  border-color: var(--accent);
+}
+
+.settings-row-status {
+  font-size: var(--font-size-small);
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(46, 204, 113, 0.15);
+  color: var(--success);
+  flex-shrink: 0;
+}
+
 .repeat-badge {
   display: inline-flex;
   align-items: center;
