@@ -3,7 +3,7 @@ import { loadData, saveData, migrateFromLocalStorage } from '../utils/storage';
 import { mergeAndArchive } from '../utils/autoArchive';
 import { normalizeImportedTodo } from '../utils/normalizeTodo';
 import { removeProgressCollapsed } from '../utils/progressViewState';
-import { getCycleKey, isRepeatRule } from '../utils/repeat';
+import { getCycleKey, getWindowStart, isRepeatRule } from '../utils/repeat';
 import { scheduleReminder, cancelReminder, rescheduleAll, checkDueReminders, requestNotificationPermission } from '../utils/notification';
 
 const MANUAL_SORT_KEY = 'todo_manual_sort';
@@ -42,7 +42,7 @@ function applyRepeatTick(list, now, allocateId) {
     );
     if (t.checklistMode) {
       const templates = [...new Set(
-        progress.filter(p => p.status === 'completed' && p.kind !== 'cycle-done').map(p => p.text)
+        progress.filter(p => p.status === 'completed' && p.kind !== 'cycle-done' && !p.temporary).map(p => p.text)
       )];
       if (templates.length > 0) {
         progress = [...progress, ...templates.map(text => ({
@@ -289,7 +289,7 @@ export function useTodos() {
     }
   }, []);
 
-  const addProgress = useCallback((id, text) => {
+  const addProgress = useCallback((id, text, temporary) => {
     if (!text.trim()) return;
     setTodos(prev => prev.map(t =>
       t.id === id ? {
@@ -299,6 +299,7 @@ export function useTodos() {
           text: text.trim(),
           createdAt: new Date().toISOString(),
           status: 'active',
+          temporary: temporary === true,
         }]
       } : t
     ));
@@ -333,12 +334,12 @@ export function useTodos() {
     ));
   }, []);
 
-  const updateProgress = useCallback((todoId, progressId, text) => {
+  const updateProgress = useCallback((todoId, progressId, text, temporary) => {
     setTodos(prev => prev.map(t =>
       t.id === todoId ? {
         ...t,
         progress: (t.progress || []).map(p =>
-          p.id === progressId ? { ...p, text: text.trim() } : p
+          p.id === progressId ? { ...p, text: text.trim(), temporary: temporary !== undefined ? temporary === true : p.temporary } : p
         )
       } : t
     ));

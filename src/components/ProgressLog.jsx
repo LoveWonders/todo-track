@@ -23,6 +23,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showDateModal, setShowDateModal] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [temporaryInput, setTemporaryInput] = useState(false);
 
   // 数据预处理（所有变量定义必须在条件 return 之前）
   const items = Array.isArray(progress) ? progress : [];
@@ -40,11 +41,12 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
   const handleSubmit = useCallback(() => {
     const trimmed = progressText.trim();
     if (!trimmed) return;
-    addProgress(todoId, trimmed);
+    addProgress(todoId, trimmed, temporaryInput);
     setProgressText('');
     setShowInput(false);
+    setTemporaryInput(false);
     setFabHidden(false);
-  }, [progressText, todoId, addProgress, setFabHidden]);
+  }, [progressText, todoId, addProgress, temporaryInput, setFabHidden]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
@@ -66,14 +68,16 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
   }, []);
 
   const handleOpenEdit = useCallback((p) => {
-    setEditing({ progress: p, text: p.text ?? '' });
+    setEditing({ progress: p, text: p.text ?? '', temporary: p.temporary === true });
   }, []);
 
   const handleSaveEdit = useCallback(() => {
     if (!editing) return;
     const trimmed = editing.text.trim();
     if (trimmed && trimmed !== editing.progress.text) {
-      updateProgress(todoId, editing.progress.id, trimmed);
+      updateProgress(todoId, editing.progress.id, trimmed, editing.temporary);
+    } else if (editing.temporary !== editing.progress.temporary) {
+      updateProgress(todoId, editing.progress.id, editing.progress.text, editing.temporary);
     }
     setEditing(null);
     setFabHidden(false);
@@ -143,6 +147,8 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
                 onSubmit={handleSubmit}
                 onCancelInput={() => setShowInput(false)}
                 onManage={() => {}}
+                temporary={temporaryInput}
+                onToggleTemporary={() => setTemporaryInput(v => !v)}
               />
             ) : (
               <>
@@ -216,6 +222,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
                 </span>
               )}
               <span className="progress-date">{new Date(p.createdAt ?? p.time).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span>
+              {p.temporary && <span className="progress-temp-tag">临时</span>}
               <span className="progress-text">{String(p.text)}</span>
             </div>
           ))}
@@ -238,8 +245,10 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
               allCount={progressCount}
               onShowInput={() => setShowInput(true)} onTextChange={setProgressText}
               onKeyDown={handleKeyDown} onSubmit={handleSubmit}
-              onCancelInput={() => { setShowInput(false); setFabHidden(false); }}
+              onCancelInput={() => { setShowInput(false); setTemporaryInput(false); setFabHidden(false); }}
               onManage={() => { setManageMode(true); setConfirmDelete(false); }}
+              temporary={temporaryInput}
+              onToggleTemporary={() => setTemporaryInput(v => !v)}
             />
           )}
         </div>
@@ -269,6 +278,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
                   )}
                   <span className="progress-status-tag">{p.status === 'completed' ? '已完成' : '已作废'}</span>
                   <span className="progress-date">{new Date(p.completedAt ?? p.createdAt ?? p.time).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span>
+                  {p.temporary && <span className="progress-temp-tag">临时</span>}
                   {String(p.text)}
                 </div>
               ))}
@@ -299,6 +309,14 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
                 onBlur={() => setFabHidden(false)}
                 autoFocus
               />
+              <label className="temp-edit-option">
+                <input
+                  type="checkbox"
+                  checked={editing.temporary === true}
+                  onChange={e => setEditing(prev => ({ ...prev, temporary: e.target.checked }))}
+                />
+                临时子项（完成后不带到下一期）
+              </label>
             </div>
             <div className="modal-full-footer">
               <button className="btn-cancel" onClick={() => { setEditing(null); setFabHidden(false); }}>取消</button>

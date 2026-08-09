@@ -4192,3 +4192,36 @@ body.compact-mode .todo-tag {
 .btn-add-tag:hover {
   background: var(--accent-hover);
 }
+
+.temp-toggle {
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.temp-toggle.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.progress-temp-tag {
+  font-size: 10px;
+  padding: 0 4px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
+.temp-edit-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  cursor: pointer;
+}

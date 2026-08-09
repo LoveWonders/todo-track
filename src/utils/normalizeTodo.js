@@ -36,6 +36,7 @@ function normalizeProgress(p, index) {
     status: p.status === 'completed' ? 'completed' : p.status === 'cancelled' ? 'cancelled' : 'active',
     completedAt: normalizeIso(p.completedAt),
     kind: p.kind === 'cycle-done' ? 'cycle-done' : undefined,
+    temporary: p.temporary === true,
   };
 }
 
