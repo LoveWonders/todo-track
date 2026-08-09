@@ -23,7 +23,7 @@ import { loadArchive, saveArchive } from './utils/autoArchive';
 import { formatDate } from './utils/dateParser';
 
 export default function App() {
-  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, commitReorder, setPinStatus, toggleStatus, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags, isManualMode, setManualMode } = useTodos();
+  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, commitReorder, setPinStatus, toggleStatus, completeTodo, setRepeatRule, setReminderTime, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags, isManualMode, setManualMode } = useTodos();
   const [filterConfig, setFilterConfig] = useState({ includeTags: [], excludeTags: [] });
   const [view, setView] = useState('active');
   const [dragId, setDragId] = useState(null);
@@ -118,10 +118,12 @@ export default function App() {
   }, [importTodos]);
 
   const actionsValue = useMemo(() => ({
-    updateTodo, toggleStatus, addProgress, toggleProgressStatus,
+    updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime,
+    addProgress, toggleProgressStatus,
     deleteProgress, updateProgress, updateProgressCompletedAt,
     handleBatchToggle, setPinStatus, setFabHidden,
-  }), [updateTodo, toggleStatus, addProgress, toggleProgressStatus,
+  }), [updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime,
+    addProgress, toggleProgressStatus,
     deleteProgress, updateProgress, updateProgressCompletedAt,
     handleBatchToggle, setPinStatus, setFabHidden]);
 

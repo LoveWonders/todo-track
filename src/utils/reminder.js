@@ -1,4 +1,4 @@
-import { getWindowStart, getCycleKey, isRepeatRule, CYCLE_LABELS } from './repeat';
+import { getWindowStart, isRepeatRule, CYCLE_LABELS } from './repeat';
 
 export function parseReminderTime(timeStr) {
   if (typeof timeStr !== 'string') return null;
