@@ -31,6 +31,15 @@ public class DownloadPlugin extends Plugin {
             return;
         }
 
+        if (!filename.matches("[A-Za-z0-9._\\-]+")) {
+            call.reject("filename 包含非法字符");
+            return;
+        }
+        if (subFolder != null && (subFolder.contains("..") || subFolder.contains("/") || subFolder.contains("\\"))) {
+            call.reject("subFolder 包含非法路径");
+            return;
+        }
+
         try {
             Context context = getContext();
 
