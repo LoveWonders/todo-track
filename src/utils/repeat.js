@@ -35,3 +35,12 @@ export function getWindowStart(rule, date = new Date()) {
 export function getCycleKey(rule, date = new Date()) {
   return toLocalDateKey(getWindowStart(rule, date));
 }
+
+export function hasCycleDoneThisCycle(todo, now = new Date()) {
+  if (!isRepeatRule(todo?.repeatRule)) return false;
+  const ws = getWindowStart(todo.repeatRule, now).getTime();
+  return (Array.isArray(todo.progress) ? todo.progress : []).some(p =>
+    p.kind === 'cycle-done' &&
+    new Date(p.completedAt ?? p.createdAt).getTime() >= ws
+  );
+}

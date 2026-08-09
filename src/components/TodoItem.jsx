@@ -5,7 +5,7 @@ import { getTaskTier } from '../utils/taskTier';
 import { loadProgressCollapsed, saveProgressCollapsed } from '../utils/progressViewState';
 import { URGENT_TAG } from '../constants';
 import { useTodoActions, useTodoView } from '../hooks/TodoContext';
-import { CYCLE_LABELS } from '../utils/repeat';
+import { CYCLE_LABELS, hasCycleDoneThisCycle } from '../utils/repeat';
 import Countdown from './Countdown';
 import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
@@ -42,6 +42,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const progressCount = progressArr.length;
   const completedCount = progressArr.filter(p => p.status === 'completed').length;
   const progressAllDone = progressCount > 0 && completedCount === progressCount;
+  const cycleDone = hasCycleDoneThisCycle(todo);
   const checklistMode = todo.checklistMode === true;
 
   const toggleCollapsed = () => {
@@ -205,11 +206,11 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
             )}
             {checklistMode && progressCount > 0 && (
               <span
-                className={`progress-badge ${progressAllDone ? 'all-done' : ''}`}
-                title={progressAllDone ? '全部子项已完成，点击完成待办' : `子项进度 ${completedCount}/${progressCount}`}
+                className={`progress-badge ${progressAllDone ? 'all-done' : ''} ${cycleDone ? 'cycle-done' : ''}`}
+                title={cycleDone ? '本期已完成' : progressAllDone ? '全部子项已完成，点击完成待办' : `子项进度 ${completedCount}/${progressCount}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (progressAllDone) completeTodo(todo.id);
+                  if (progressAllDone && !cycleDone) completeTodo(todo.id);
                 }}
               >
                 {completedCount}/{progressCount}
@@ -281,7 +282,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
       </div>
 
       {!isArchive && todo.status === 'active' && canCollapse && !collapsed && (
-        <ProgressLog progress={todo.progress} todoId={todo.id} collapsed={collapsed} checklistMode={checklistMode} />
+        <ProgressLog progress={todo.progress} todoId={todo.id} collapsed={collapsed} checklistMode={checklistMode} repeatRule={todo.repeatRule} />
       )}
 
       {isArchive && todo.progress && todo.progress.length > 0 && (

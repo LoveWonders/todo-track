@@ -4225,3 +4225,21 @@ body.compact-mode .todo-tag {
   color: var(--text-secondary);
   cursor: pointer;
 }
+
+.progress-done-note {
+  font-size: var(--font-size-small);
+  color: var(--accent);
+  font-weight: 600;
+  padding: 4px 0;
+}
+
+.btn-primary-lg:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+}
+
+.progress-badge.cycle-done {
+  background: var(--accent);
+  color: #fff;
+}

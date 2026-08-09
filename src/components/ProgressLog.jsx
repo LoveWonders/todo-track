@@ -3,6 +3,7 @@ import { useTodoActions, useTodoView } from '../hooks/TodoContext';
 import CompleteDateModal from './CompleteDateModal';
 import ProgressManageBar from './ProgressManageBar';
 import ProgressDefaultBar from './ProgressDefaultBar';
+import { hasCycleDoneThisCycle } from '../utils/repeat';
 
 const LONG_TEXT_THRESHOLD = 20;
 
@@ -10,7 +11,7 @@ function isLongProgressText(text) {
   return String(text).length > LONG_TEXT_THRESHOLD;
 }
 
-export default function ProgressLog({ progress, todoId, collapsed, checklistMode }) {
+export default function ProgressLog({ progress, todoId, collapsed, checklistMode, repeatRule }) {
   const { toggleProgressStatus, completeTodo, deleteProgress, addProgress, updateProgress, updateProgressCompletedAt, setFabHidden } = useTodoActions();
   const { batchMode } = useTodoView();
   
@@ -113,6 +114,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
   const completedCount = items.filter(p => p.status === 'completed').length;
   const allCompleted = progressCount > 0 && completedCount === progressCount;
   const summaryPct = progressCount > 0 ? Math.round((completedCount / progressCount) * 100) : 0;
+  const cycleDone = hasCycleDoneThisCycle({ repeatRule, progress: items });
 
   const sortedArchived = useMemo(() => {
     const completed = [];
@@ -193,7 +195,9 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
           <div className="progress-summary-bar">
             <div className="progress-summary-fill" style={{ width: `${summaryPct}%` }} />
           </div>
-          {allCompleted && (
+          {allCompleted && (cycleDone ? (
+            <span className="progress-done-note">本期已完成 ✓</span>
+          ) : (
             <button
               className="btn-mini btn-mini-save progress-finish-btn"
               onClick={(e) => { e.stopPropagation(); completeTodo(todoId); }}
@@ -201,7 +205,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
             >
               完成待办
             </button>
-          )}
+          ))}
         </div>
       )}
 

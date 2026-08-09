@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatDateTime, isOverdue } from '../utils/dateParser';
 import { URGENT_TAG } from '../constants';
-import { CYCLE_LABELS } from '../utils/repeat';
+import { CYCLE_LABELS, hasCycleDoneThisCycle } from '../utils/repeat';
 import Countdown from './Countdown';
 import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
@@ -207,16 +207,22 @@ export default function TodoDetail({ todo, onClose }) {
 
           <div className="detail-section" style={{ marginTop: 12 }}>
             <div className="detail-section-title">进度记录</div>
-            <ProgressLog progress={todo.progress} todoId={todo.id} checklistMode={todo.checklistMode === true} />
+            <ProgressLog progress={todo.progress} todoId={todo.id} checklistMode={todo.checklistMode === true} repeatRule={todo.repeatRule} />
           </div>
         </div>
 
         <div className="modal-full-footer" style={{ justifyContent: 'center', gap: 10, padding: '12px 16px' }}>
           {todo.status === 'active' ? (
             <>
-              <button className="btn-primary-lg" onClick={() => { completeTodo(todo.id); onClose(); }}>
-                标记完成
-              </button>
+              {hasCycleDoneThisCycle(todo) ? (
+                <button className="btn-primary-lg" disabled title="本期已完成，下一周期继续">
+                  本期已完成
+                </button>
+              ) : (
+                <button className="btn-primary-lg" onClick={() => { completeTodo(todo.id); onClose(); }}>
+                  标记完成
+                </button>
+              )}
               <button className="btn-danger-lg" onClick={() => { toggleStatus(todo.id, 'cancelled'); onClose(); }}>
                 作废
               </button>
