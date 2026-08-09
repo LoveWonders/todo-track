@@ -21,9 +21,10 @@ function getStatusClass(todo) {
 
 const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragListeners }) {
   const { toggleStatus, completeTodo, updateTodo, handleBatchToggle, setPinStatus, setFabHidden } = useTodoActions();
-  const { batchMode, isArchive, devMode } = useTodoView();
+  const { batchMode, isArchive, devMode, openMenuId, setOpenMenuId } = useTodoView();
   const statusClass = getStatusClass(todo);
   const tier = getTaskTier(todo);
+  const moreOpen = openMenuId === todo.id;
 
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
@@ -31,7 +32,6 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editText, setEditText] = useState('');
-  const [moreOpen, setMoreOpen] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({});
   const [collapsed, setCollapsed] = useState(() => loadProgressCollapsed(todo.id));
@@ -55,11 +55,11 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
     if (!moreOpen) return;
     const close = (e) => {
       if (e.target.closest('.more-dropdown') || e.target.closest('.drag-handle')) return;
-      setMoreOpen(false);
+      setOpenMenuId(null);
     };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
-  }, [moreOpen]);
+  }, [moreOpen, setOpenMenuId]);
 
   const handleOpenEdit = () => {
     if (batchMode) return;
@@ -84,7 +84,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const handleEnterBatch = (e) => {
     e.stopPropagation();
     handleBatchToggle(todo.id);
-    setMoreOpen(false);
+    setOpenMenuId(null);
   };
 
   const handleComplete = (e) => {
@@ -115,19 +115,19 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const handlePinTop = (e) => {
     e.stopPropagation();
     setPinStatus(todo.id, todo.pinStatus === 'top' ? null : 'top');
-    setMoreOpen(false);
+    setOpenMenuId(null);
   };
 
   const handlePinBottom = (e) => {
     e.stopPropagation();
     setPinStatus(todo.id, todo.pinStatus === 'bottom' ? null : 'bottom');
-    setMoreOpen(false);
+    setOpenMenuId(null);
   };
 
   const handleToggleMore = (e) => {
     e.stopPropagation();
     if (moreOpen) {
-      setMoreOpen(false);
+      setOpenMenuId(null);
       return;
     }
     if (dragRef.current) {
@@ -139,7 +139,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
         zIndex: 9999,
       });
     }
-    setMoreOpen(true);
+    setOpenMenuId(todo.id);
   };
 
   return (
@@ -170,7 +170,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
         {moreOpen && createPortal(
           <div className="more-dropdown" style={dropdownStyle}>
-            <button className="more-item" onClick={() => { setMoreOpen(false); setShowDetail(true); }}>
+            <button className="more-item" onClick={() => { setOpenMenuId(null); setShowDetail(true); }}>
               详情
             </button>
             <button className="more-item" onClick={handleEnterBatch}>

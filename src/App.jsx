@@ -33,6 +33,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
   const [fabHidden, setFabHidden] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -128,8 +129,8 @@ export default function App() {
     handleBatchToggle, setPinStatus, setFabHidden]);
 
   const viewValue = useMemo(() => ({
-    batchMode, isArchive, devMode,
-  }), [batchMode, isArchive, devMode]);
+    batchMode, isArchive, devMode, openMenuId, setOpenMenuId,
+  }), [batchMode, isArchive, devMode, openMenuId]);
 
   const sortableIds = useMemo(() => filteredTodos.map(t => t.id), [filteredTodos]);
 

@@ -127,7 +127,8 @@ export function useTodos() {
     } catch { /* ignore */ }
   }, [isManualMode]);
 
-  const addTodo = useCallback(({ title, startDate, dueDate, tags }) => {
+  const addTodo = useCallback(({ title, startDate, dueDate, tags, checklistMode, repeatRule }) => {
+    const rule = isRepeatRule(repeatRule) ? repeatRule : null;
     const todo = {
       id: todoIdRef.current++,
       title,
@@ -138,9 +139,9 @@ export function useTodos() {
       pinStatus: null,
       createdAt: new Date().toISOString(),
       progress: [],
-      checklistMode: false,
-      repeatRule: null,
-      cycleKey: null,
+      checklistMode: checklistMode === true,
+      repeatRule: rule,
+      cycleKey: rule ? getCycleKey(rule) : null,
       reminderTime: null,
     };
     setTodos(prev => [...prev, todo]);

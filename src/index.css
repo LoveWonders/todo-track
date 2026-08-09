@@ -3797,6 +3797,12 @@ body.compact-mode .todo-tag {
   font-weight: 500;
 }
 
+.sheet-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .preset-tags-scroll {
   display: flex;
   gap: 6px;

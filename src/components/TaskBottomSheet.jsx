@@ -6,6 +6,7 @@ import { URGENT_TAG } from '../constants';
 import { useSettings } from '../hooks/useSettings';
 import { isSafeTagName } from '../utils/tagMeta';
 import { makeDefaultDueDate } from '../utils/defaultDue';
+import { CYCLE_LABELS } from '../utils/repeat';
 
 const DEFAULT_PRESET_TAGS = ['工作', '长期', '个人'];
 const PRESET_TAGS_STORAGE_KEY = 'todo_preset_tags';
@@ -28,6 +29,8 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
   const { text, setText, parsed, clear: clearSmart } = useSmartInput();
   const { tags, toggleTag, clearTags } = useTagLogic([]);
   const [isUrgent, setIsUrgent] = useState(false);
+  const [isChecklist, setIsChecklist] = useState(false);
+  const [repeatRule, setRepeatRule] = useState(null);
   const [presetTags, setPresetTags] = useState(() => {
     const loaded = loadPresetTags();
     if (Array.isArray(loaded)) return loaded;
@@ -150,12 +153,14 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
       finalDueDate = makeDefaultDueDate(settings.defaultDueHour, settings.defaultDueMinute);
     }
     const title = final || formatDateOnly(finalDueDate) || '待办';
-    onAdd({ title, startDate: pickedStart, dueDate: finalDueDate, tags: submittedTags });
+    onAdd({ title, startDate: pickedStart, dueDate: finalDueDate, tags: submittedTags, checklistMode: isChecklist, repeatRule });
     clearSmart();
     clearTags();
     setIsUrgent(false);
+    setIsChecklist(false);
+    setRepeatRule(null);
     onClose();
-  }, [pickedStart, pickedEnd, submittedTags, parsed, onAdd, clearSmart, clearTags, settings.defaultDueHour, settings.defaultDueMinute, onClose]);
+  }, [pickedStart, pickedEnd, submittedTags, parsed, onAdd, clearSmart, clearTags, settings.defaultDueHour, settings.defaultDueMinute, isChecklist, repeatRule, onClose]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -184,10 +189,15 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
           title: text.trim() || formatDateOnly(iso) || '待办',
           startDate: pickedStart,
           dueDate: iso,
-          tags: submittedTags
+          tags: submittedTags,
+          checklistMode: isChecklist,
+          repeatRule,
         });
         clearSmart();
         clearTags();
+        setIsUrgent(false);
+        setIsChecklist(false);
+        setRepeatRule(null);
         onClose();
       }
       if (document.body.contains(input)) document.body.removeChild(input);
@@ -199,7 +209,7 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
         input.focus();
       }
     });
-  }, [pickedEnd, pickedStart, submittedTags, text, onAdd, clearSmart, clearTags, onClose]);
+  }, [pickedEnd, pickedStart, submittedTags, text, onAdd, clearSmart, clearTags, isChecklist, repeatRule, onClose]);
 
   if (!isOpen) return null;
 
@@ -271,6 +281,41 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
             <span className="urgent-icon">!</span>
             <span className="urgent-text">{isUrgent ? '已设为紧急' : '设为紧急'}</span>
           </button>
+        </div>
+
+        <div className="sheet-section">
+          <label className="sheet-label">清单模式</label>
+          <div className="sheet-option-row">
+            <button
+              className={`detail-toggle ${isChecklist ? 'on' : ''}`}
+              onClick={() => setIsChecklist(v => !v)}
+              role="switch"
+              aria-checked={isChecklist}
+            >
+              <span className="detail-toggle-knob" />
+            </button>
+            <span className="detail-toggle-hint">{isChecklist ? '拆解勾选' : '流水账'}</span>
+          </div>
+        </div>
+
+        <div className="sheet-section">
+          <label className="sheet-label">设为重复</label>
+          <div className="sheet-option-row">
+            <div className="repeat-selector">
+              {['daily', 'weekly', 'monthly'].map(rule => (
+                <button
+                  key={rule}
+                  className={`repeat-opt ${repeatRule === rule ? 'active' : ''}`}
+                  onClick={() => setRepeatRule(prev => (prev === rule ? null : rule))}
+                >
+                  {CYCLE_LABELS[rule]}
+                </button>
+              ))}
+            </div>
+            <span className="detail-toggle-hint">
+              {repeatRule ? `重复任务 · ${CYCLE_LABELS[repeatRule]}` : '不重复'}
+            </span>
+          </div>
         </div>
 
         <div className="sheet-section">
