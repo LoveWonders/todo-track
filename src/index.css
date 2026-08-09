@@ -3204,6 +3204,7 @@ body.compact-mode .todo-tag {
   width: 36px;
   height: 20px;
   border-radius: 10px;
+  border: none;
   background: var(--border);
   cursor: pointer;
   transition: background 0.2s;
