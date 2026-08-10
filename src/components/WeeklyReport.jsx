@@ -42,10 +42,18 @@ function buildCopyText(label, range, completed, progressed, noProgress) {
   return lines.join('\n');
 }
 
-function WeekBlock({ label, range, todos }) {
-  const completed = useMemo(() => getCompletedLastWeek(todos, range), [todos, range]);
-  const progressed = useMemo(() => getProgressedLastWeek(todos, range), [todos, range]);
-  const noProgress = useMemo(() => getNoProgressLastWeek(todos, range), [todos, range]);
+function WeekBlock({ label, range, todos, activeTag }) {
+  const completedAll = useMemo(() => getCompletedLastWeek(todos, range), [todos, range]);
+  const progressedAll = useMemo(() => getProgressedLastWeek(todos, range), [todos, range]);
+  const noProgressAll = useMemo(() => getNoProgressLastWeek(todos, range), [todos, range]);
+
+  const filterByTag = useCallback((list) =>
+    activeTag ? list.filter(t => (t.tags || []).includes(activeTag)) : list
+  , [activeTag]);
+
+  const completed = useMemo(() => filterByTag(completedAll), [filterByTag, completedAll]);
+  const progressed = useMemo(() => filterByTag(progressedAll), [filterByTag, progressedAll]);
+  const noProgress = useMemo(() => filterByTag(noProgressAll), [filterByTag, noProgressAll]);
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -65,6 +73,8 @@ function WeekBlock({ label, range, todos }) {
     { key: 'noProgress', title: '无进展', data: noProgress, color: 'var(--warn)' },
   ];
 
+  const total = completed.length + progressed.length + noProgress.length;
+
   return (
     <>
       <div className="weekly-header">
@@ -81,6 +91,10 @@ function WeekBlock({ label, range, todos }) {
         <span className="weekly-stat-sep">/</span>
         <span className="weekly-stat" style={{ color: 'var(--warn)' }}>无进展 {noProgress.length}</span>
       </div>
+
+      {activeTag && total === 0 && (
+        <div className="weekly-empty-tip">当前标签下暂无周报内容</div>
+      )}
 
       {sections.map(section => (
         <div key={section.key} className="weekly-section">
@@ -115,14 +129,37 @@ function WeekBlock({ label, range, todos }) {
 export default function WeeklyReport({ todos }) {
   const thisWeekRange = useMemo(() => getThisWeekRange(), []);
   const lastWeekRange = useMemo(() => getLastWeekRange(), []);
+  const [activeTag, setActiveTag] = useState(null);
+
+  const allTags = useMemo(() => [...new Set(todos.flatMap(t => t.tags || []))].sort(), [todos]);
 
   return (
     <div className="weekly-report">
-      <WeekBlock label="本周" range={thisWeekRange} todos={todos} />
+      {allTags.length > 0 && (
+        <div className="filter-bar weekly-filter-bar">
+          <button
+            className={`filter-chip ${activeTag === null ? 'active' : ''}`}
+            onClick={() => setActiveTag(null)}
+          >
+            全部
+          </button>
+          {allTags.map(tag => (
+            <button
+              key={tag}
+              className={`filter-chip ${activeTag === tag ? 'active' : ''}`}
+              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <WeekBlock label="本周" range={thisWeekRange} todos={todos} activeTag={activeTag} />
 
       <div className="weekly-divider" />
 
-      <WeekBlock label="上周" range={lastWeekRange} todos={todos} />
+      <WeekBlock label="上周" range={lastWeekRange} todos={todos} activeTag={activeTag} />
 
       <div className="scroll-spacer" />
     </div>
