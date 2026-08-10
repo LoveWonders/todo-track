@@ -119,6 +119,18 @@ function WeekBlock({ label, labelKey, range, todos, activeTags, filterProps }) {
                       全部
                     </button>
                     <button
+                      className="btn-mini btn-mini-cancel filter-footer-btn"
+                      onClick={filterProps.onInvert}
+                    >
+                      反选
+                    </button>
+                    <button
+                      className="btn-mini btn-mini-save filter-footer-btn"
+                      onClick={filterProps.onSelectAll}
+                    >
+                      全选
+                    </button>
+                    <button
                       className="btn-mini btn-mini-save filter-footer-btn"
                       onClick={filterProps.onConfirm}
                     >
@@ -221,13 +233,23 @@ export default function WeeklyReport({ todos }) {
     setOpenFor(null);
   }, []);
 
+  const handleSelectAll = useCallback(() => {
+    setDraftTags([...allTags]);
+  }, [allTags]);
+
+  const handleInvert = useCallback(() => {
+    setDraftTags(prev => allTags.filter(tag => !prev.includes(tag)));
+  }, [allTags]);
+
   const filterProps = useMemo(() => ({
     openFor, allTags, draftTags,
     onToggle: (labelKey) => handleToggleFilter(labelKey),
     onCheck: handleCheck,
     onConfirm: handleConfirm,
     onAll: handleAll,
-  }), [openFor, allTags, draftTags, handleToggleFilter, handleCheck, handleConfirm, handleAll]);
+    onSelectAll: handleSelectAll,
+    onInvert: handleInvert,
+  }), [openFor, allTags, draftTags, handleToggleFilter, handleCheck, handleConfirm, handleAll, handleSelectAll, handleInvert]);
 
   return (
     <div className="weekly-report">
