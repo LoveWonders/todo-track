@@ -20,7 +20,7 @@ export function saveArchive(archive) {
 }
 
 export function autoArchive(todos, maxAgeDays = 30) {
-  if (!todos || todos.length === 0) return { remaining: todos, archived: [] };
+  if (!todos || todos.length === 0) return { remaining: todos, newlyArchived: [] };
 
   const cutoff = Date.now() - maxAgeDays * 86400000;
   const remaining = [];
