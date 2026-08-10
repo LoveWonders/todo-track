@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { getWindowStart, getCycleKey, isRepeatRule, CYCLE_LABELS } from './repeat';
+import { anchorDateInWindow, getWindowStart, getCycleKey, isRepeatRule, anchorLabel } from './repeat';
 import { nextReminderAt, parseReminderTime } from './reminder';
 
 const REMINDER_ACK_KEY = 'todo_reminder_ack';
@@ -27,14 +27,14 @@ export async function requestNotificationPermission() {
 export async function scheduleReminder(todo) {
   if (!isNative()) return;
   if (!todo.repeatRule || !todo.reminderTime) return;
-  const at = nextReminderAt(todo.repeatRule, todo.reminderTime);
+  const at = nextReminderAt(todo.repeatRule, todo.reminderTime, todo.repeatAnchor);
   if (!at) return;
   try {
     await LocalNotifications.schedule({
       notifications: [{
         id: todo.id,
         title: todo.title || '待办',
-        body: `${CYCLE_LABELS[todo.repeatRule]}待办提醒`,
+        body: `${anchorLabel(todo.repeatRule, todo.repeatAnchor)}待办提醒`,
         schedule: { at },
       }],
     });
@@ -89,13 +89,13 @@ export function checkDueReminders(todos) {
     const tm = parseReminderTime(t.reminderTime);
     if (!tm) continue;
     const winStart = getWindowStart(t.repeatRule, now);
-    const dueAt = new Date(winStart);
+    const dueAt = anchorDateInWindow(t.repeatRule, t.repeatAnchor, winStart);
     dueAt.setHours(tm.h, tm.min, 0, 0);
     const key = `${getCycleKey(t.repeatRule, now)}:${t.reminderTime}`;
     if (now.getTime() >= dueAt.getTime() && ack[t.id] !== key) {
       try {
         new Notification(t.title || '待办', {
-          body: `${CYCLE_LABELS[t.repeatRule]}待办提醒`,
+          body: `${anchorLabel(t.repeatRule, t.repeatAnchor)}待办提醒`,
           tag: `todo-${t.id}-${key}`,
         });
       } catch { /* ignore */ }

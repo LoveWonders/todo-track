@@ -3280,6 +3280,46 @@ body.compact-mode .todo-tag {
   color: #fff;
 }
 
+.repeat-anchor-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.repeat-anchor-opt {
+  font-size: var(--font-size-small);
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.repeat-anchor-opt.active {
+  background: rgba(52, 152, 219, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.repeat-anchor-input {
+  width: 56px;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: var(--font-size-small);
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+}
+
+.repeat-anchor-input:focus {
+  border-color: var(--accent);
+}
+
 .detail-time-input {
   width: 110px;
   padding: 3px 8px;

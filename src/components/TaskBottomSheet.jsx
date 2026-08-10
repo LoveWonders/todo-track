@@ -6,7 +6,7 @@ import { URGENT_TAG } from '../constants';
 import { useSettings } from '../hooks/useSettings';
 import { isSafeTagName } from '../utils/tagMeta';
 import { makeDefaultDueDate } from '../utils/defaultDue';
-import { CYCLE_LABELS } from '../utils/repeat';
+import { CYCLE_LABELS, WEEKDAY_LABELS, anchorLabel } from '../utils/repeat';
 
 const DEFAULT_PRESET_TAGS = ['工作', '长期', '个人'];
 const PRESET_TAGS_STORAGE_KEY = 'todo_preset_tags';
@@ -31,6 +31,7 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
   const [isUrgent, setIsUrgent] = useState(false);
   const [isChecklist, setIsChecklist] = useState(false);
   const [repeatRule, setRepeatRule] = useState(null);
+  const [repeatAnchor, setRepeatAnchor] = useState(null);
   const [presetTags, setPresetTags] = useState(() => {
     const loaded = loadPresetTags();
     if (Array.isArray(loaded)) return loaded;
@@ -153,14 +154,15 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
       finalDueDate = makeDefaultDueDate(settings.defaultDueHour, settings.defaultDueMinute);
     }
     const title = final || formatDateOnly(finalDueDate) || '待办';
-    onAdd({ title, startDate: pickedStart, dueDate: finalDueDate, tags: submittedTags, checklistMode: isChecklist, repeatRule });
+    onAdd({ title, startDate: pickedStart, dueDate: finalDueDate, tags: submittedTags, checklistMode: isChecklist, repeatRule, repeatAnchor });
     clearSmart();
     clearTags();
     setIsUrgent(false);
     setIsChecklist(false);
     setRepeatRule(null);
+    setRepeatAnchor(null);
     onClose();
-  }, [pickedStart, pickedEnd, submittedTags, parsed, onAdd, clearSmart, clearTags, settings.defaultDueHour, settings.defaultDueMinute, isChecklist, repeatRule, onClose]);
+  }, [pickedStart, pickedEnd, submittedTags, parsed, onAdd, clearSmart, clearTags, settings.defaultDueHour, settings.defaultDueMinute, isChecklist, repeatRule, repeatAnchor, onClose]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -192,12 +194,14 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
           tags: submittedTags,
           checklistMode: isChecklist,
           repeatRule,
+          repeatAnchor,
         });
         clearSmart();
         clearTags();
         setIsUrgent(false);
         setIsChecklist(false);
         setRepeatRule(null);
+        setRepeatAnchor(null);
         onClose();
       }
       if (document.body.contains(input)) document.body.removeChild(input);
@@ -209,7 +213,7 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
         input.focus();
       }
     });
-  }, [pickedEnd, pickedStart, submittedTags, text, onAdd, clearSmart, clearTags, isChecklist, repeatRule, onClose]);
+  }, [pickedEnd, pickedStart, submittedTags, text, onAdd, clearSmart, clearTags, isChecklist, repeatRule, repeatAnchor, onClose]);
 
   if (!isOpen) return null;
 
@@ -306,16 +310,57 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
                 <button
                   key={rule}
                   className={`repeat-opt ${repeatRule === rule ? 'active' : ''}`}
-                  onClick={() => setRepeatRule(prev => (prev === rule ? null : rule))}
+                  onClick={() => {
+                    setRepeatRule(prev => (prev === rule ? null : rule));
+                    setRepeatAnchor(null);
+                  }}
                 >
                   {CYCLE_LABELS[rule]}
                 </button>
               ))}
             </div>
             <span className="detail-toggle-hint">
-              {repeatRule ? `重复任务 · ${CYCLE_LABELS[repeatRule]}` : '不重复'}
+              {repeatRule ? `重复任务 · ${anchorLabel(repeatRule, repeatAnchor)}` : '不重复'}
             </span>
           </div>
+          {repeatRule === 'weekly' && (
+            <div className="repeat-anchor-row">
+              {WEEKDAY_LABELS.map((label, i) => (
+                <button
+                  key={i}
+                  className={`repeat-anchor-opt ${repeatAnchor === i + 1 ? 'active' : ''}`}
+                  onClick={() => setRepeatAnchor(repeatAnchor === i + 1 ? null : i + 1)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+          {repeatRule === 'monthly' && (
+            <div className="repeat-anchor-row">
+              <input
+                type="number"
+                min="1"
+                max="31"
+                className="repeat-anchor-input"
+                value={Number.isInteger(repeatAnchor) ? repeatAnchor : ''}
+                placeholder="号数"
+                onChange={e => {
+                  const raw = e.target.value;
+                  if (raw === '') { setRepeatAnchor(null); return; }
+                  const v = Math.min(31, Math.max(1, Number(raw)));
+                  setRepeatAnchor(Number.isNaN(v) ? null : v);
+                }}
+              />
+              <button
+                className={`repeat-anchor-opt ${repeatAnchor === 'last' ? 'active' : ''}`}
+                onClick={() => setRepeatAnchor(repeatAnchor === 'last' ? null : 'last')}
+              >
+                月末
+              </button>
+              <span className="detail-toggle-hint">不选则每月最后一天到期</span>
+            </div>
+          )}
         </div>
 
         <div className="sheet-section">

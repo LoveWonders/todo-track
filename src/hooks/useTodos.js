@@ -3,7 +3,7 @@ import { loadData, saveData, migrateFromLocalStorage } from '../utils/storage';
 import { mergeAndArchive } from '../utils/autoArchive';
 import { normalizeImportedTodo } from '../utils/normalizeTodo';
 import { removeProgressCollapsed } from '../utils/progressViewState';
-import { getCycleKey, getWindowStart, isRepeatRule } from '../utils/repeat';
+import { getCycleKey, getWindowStart, isRepeatRule, isValidAnchor } from '../utils/repeat';
 import { scheduleReminder, cancelReminder, rescheduleAll, checkDueReminders, requestNotificationPermission } from '../utils/notification';
 
 const MANUAL_SORT_KEY = 'todo_manual_sort';
@@ -127,7 +127,7 @@ export function useTodos() {
     } catch { /* ignore */ }
   }, [isManualMode]);
 
-  const addTodo = useCallback(({ title, startDate, dueDate, tags, checklistMode, repeatRule }) => {
+  const addTodo = useCallback(({ title, startDate, dueDate, tags, checklistMode, repeatRule, repeatAnchor }) => {
     const rule = isRepeatRule(repeatRule) ? repeatRule : null;
     const todo = {
       id: todoIdRef.current++,
@@ -141,6 +141,7 @@ export function useTodos() {
       progress: [],
       checklistMode: checklistMode === true,
       repeatRule: rule,
+      repeatAnchor: rule ? (isValidAnchor(rule, repeatAnchor) ? repeatAnchor : null) : null,
       cycleKey: rule ? getCycleKey(rule) : null,
       reminderTime: null,
     };
@@ -256,20 +257,25 @@ export function useTodos() {
     }
   }, []);
 
-  const setRepeatRule = useCallback((id, rule) => {
+  const setRepeatRule = useCallback((id, rule, anchor) => {
     setTodos(prev => prev.map(t => {
       if (t.id !== id) return t;
       if (!isRepeatRule(rule)) {
-        return { ...t, repeatRule: null, cycleKey: null };
+        return { ...t, repeatRule: null, repeatAnchor: null, cycleKey: null };
       }
-      return { ...t, repeatRule: rule, cycleKey: t.cycleKey || getCycleKey(rule) };
+      return {
+        ...t,
+        repeatRule: rule,
+        repeatAnchor: isValidAnchor(rule, anchor) ? anchor : null,
+        cycleKey: t.cycleKey || getCycleKey(rule),
+      };
     }));
     const target = todosRef.current.find(t => t.id === id);
     if (!target) return;
     if (!isRepeatRule(rule)) {
       cancelReminder(id);
     } else if (target.reminderTime) {
-      scheduleReminder(target);
+      scheduleReminder({ ...target, repeatRule: rule, repeatAnchor: isValidAnchor(rule, anchor) ? anchor : null });
     }
   }, []);
 

@@ -1,4 +1,4 @@
-import { getWindowStart, isRepeatRule, CYCLE_LABELS } from './repeat';
+import { anchorDateInWindow, getWindowStart, isRepeatRule, CYCLE_LABELS } from './repeat';
 
 export function parseReminderTime(timeStr) {
   if (typeof timeStr !== 'string') return null;
@@ -18,12 +18,12 @@ function nextWindowStart(rule, date) {
   return d;
 }
 
-export function nextReminderAt(rule, timeStr, from = new Date()) {
+export function nextReminderAt(rule, timeStr, anchor, from = new Date()) {
   const t = parseReminderTime(timeStr);
   if (!t || !isRepeatRule(rule)) return null;
   let start = getWindowStart(rule, from);
   for (let i = 0; i < 4; i++) {
-    const c = new Date(start);
+    const c = anchorDateInWindow(rule, anchor, start);
     c.setHours(t.h, t.min, 0, 0);
     if (c.getTime() > from.getTime()) return c;
     start = nextWindowStart(rule, start);

@@ -1,5 +1,5 @@
 import { isSafeTagName } from './tagMeta';
-import { isRepeatRule } from './repeat';
+import { isRepeatRule, isValidAnchor } from './repeat';
 
 const VALID_STATUSES = ['active', 'completed', 'cancelled'];
 const VALID_PIN_STATUSES = ['top', 'bottom', null];
@@ -59,6 +59,7 @@ export function normalizeImportedTodo(t) {
     createdAt: normalizeIso(t.createdAt) || new Date().toISOString(),
     checklistMode: t.checklistMode === true,
     repeatRule: isRepeatRule(t.repeatRule) ? t.repeatRule : null,
+    repeatAnchor: isRepeatRule(t.repeatRule) && isValidAnchor(t.repeatRule, t.repeatAnchor) ? t.repeatAnchor : null,
     cycleKey: typeof t.cycleKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(t.cycleKey) ? t.cycleKey : null,
     reminderTime: typeof t.reminderTime === 'string' && /^([01]?\d|2[0-3]):[0-5]\d$/.test(t.reminderTime) ? t.reminderTime : null,
   };

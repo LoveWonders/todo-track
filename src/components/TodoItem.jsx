@@ -5,7 +5,7 @@ import { getTaskTier } from '../utils/taskTier';
 import { loadProgressCollapsed, saveProgressCollapsed } from '../utils/progressViewState';
 import { URGENT_TAG } from '../constants';
 import { useTodoActions, useTodoView } from '../hooks/TodoContext';
-import { CYCLE_LABELS, hasCycleDoneThisCycle } from '../utils/repeat';
+import { hasCycleDoneThisCycle, anchorLabel } from '../utils/repeat';
 import Countdown from './Countdown';
 import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
@@ -201,7 +201,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
             </span>
             {todo.repeatRule && (
               <span className={`repeat-badge repeat-${todo.repeatRule}`}>
-                {CYCLE_LABELS[todo.repeatRule]}
+                {anchorLabel(todo.repeatRule, todo.repeatAnchor)}
               </span>
             )}
             {checklistMode && progressCount > 0 && (

@@ -1,7 +1,16 @@
 import { getTaskTier } from './taskTier';
+import { isRepeatRule, getRepeatDue } from './repeat';
 
 const TOP = 'top';
 const BOTTOM = 'bottom';
+
+function todoDueTime(t, now) {
+  if (isRepeatRule(t.repeatRule)) {
+    const due = getRepeatDue(t, now);
+    return due != null ? due : Infinity;
+  }
+  return t.dueDate ? new Date(t.dueDate).getTime() : Infinity;
+}
 
 export default function sortTodos(list, isManualMode) {
   if (!Array.isArray(list)) return [];
@@ -21,8 +30,8 @@ export default function sortTodos(list, isManualMode) {
     const now = new Date();
 
     const byDue = (a, b) => {
-      const aDue = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
-      const bDue = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+      const aDue = todoDueTime(a, now);
+      const bDue = todoDueTime(b, now);
       return aDue - bDue;
     };
 

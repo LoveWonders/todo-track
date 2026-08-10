@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatDateTime, isOverdue } from '../utils/dateParser';
 import { URGENT_TAG } from '../constants';
-import { CYCLE_LABELS, hasCycleDoneThisCycle } from '../utils/repeat';
+import { CYCLE_LABELS, WEEKDAY_LABELS, anchorLabel, hasCycleDoneThisCycle } from '../utils/repeat';
 import Countdown from './Countdown';
 import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
@@ -170,17 +170,80 @@ export default function TodoDetail({ todo, onClose }) {
                     <button
                       key={rule}
                       className={`repeat-opt ${todo.repeatRule === rule ? 'active' : ''}`}
-                      onClick={() => { setRepeatRule(todo.id, todo.repeatRule === rule ? null : rule); triggerAutoSave(); }}
+                      onClick={() => {
+                        if (todo.repeatRule === rule) {
+                          setRepeatRule(todo.id, null);
+                        } else {
+                          setRepeatRule(todo.id, rule, todo.repeatAnchor);
+                        }
+                        triggerAutoSave();
+                      }}
                     >
                       {CYCLE_LABELS[rule]}
                     </button>
                   ))}
                 </div>
                 <span className="detail-toggle-hint">
-                  {todo.repeatRule ? `重复任务 · ${CYCLE_LABELS[todo.repeatRule]}` : '不重复'}
+                  {todo.repeatRule ? `重复任务 · ${anchorLabel(todo.repeatRule, todo.repeatAnchor)}` : '不重复'}
                 </span>
               </span>
             </div>
+
+            {todo.repeatRule === 'weekly' && (
+              <div className="detail-row">
+                <span className="detail-label">到期日</span>
+                <span className="detail-value">
+                  <div className="repeat-anchor-row">
+                    {WEEKDAY_LABELS.map((label, i) => (
+                      <button
+                        key={i}
+                        className={`repeat-anchor-opt ${todo.repeatAnchor === i + 1 ? 'active' : ''}`}
+                        onClick={() => { setRepeatRule(todo.id, 'weekly', todo.repeatAnchor === i + 1 ? null : i + 1); triggerAutoSave(); }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </span>
+              </div>
+            )}
+
+            {todo.repeatRule === 'monthly' && (
+              <div className="detail-row">
+                <span className="detail-label">到期日</span>
+                <span className="detail-value">
+                  <div className="repeat-anchor-row">
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      className="repeat-anchor-input"
+                      value={Number.isInteger(todo.repeatAnchor) ? todo.repeatAnchor : ''}
+                      placeholder="号数"
+                      onChange={e => {
+                        const raw = e.target.value;
+                        let anchor = null;
+                        if (raw !== '') {
+                          const v = Math.min(31, Math.max(1, Number(raw)));
+                          anchor = Number.isNaN(v) ? null : v;
+                        }
+                        setRepeatRule(todo.id, 'monthly', anchor);
+                        triggerAutoSave();
+                      }}
+                    />
+                    <button
+                      className={`repeat-anchor-opt ${todo.repeatAnchor === 'last' ? 'active' : ''}`}
+                      onClick={() => {
+                        setRepeatRule(todo.id, 'monthly', todo.repeatAnchor === 'last' ? null : 'last');
+                        triggerAutoSave();
+                      }}
+                    >
+                      月末
+                    </button>
+                  </div>
+                </span>
+              </div>
+            )}
 
             {todo.repeatRule && (
               <div className="detail-row">
