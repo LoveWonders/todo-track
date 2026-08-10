@@ -73,4 +73,13 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - **标签自定义**：设置面板支持自定义 Bottom Sheet 快捷标签
   - 智能识别功能保持不变：@日期 (chrono-node + 中文惯用语) #标签 自动识别
 
+### 布局验证用 Playwright 全局安装
+- Date: 2026-08-10
+- Context: Agent 在执行进度卡片两列布局排查时发现，需用真实浏览器验证 flex 布局
+- Category: 环境配置
+- Instructions:
+  - playwright 已全局安装（`/usr/local/lib/node_modules/playwright`），chromium 已下载到 `/root/.cache/ms-playwright`
+  - 使用方式：`export NODE_PATH=/usr/local/lib/node_modules` 后 `require('playwright')`，headless 启动
+  - dev server 在 `http://localhost:5173/` 可直接验证；注入数据需写入 `todo_app_data`（todo id 必须为数字，字符串 id 会被 normalizeImportedTodo 丢弃）
+
 (Showing lines 52-72 of 72.)
