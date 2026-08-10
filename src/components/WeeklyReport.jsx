@@ -113,10 +113,10 @@ function WeekBlock({ label, labelKey, range, todos, activeTags, filterProps }) {
                 {filterProps.allTags.length > 0 && (
                   <div className="filter-dropdown-footer">
                     <button
-                      className="btn-mini btn-mini-cancel filter-footer-btn"
-                      onClick={filterProps.onAll}
+                      className="btn-mini btn-mini-save filter-footer-btn"
+                      onClick={filterProps.onSelectAll}
                     >
-                      全部
+                      全选
                     </button>
                     <button
                       className="btn-mini btn-mini-cancel filter-footer-btn"
@@ -125,10 +125,10 @@ function WeekBlock({ label, labelKey, range, todos, activeTags, filterProps }) {
                       反选
                     </button>
                     <button
-                      className="btn-mini btn-mini-save filter-footer-btn"
-                      onClick={filterProps.onSelectAll}
+                      className="btn-mini btn-mini-cancel filter-footer-btn"
+                      onClick={filterProps.onClearDraft}
                     >
-                      全选
+                      清空
                     </button>
                     <button
                       className="btn-mini btn-mini-save filter-footer-btn"
@@ -228,9 +228,8 @@ export default function WeeklyReport({ todos }) {
     setOpenFor(null);
   }, [draftTags]);
 
-  const handleAll = useCallback(() => {
-    setActiveTags([]);
-    setOpenFor(null);
+  const handleClearDraft = useCallback(() => {
+    setDraftTags([]);
   }, []);
 
   const handleSelectAll = useCallback(() => {
@@ -246,10 +245,10 @@ export default function WeeklyReport({ todos }) {
     onToggle: (labelKey) => handleToggleFilter(labelKey),
     onCheck: handleCheck,
     onConfirm: handleConfirm,
-    onAll: handleAll,
+    onClearDraft: handleClearDraft,
     onSelectAll: handleSelectAll,
     onInvert: handleInvert,
-  }), [openFor, allTags, draftTags, handleToggleFilter, handleCheck, handleConfirm, handleAll, handleSelectAll, handleInvert]);
+  }), [openFor, allTags, draftTags, handleToggleFilter, handleCheck, handleConfirm, handleClearDraft, handleSelectAll, handleInvert]);
 
   return (
     <div className="weekly-report">
