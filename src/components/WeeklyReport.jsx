@@ -84,7 +84,7 @@ function WeekBlock({ label, labelKey, range, todos, activeTags, filterProps }) {
           <div className="filter-wps-wrap weekly-filter-wrap">
             <button
               className={`filter-btn-wps ${activeTags.length > 0 || dropdownOpen ? 'active' : ''}`}
-              onClick={filterProps.onToggle}
+              onClick={() => filterProps.onToggle(labelKey)}
               title="按标签筛选"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -200,10 +200,12 @@ export default function WeeklyReport({ todos }) {
   const handleToggleFilter = useCallback((labelKey) => {
     setOpenFor(prev => {
       if (prev === labelKey) return null;
-      setDraftTags([...activeTags]);
       return labelKey;
     });
-  }, [activeTags]);
+    if (openFor !== labelKey) {
+      setDraftTags([...activeTags]);
+    }
+  }, [openFor, activeTags]);
 
   const handleCheck = useCallback((tag) => {
     setDraftTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
