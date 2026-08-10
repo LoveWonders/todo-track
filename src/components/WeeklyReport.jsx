@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import {
   getLastWeekRange,
   getThisWeekRange,
@@ -42,18 +42,18 @@ function buildCopyText(label, range, completed, progressed, noProgress) {
   return lines.join('\n');
 }
 
-function WeekBlock({ label, range, todos, activeTag }) {
+function WeekBlock({ label, labelKey, range, todos, activeTags, filterProps }) {
   const completedAll = useMemo(() => getCompletedLastWeek(todos, range), [todos, range]);
   const progressedAll = useMemo(() => getProgressedLastWeek(todos, range), [todos, range]);
   const noProgressAll = useMemo(() => getNoProgressLastWeek(todos, range), [todos, range]);
 
-  const filterByTag = useCallback((list) =>
-    activeTag ? list.filter(t => (t.tags || []).includes(activeTag)) : list
-  , [activeTag]);
+  const filterByTags = useCallback((list) =>
+    activeTags.length > 0 ? list.filter(t => (t.tags || []).some(tag => activeTags.includes(tag))) : list
+  , [activeTags]);
 
-  const completed = useMemo(() => filterByTag(completedAll), [filterByTag, completedAll]);
-  const progressed = useMemo(() => filterByTag(progressedAll), [filterByTag, progressedAll]);
-  const noProgress = useMemo(() => filterByTag(noProgressAll), [filterByTag, noProgressAll]);
+  const completed = useMemo(() => filterByTags(completedAll), [filterByTags, completedAll]);
+  const progressed = useMemo(() => filterByTags(progressedAll), [filterByTags, progressedAll]);
+  const noProgress = useMemo(() => filterByTags(noProgressAll), [filterByTags, noProgressAll]);
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -74,14 +74,65 @@ function WeekBlock({ label, range, todos, activeTag }) {
   ];
 
   const total = completed.length + progressed.length + noProgress.length;
+  const dropdownOpen = filterProps.openFor === labelKey;
 
   return (
     <>
       <div className="weekly-header">
         <span className="weekly-title">{label} ({formatRange(range)})</span>
-        <button className="weekly-copy-btn" onClick={handleCopy}>
-          {copied ? '已复制' : '复制汇报'}
-        </button>
+        <div className="weekly-header-actions">
+          <div className="filter-wps-wrap weekly-filter-wrap">
+            <button
+              className={`filter-btn-wps ${activeTags.length > 0 || dropdownOpen ? 'active' : ''}`}
+              onClick={filterProps.onToggle}
+              title="按标签筛选"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+            </button>
+
+            {dropdownOpen && (
+              <div className="filter-dropdown">
+                <div className="filter-dropdown-list">
+                  {filterProps.allTags.length === 0 ? (
+                    <div className="filter-dropdown-empty">暂无标签</div>
+                  ) : (
+                    filterProps.allTags.map(tag => (
+                      <label key={tag} className="filter-dropdown-item">
+                        <input
+                          type="checkbox"
+                          checked={filterProps.draftTags.includes(tag)}
+                          onChange={() => filterProps.onCheck(tag)}
+                        />
+                        <span className="filter-dropdown-label">#{tag}</span>
+                      </label>
+                    ))
+                  )}
+                </div>
+                {filterProps.allTags.length > 0 && (
+                  <div className="filter-dropdown-footer">
+                    <button
+                      className="btn-mini btn-mini-cancel filter-footer-btn"
+                      onClick={filterProps.onAll}
+                    >
+                      全部
+                    </button>
+                    <button
+                      className="btn-mini btn-mini-save filter-footer-btn"
+                      onClick={filterProps.onConfirm}
+                    >
+                      确定
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <button className="weekly-copy-btn" onClick={handleCopy}>
+            {copied ? '已复制' : '复制'}
+          </button>
+        </div>
       </div>
 
       <div className="weekly-stats">
@@ -92,7 +143,7 @@ function WeekBlock({ label, range, todos, activeTag }) {
         <span className="weekly-stat" style={{ color: 'var(--warn)' }}>无进展 {noProgress.length}</span>
       </div>
 
-      {activeTag && total === 0 && (
+      {activeTags.length > 0 && total === 0 && (
         <div className="weekly-empty-tip">当前标签下暂无周报内容</div>
       )}
 
@@ -129,37 +180,60 @@ function WeekBlock({ label, range, todos, activeTag }) {
 export default function WeeklyReport({ todos }) {
   const thisWeekRange = useMemo(() => getThisWeekRange(), []);
   const lastWeekRange = useMemo(() => getLastWeekRange(), []);
-  const [activeTag, setActiveTag] = useState(null);
+  const [activeTags, setActiveTags] = useState([]);
+  const [draftTags, setDraftTags] = useState([]);
+  const [openFor, setOpenFor] = useState(null);
 
   const allTags = useMemo(() => [...new Set(todos.flatMap(t => t.tags || []))].sort(), [todos]);
 
+  useEffect(() => {
+    if (!openFor) return;
+    const handler = (e) => {
+      if (!e.target.closest('.weekly-filter-wrap')) {
+        setOpenFor(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [openFor]);
+
+  const handleToggleFilter = useCallback((labelKey) => {
+    setOpenFor(prev => {
+      if (prev === labelKey) return null;
+      setDraftTags([...activeTags]);
+      return labelKey;
+    });
+  }, [activeTags]);
+
+  const handleCheck = useCallback((tag) => {
+    setDraftTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+  }, []);
+
+  const handleConfirm = useCallback(() => {
+    setActiveTags(draftTags);
+    setOpenFor(null);
+  }, [draftTags]);
+
+  const handleAll = useCallback(() => {
+    setActiveTags([]);
+    setOpenFor(null);
+  }, []);
+
+  const filterProps = useMemo(() => ({
+    openFor, allTags, draftTags,
+    onToggle: (labelKey) => handleToggleFilter(labelKey),
+    onCheck: handleCheck,
+    onConfirm: handleConfirm,
+    onAll: handleAll,
+  }), [openFor, allTags, draftTags, handleToggleFilter, handleCheck, handleConfirm, handleAll]);
+
   return (
     <div className="weekly-report">
-      {allTags.length > 0 && (
-        <div className="filter-bar weekly-filter-bar">
-          <button
-            className={`filter-chip ${activeTag === null ? 'active' : ''}`}
-            onClick={() => setActiveTag(null)}
-          >
-            全部
-          </button>
-          {allTags.map(tag => (
-            <button
-              key={tag}
-              className={`filter-chip ${activeTag === tag ? 'active' : ''}`}
-              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-            >
-              #{tag}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <WeekBlock label="本周" range={thisWeekRange} todos={todos} activeTag={activeTag} />
+      <WeekBlock label="本周" labelKey="this" range={thisWeekRange} todos={todos} activeTags={activeTags} filterProps={filterProps} />
 
       <div className="weekly-divider" />
 
-      <WeekBlock label="上周" range={lastWeekRange} todos={todos} activeTag={activeTag} />
+      <WeekBlock label="上周" labelKey="last" range={lastWeekRange} todos={todos} activeTags={activeTags} filterProps={filterProps} />
 
       <div className="scroll-spacer" />
     </div>
