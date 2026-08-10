@@ -5,10 +5,15 @@ import ProgressManageBar from './ProgressManageBar';
 import ProgressDefaultBar from './ProgressDefaultBar';
 import { hasCycleDoneThisCycle } from '../utils/repeat';
 
-const LONG_TEXT_THRESHOLD = 20;
+const LONG_TEXT_WIDTH = 18;
 
 function isLongProgressText(text) {
-  return String(text).length > LONG_TEXT_THRESHOLD;
+  const s = String(text);
+  let w = 0;
+  for (const ch of s) {
+    w += ch.charCodeAt(0) > 0xff ? 2 : 1;
+  }
+  return w > LONG_TEXT_WIDTH;
 }
 
 export default function ProgressLog({ progress, todoId, collapsed, checklistMode, repeatRule }) {
