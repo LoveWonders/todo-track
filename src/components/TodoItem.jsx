@@ -42,6 +42,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const cycleItems = currentCycleProgress(todo);
   const progressCount = cycleItems.length;
   const completedCount = cycleItems.filter(p => p.status === 'completed').length;
+  const activeCount = cycleItems.filter(p => p.status === 'active').length;
   const progressAllDone = progressCount > 0 && completedCount === progressCount;
   const cycleDone = hasCycleDoneThisCycle(todo);
   const checklistMode = todo.checklistMode === true;
@@ -266,8 +267,8 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
                   title={collapsed ? '展开进度' : '收起进度'}
                 >
                   {collapsed ? '\u25BC' : '\u25B2'}
-                  {progressCount > 0 && collapsed && (
-                    <span className="expand-count">{progressCount}</span>
+                  {activeCount > 0 && collapsed && (
+                    <span className="expand-count">{activeCount}</span>
                   )}
                 </button>
               )}
