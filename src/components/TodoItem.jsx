@@ -5,7 +5,7 @@ import { getTaskTier } from '../utils/taskTier';
 import { loadProgressCollapsed, saveProgressCollapsed } from '../utils/progressViewState';
 import { URGENT_TAG } from '../constants';
 import { useTodoActions, useTodoView } from '../hooks/TodoContext';
-import { hasCycleDoneThisCycle, anchorLabel } from '../utils/repeat';
+import { hasCycleDoneThisCycle, anchorLabel, currentCycleProgress } from '../utils/repeat';
 import Countdown from './Countdown';
 import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
@@ -39,8 +39,9 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
   const canCollapse = !isArchive && todo.status === 'active';
   const progressArr = Array.isArray(todo.progress) ? todo.progress : [];
-  const progressCount = progressArr.length;
-  const completedCount = progressArr.filter(p => p.status === 'completed').length;
+  const cycleItems = currentCycleProgress(todo);
+  const progressCount = cycleItems.length;
+  const completedCount = cycleItems.filter(p => p.status === 'completed').length;
   const progressAllDone = progressCount > 0 && completedCount === progressCount;
   const cycleDone = hasCycleDoneThisCycle(todo);
   const checklistMode = todo.checklistMode === true;

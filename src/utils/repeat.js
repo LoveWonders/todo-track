@@ -110,6 +110,13 @@ export function getRepeatDue(todo, now = new Date()) {
   return end ? end.getTime() : null;
 }
 
+export function currentCycleProgress(todo, now = new Date()) {
+  const all = Array.isArray(todo?.progress) ? todo.progress : [];
+  if (!isRepeatRule(todo?.repeatRule)) return all;
+  const ws = getWindowStart(todo.repeatRule, now).getTime();
+  return all.filter(p => new Date(p.createdAt ?? p.time).getTime() >= ws);
+}
+
 export function anchorDateInWindow(rule, anchor, windowStart) {
   const ws = windowStart instanceof Date ? windowStart : new Date(windowStart);
   if (rule === 'daily') return new Date(ws);

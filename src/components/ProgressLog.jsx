@@ -3,7 +3,7 @@ import { useTodoActions, useTodoView } from '../hooks/TodoContext';
 import CompleteDateModal from './CompleteDateModal';
 import ProgressManageBar from './ProgressManageBar';
 import ProgressDefaultBar from './ProgressDefaultBar';
-import { hasCycleDoneThisCycle } from '../utils/repeat';
+import { hasCycleDoneThisCycle, currentCycleProgress } from '../utils/repeat';
 
 const LONG_TEXT_WIDTH = 18;
 
@@ -33,7 +33,8 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
 
   // 数据预处理（所有变量定义必须在条件 return 之前）
   const items = Array.isArray(progress) ? progress : [];
-  const progressCount = items.length;
+  const cycleItems = currentCycleProgress({ repeatRule, progress: items });
+  const progressCount = cycleItems.length;
   const inBatch = batchMode;
 
   // 事件处理函数（必须在条件 return 之前定义）
@@ -116,7 +117,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
     return { activeProgress: active, archivedProgress: archived };
   }, [items]);
 
-  const completedCount = items.filter(p => p.status === 'completed').length;
+  const completedCount = cycleItems.filter(p => p.status === 'completed').length;
   const allCompleted = progressCount > 0 && completedCount === progressCount;
   const summaryPct = progressCount > 0 ? Math.round((completedCount / progressCount) * 100) : 0;
   const cycleDone = hasCycleDoneThisCycle({ repeatRule, progress: items });
