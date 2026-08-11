@@ -4,9 +4,7 @@ import { useSmartInput } from '../hooks/useSmartInput';
 import { useTagLogic } from '../hooks/useTagLogic';
 import { formatDateRange, formatDateOnly } from '../utils/dateParser';
 import { toISODateTime, parseLocalDate } from '../utils/datePatterns';
-import { makeDefaultDueDate } from '../utils/defaultDue';
 import { URGENT_TAG } from '../constants';
-import { useSettings } from '../hooks/useSettings';
 
 function tryParseDateText(text) {
   if (!text || !text.trim()) return null;
@@ -42,7 +40,6 @@ export default function TodoInput({ onAdd }) {
   const [pickedStart, setPickedStart] = useState(null);
   const [pickedEnd, setPickedEnd] = useState(null);
   const [isUrgent, setIsUrgent] = useState(false);
-  const { settings } = useSettings();
 
   const { text, setText, parsed, clear: clearSmart } = useSmartInput();
   const { tags, removeTag, clearTags } = useTagLogic([]);
@@ -108,11 +105,7 @@ export default function TodoInput({ onAdd }) {
     if (!canSubmit) return;
     const final = parsed.cleanContent.trim();
 
-    let finalDueDate = effectiveEnd;
-    if (!finalDueDate) {
-      finalDueDate = makeDefaultDueDate(settings.defaultDueHour, settings.defaultDueMinute);
-    }
-
+    const finalDueDate = effectiveEnd || null;
     const title = final || formatDateRange(null, finalDueDate) || '待办';
 
     onAdd({ title, startDate: effectiveStart, dueDate: finalDueDate, tags: submittedTags });
@@ -121,7 +114,7 @@ export default function TodoInput({ onAdd }) {
     setIsUrgent(false);
     setPickedStart(null);
     setPickedEnd(null);
-  }, [canSubmit, parsed, effectiveStart, effectiveEnd, submittedTags, onAdd, clearSmart, clearTags, settings.defaultDueHour, settings.defaultDueMinute]);
+  }, [canSubmit, parsed, effectiveStart, effectiveEnd, submittedTags, onAdd, clearSmart, clearTags]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {

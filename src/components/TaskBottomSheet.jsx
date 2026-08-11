@@ -5,7 +5,6 @@ import { useTagLogic } from '../hooks/useTagLogic';
 import { URGENT_TAG } from '../constants';
 import { useSettings } from '../hooks/useSettings';
 import { isSafeTagName } from '../utils/tagMeta';
-import { makeDefaultDueDate } from '../utils/defaultDue';
 import { CYCLE_LABELS, WEEKDAY_LABELS, anchorLabel } from '../utils/repeat';
 
 const DEFAULT_PRESET_TAGS = ['工作', '长期', '个人'];
@@ -149,10 +148,7 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
 
   const handleSubmit = useCallback(() => {
     const final = parsed.cleanContent.trim();
-    let finalDueDate = pickedEnd;
-    if (!finalDueDate) {
-      finalDueDate = makeDefaultDueDate(settings.defaultDueHour, settings.defaultDueMinute);
-    }
+    const finalDueDate = pickedEnd || null;
     const title = final || formatDateOnly(finalDueDate) || '待办';
     onAdd({ title, startDate: pickedStart, dueDate: finalDueDate, tags: submittedTags, checklistMode: isChecklist, repeatRule, repeatAnchor });
     clearSmart();
@@ -162,7 +158,7 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
     setRepeatRule(null);
     setRepeatAnchor(null);
     onClose();
-  }, [pickedStart, pickedEnd, submittedTags, parsed, onAdd, clearSmart, clearTags, settings.defaultDueHour, settings.defaultDueMinute, isChecklist, repeatRule, repeatAnchor, onClose]);
+  }, [pickedStart, pickedEnd, submittedTags, parsed, onAdd, clearSmart, clearTags, isChecklist, repeatRule, repeatAnchor, onClose]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {

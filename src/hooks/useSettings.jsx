@@ -4,8 +4,6 @@ import { setAutoTrim } from '../utils/logger';
 const SETTINGS_KEY = 'todo_app_settings';
 
 const defaultSettings = {
-  defaultDueHour: 21,
-  defaultDueMinute: 0,
   presetTags: undefined,
   compactMode: false,
   autoArchive: true,

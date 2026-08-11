@@ -63,12 +63,6 @@ function checkSettings(data, source, problems) {
     return 0;
   }
   let issues = [];
-  if (data.defaultDueHour != null && (!Number.isInteger(data.defaultDueHour) || data.defaultDueHour < 0 || data.defaultDueHour > 23)) {
-    issues.push('defaultDueHour 无效（应为 0-23 整数）');
-  }
-  if (data.defaultDueMinute != null && (!Number.isInteger(data.defaultDueMinute) || data.defaultDueMinute < 0 || data.defaultDueMinute > 59)) {
-    issues.push('defaultDueMinute 无效（应为 0-59 整数）');
-  }
   if (data.presetTags != null && !Array.isArray(data.presetTags)) {
     issues.push('presetTags 无效（需要数组）');
   }
