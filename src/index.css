@@ -3766,6 +3766,34 @@ body.compact-mode .todo-tag {
   color: var(--accent);
 }
 
+.archive-history-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.archive-history-detail {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.archive-history-detail:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
 .archive-history-restore {
   width: 28px;
   height: 28px;

@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { DndContext, DragOverlay, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { useTodos } from './hooks/useTodos';
@@ -18,6 +19,7 @@ import BatchBar from './components/BatchBar';
 import PerformanceTester from './components/PerformanceTester';
 import SettingsModal from './components/SettingsModal';
 import TaskBottomSheet from './components/TaskBottomSheet';
+import TodoDetail from './components/TodoDetail';
 import FloatingActionButton from './components/FloatingActionButton';
 import { loadArchive, saveArchive } from './utils/autoArchive';
 import { formatDate } from './utils/dateParser';
@@ -29,6 +31,7 @@ export default function App() {
   const [dragId, setDragId] = useState(null);
   const [devMode, setDevMode] = useState(false);
   const [archiveData, setArchiveData] = useState([]);
+  const [archiveDetailItem, setArchiveDetailItem] = useState(null);
   const [showArchivedHistory, setShowArchivedHistory] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
@@ -257,13 +260,22 @@ export default function App() {
                                   </span>
                                 </div>
                               </div>
-                              <button
-                                className="archive-history-restore"
-                                onClick={() => restoreFromArchive(item)}
-                                title="恢复"
-                              >
-                                &#x21A9;
-                              </button>
+                              <div className="archive-history-actions">
+                                <button
+                                  className="archive-history-detail"
+                                  onClick={() => setArchiveDetailItem(item)}
+                                  title="详情"
+                                >
+                                  详情
+                                </button>
+                                <button
+                                  className="archive-history-restore"
+                                  onClick={() => restoreFromArchive(item)}
+                                  title="恢复"
+                                >
+                                  &#x21A9;
+                                </button>
+                              </div>
                             </div>
                           ))
                         )}
@@ -301,6 +313,11 @@ export default function App() {
               ) : null}
             </DragOverlay>
           </DndContext>
+
+          {archiveDetailItem && createPortal(
+            <TodoDetail todo={archiveDetailItem} onClose={() => setArchiveDetailItem(null)} />,
+            document.body
+          )}
         </TodoProvider>
       )}
 
