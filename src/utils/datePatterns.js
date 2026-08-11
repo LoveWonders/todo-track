@@ -42,6 +42,16 @@ export const DATE_PATTERNS = [
   }},
   { regex: /(下?)周([一二三四五六日天])/, handler: (m) => nextWeekday(m[2], !!m[1]) },
   { regex: /(下?)星期([一二三四五六日天])/, handler: (m) => nextWeekday(m[2], !!m[1]) },
+  { regex: /(下?)周末/, handler: (m) => {
+    const d = new Date();
+    const toSunday = (7 - d.getDay()) % 7;
+    if (m[1]) {
+      d.setDate(d.getDate() + (toSunday === 0 ? 7 : toSunday + 7));
+    } else {
+      d.setDate(d.getDate() + toSunday);
+    }
+    return d;
+  }},
   { regex: /本周/, handler: () => { const d = new Date(); d.setDate(d.getDate() + (7 - d.getDay()) % 7); return d; } },
   { regex: /下周/, handler: () => { const d = new Date(); d.setDate(d.getDate() + (14 - d.getDay()) % 7 || 7); return d; } },
   { regex: /(\d+)月前/, handler: (m) => { const d = new Date(); d.setMonth(d.getMonth() - +m[1]); return d; } },
