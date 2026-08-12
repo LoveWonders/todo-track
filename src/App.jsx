@@ -25,7 +25,7 @@ import { loadArchive, saveArchive } from './utils/autoArchive';
 import { formatDate } from './utils/dateParser';
 
 export default function App() {
-  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, deleteTodo, commitReorder, setPinStatus, toggleStatus, completeTodo, setRepeatRule, setReminderTime, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags, isManualMode, setManualMode } = useTodos();
+  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, batchUpdateCompletedAt, importTodos, allTags, isManualMode, setManualMode } = useTodos();
   const [filterConfig, setFilterConfig] = useState({ includeTags: [], excludeTags: [] });
   const [view, setView] = useState('active');
   const [dragId, setDragId] = useState(null);
@@ -82,7 +82,7 @@ export default function App() {
     batchMode, selectedIds, exitBatch, handleBatchToggle,
     batchDelete, batchComplete, batchCancel, batchSetDate,
     batchSetTags, batchAddProgress, batchCompleteAt, selectAll, invertSelection,
-  } = useBatchActions(filteredTodos, source, deleteTodo, toggleStatus, updateTodo, addProgress, updateCompletedAt);
+  } = useBatchActions(filteredTodos, source, batchUpdateTodos, batchDeleteTodos, batchToggleStatus, addProgress, batchUpdateCompletedAt);
 
   const exitPrompt = useBackButton({ view, setView, batchMode, exitBatch });
   const { showCompleteDateModal, openCompleteDateModal, closeCompleteDateModal } = useModalManager();
@@ -140,20 +140,24 @@ export default function App() {
   const draggedTodo = dragId ? todos.find(t => t.id === dragId) : null;
 
   const replaceTagInTodos = useCallback((oldTag, newTag) => {
+    const entries = [];
     todos.forEach(t => {
       if (t.tags && t.tags.includes(oldTag)) {
-        updateTodo(t.id, { tags: t.tags.map(x => x === oldTag ? newTag : x) });
+        entries.push({ id: t.id, updates: { tags: t.tags.map(x => x === oldTag ? newTag : x) } });
       }
     });
-  }, [todos, updateTodo]);
+    batchUpdateTodos(entries);
+  }, [todos, batchUpdateTodos]);
 
   const removeTagFromTodos = useCallback((tag) => {
+    const entries = [];
     todos.forEach(t => {
       if (t.tags && t.tags.includes(tag)) {
-        updateTodo(t.id, { tags: t.tags.filter(x => x !== tag) });
+        entries.push({ id: t.id, updates: { tags: t.tags.filter(x => x !== tag) } });
       }
     });
-  }, [todos, updateTodo]);
+    batchUpdateTodos(entries);
+  }, [todos, batchUpdateTodos]);
 
   return (
     <TagMetaProvider>

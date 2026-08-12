@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { formatDateOnly } from '../utils/dateParser';
 import { useSmartInput } from '../hooks/useSmartInput';
 import { useTagLogic } from '../hooks/useTagLogic';
@@ -69,7 +69,7 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
 
   const pickedStart = parsed.startDate;
   const pickedEnd = parsed.dueDate;
-  const submittedTags = mergeSubmitTags(tags, parsed.tags, isUrgent);
+  const submittedTags = useMemo(() => mergeSubmitTags(tags, parsed.tags, isUrgent), [tags, parsed.tags, isUrgent]);
 
   const handlePresetTagClick = useCallback((tag) => {
     if (editMode) return;

@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useMemo } from 'react';
 import { useSmartInput } from '../hooks/useSmartInput';
 import { useTagLogic } from '../hooks/useTagLogic';
 import { formatDateRange, formatDateOnly, parseDateRangeText, isoToDatetimeLocal } from '../utils/dateParser';
@@ -20,7 +20,7 @@ export default function TodoInput({ onAdd }) {
   const displayText = effectiveStart
     ? formatDateOnly(effectiveStart) + (effectiveEnd ? ` ~ ${formatDateOnly(effectiveEnd)}` : '')
     : effectiveEnd ? formatDateOnly(effectiveEnd) : '';
-  const submittedTags = mergeSubmitTags(tags, parsed.tags, isUrgent);
+  const submittedTags = useMemo(() => mergeSubmitTags(tags, parsed.tags, isUrgent), [tags, parsed.tags, isUrgent]);
 
   const canSubmit = parsed.cleanContent.trim() || effectiveEnd || submittedTags.length > 0;
 

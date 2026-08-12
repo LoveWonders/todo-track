@@ -190,27 +190,53 @@ export function useTodos() {
     setIsManualMode(!!mode);
   }, []);
 
-  const toggleStatus = useCallback((id, newStatus) => {
+  const batchToggleStatus = useCallback((entries) => {
+    if (!entries || entries.length === 0) return;
+    const nowIso = new Date().toISOString();
+    const emap = new Map(entries.map(e => [e.id, e.newStatus]));
     setTodos(prev => prev.map(t => {
-      if (t.id !== id) return t;
+      const newStatus = emap.get(t.id);
+      if (newStatus === undefined) return t;
       const willBeArchived = t.status === 'active' && newStatus !== 'active';
       const willBeRestored = t.status !== 'active' && newStatus !== t.status;
       return {
         ...t,
         status: t.status === newStatus ? 'active' : newStatus,
-        completedAt: willBeArchived ? new Date().toISOString()
+        completedAt: willBeArchived ? nowIso
           : willBeRestored ? null
           : t.completedAt,
       };
     }));
-    const target = todosRef.current.find(t => t.id === id);
-    if (target?.repeatRule) {
-      if (target.status === 'active' && newStatus !== 'active') {
-        cancelReminder(id);
-      } else if (target.status !== 'active' && newStatus !== target.status) {
-        scheduleReminder(target);
+    for (const { id, newStatus } of entries) {
+      const target = todosRef.current.find(t => t.id === id);
+      if (target?.repeatRule) {
+        if (target.status === 'active' && newStatus !== 'active') {
+          cancelReminder(id);
+        } else if (target.status !== 'active' && newStatus !== target.status) {
+          scheduleReminder(target);
+        }
       }
     }
+  }, []);
+
+  const toggleStatus = useCallback((id, newStatus) => {
+    batchToggleStatus([{ id, newStatus }]);
+  }, [batchToggleStatus]);
+
+  const batchUpdateTodos = useCallback((entries) => {
+    if (!entries || entries.length === 0) return;
+    const updates = new Map(entries.map(e => [e.id, e.updates]));
+    setTodos(prev => prev.map(t => {
+      const u = updates.get(t.id);
+      return u ? { ...t, ...u } : t;
+    }));
+  }, []);
+
+  const batchDeleteTodos = useCallback((ids) => {
+    const idSet = ids instanceof Set ? ids : new Set(ids);
+    if (idSet.size === 0) return;
+    idSet.forEach(id => removeProgressCollapsed(id));
+    setTodos(prev => prev.filter(t => !idSet.has(t.id)));
   }, []);
 
   const completeTodo = useCallback((id) => {
@@ -362,10 +388,17 @@ export function useTodos() {
   const updateCompletedAt = useCallback((id, dateString) => {
     const isoString = toSafeIso(dateString);
     if (!isoString) return;
-    setTodos(prev => prev.map(t =>
-      t.id === id ? { ...t, status: 'completed', completedAt: isoString } : t
-    ));
-  }, []);
+    batchUpdateTodos([{ id, updates: { status: 'completed', completedAt: isoString } }]);
+  }, [batchUpdateTodos]);
+
+  const batchUpdateCompletedAt = useCallback((entries) => {
+    const mapped = [];
+    for (const { id, dateString } of entries) {
+      const isoString = toSafeIso(dateString);
+      if (isoString) mapped.push({ id, updates: { status: 'completed', completedAt: isoString } });
+    }
+    batchUpdateTodos(mapped);
+  }, [batchUpdateTodos]);
 
   const importTodos = useCallback((importData, strategy) => {
     setTodos(prev => {
@@ -388,5 +421,5 @@ export function useTodos() {
   const archivedTodos = useMemo(() => todos.filter(t => t.status !== 'active'), [todos]);
   const allTags = useMemo(() => [...new Set(todos.flatMap(t => t.tags))].sort(), [todos]);
 
-  return { todos, activeTodos, archivedTodos, loaded, isManualMode, setManualMode, addTodo, updateTodo, deleteTodo, commitReorder, setPinStatus, toggleStatus, completeTodo, setRepeatRule, setReminderTime, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
+  return { todos, activeTodos, archivedTodos, loaded, isManualMode, setManualMode, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, batchUpdateCompletedAt, importTodos, allTags };
 }

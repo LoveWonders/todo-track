@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 
-export default function useBatchActions(filteredTodos, sourceTodos, deleteTodo, toggleStatus, updateTodo, addProgress, updateCompletedAt) {
+export default function useBatchActions(filteredTodos, sourceTodos, batchUpdateTodos, batchDeleteTodos, batchToggleStatus, addProgress, batchUpdateCompletedAt) {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [batchMode, setBatchMode] = useState(false);
 
@@ -31,43 +31,46 @@ export default function useBatchActions(filteredTodos, sourceTodos, deleteTodo, 
   const batchDelete = useCallback(() => {
     if (selectedIds.size === 0) return;
     if (!window.confirm(`确认删除 ${selectedIds.size} 个任务？`)) return;
-    selectedIds.forEach(id => deleteTodo(id));
+    batchDeleteTodos(selectedIds);
     exitBatch();
-  }, [selectedIds, deleteTodo, exitBatch]);
+  }, [selectedIds, batchDeleteTodos, exitBatch]);
 
   const batchComplete = useCallback(() => {
-    selectedIds.forEach(id => toggleStatus(id, 'completed'));
+    batchToggleStatus([...selectedIds].map(id => ({ id, newStatus: 'completed' })));
     exitBatch();
-  }, [selectedIds, toggleStatus, exitBatch]);
+  }, [selectedIds, batchToggleStatus, exitBatch]);
 
   const batchCancel = useCallback(() => {
-    selectedIds.forEach(id => toggleStatus(id, 'cancelled'));
+    batchToggleStatus([...selectedIds].map(id => ({ id, newStatus: 'cancelled' })));
     exitBatch();
-  }, [selectedIds, toggleStatus, exitBatch]);
+  }, [selectedIds, batchToggleStatus, exitBatch]);
 
   const batchSetDate = useCallback((date) => {
-    selectedIds.forEach(id => updateTodo(id, { dueDate: date }));
-  }, [selectedIds, updateTodo]);
+    batchUpdateTodos([...selectedIds].map(id => ({ id, updates: { dueDate: date } })));
+  }, [selectedIds, batchUpdateTodos]);
 
   const batchSetTags = useCallback((tags) => {
-    selectedIds.forEach(id => {
-      const todo = sourceTodos.find(t => t.id === id);
-      if (todo) {
+    const byId = new Map(sourceTodos.map(t => [t.id, t]));
+    const entries = [...selectedIds]
+      .map(id => {
+        const todo = byId.get(id);
+        if (!todo) return null;
         const existing = new Set(todo.tags || []);
         tags.forEach(t => existing.add(t));
-        updateTodo(id, { tags: [...existing] });
-      }
-    });
-  }, [selectedIds, sourceTodos, updateTodo]);
+        return { id, updates: { tags: [...existing] } };
+      })
+      .filter(Boolean);
+    batchUpdateTodos(entries);
+  }, [selectedIds, sourceTodos, batchUpdateTodos]);
 
   const batchAddProgress = useCallback((text) => {
     selectedIds.forEach(id => addProgress(id, text));
   }, [selectedIds, addProgress]);
 
   const batchCompleteAt = useCallback((dateString) => {
-    selectedIds.forEach(id => updateCompletedAt(id, dateString));
+    batchUpdateCompletedAt([...selectedIds].map(id => ({ id, dateString })));
     exitBatch();
-  }, [selectedIds, updateCompletedAt, exitBatch]);
+  }, [selectedIds, batchUpdateCompletedAt, exitBatch]);
 
   const selectAll = useCallback(() => {
     setSelectedIds(new Set(filteredTodos.map(t => t.id)));

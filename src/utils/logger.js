@@ -5,6 +5,7 @@ const STORAGE_KEY = 'todotrack_debug_logs';
 
 let logs = [];
 let autoTrim = true;
+let persistTimer = null;
 
 (function init() {
   const settings = readJSON('todo_app_settings', null);
@@ -19,10 +20,24 @@ export function setAutoTrim(enabled) {
   autoTrim = !!enabled;
 }
 
-function persist() {
+export function flushLogs() {
+  if (persistTimer) {
+    clearTimeout(persistTimer);
+    persistTimer = null;
+  }
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
   } catch { /* ignore */ }
+}
+
+function persist() {
+  if (persistTimer) return;
+  persistTimer = setTimeout(() => {
+    persistTimer = null;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+    } catch { /* ignore */ }
+  }, 200);
 }
 
 export function addLog(type, message, detail) {
@@ -47,7 +62,7 @@ export function getLogs() {
 
 export function clearLogs() {
   logs = [];
-  persist();
+  flushLogs();
 }
 
 export function logTypeLabel(type) {
