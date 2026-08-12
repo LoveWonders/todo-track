@@ -1,10 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { formatDate, formatDateTime, parseDateText } from '../utils/dateParser';
-
-function isoToDatetimeLocal(iso) {
-  if (!iso) return '';
-  return iso.length >= 16 ? iso.slice(0, 16) : iso.slice(0, 10);
-}
+import { formatDate, formatDateTime, parseDateText, isoToDatetimeLocal } from '../utils/dateParser';
 
 function isoToDateLocal(iso) {
   if (!iso) return '';

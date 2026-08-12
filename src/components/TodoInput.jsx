@@ -1,37 +1,8 @@
 import { useRef, useState, useCallback } from 'react';
-import * as chrono from 'chrono-node';
 import { useSmartInput } from '../hooks/useSmartInput';
 import { useTagLogic } from '../hooks/useTagLogic';
-import { formatDateRange, formatDateOnly } from '../utils/dateParser';
-import { toISODateTime, parseLocalDate } from '../utils/datePatterns';
-import { URGENT_TAG } from '../constants';
-
-function tryParseDateText(text) {
-  if (!text || !text.trim()) return null;
-
-  try {
-    const results = chrono.zh.parse(text, new Date(), { forwardDate: true });
-    if (results.length > 0) {
-      const parsed = results[0];
-      if (!parsed.start) return null;
-      const hasRange = parsed.end && parsed.end.date().getTime() !== parsed.start.date().getTime();
-      const end = toISODateTime((parsed.end || parsed.start).date());
-      const start = hasRange ? toISODateTime(parsed.start.date()) : null;
-      return { start, end };
-    }
-  } catch { /* fall through */ }
-
-  const fallback = parseLocalDate(text);
-  if (fallback) {
-    return { start: null, end: toISODateTime(fallback) };
-  }
-  return null;
-}
-
-function isoToDatetimeLocal(iso) {
-  if (!iso) return '';
-  return iso.length >= 16 ? iso.slice(0, 16) : iso.slice(0, 10);
-}
+import { formatDateRange, formatDateOnly, parseDateRangeText, isoToDatetimeLocal } from '../utils/dateParser';
+import { mergeSubmitTags } from '../utils/tagMeta';
 
 export default function TodoInput({ onAdd }) {
   const inputRef = useRef(null);
@@ -49,7 +20,7 @@ export default function TodoInput({ onAdd }) {
   const displayText = effectiveStart
     ? formatDateOnly(effectiveStart) + (effectiveEnd ? ` ~ ${formatDateOnly(effectiveEnd)}` : '')
     : effectiveEnd ? formatDateOnly(effectiveEnd) : '';
-  const submittedTags = [...new Set([...tags, ...parsed.tags, ...(isUrgent ? [URGENT_TAG] : [])])];
+  const submittedTags = mergeSubmitTags(tags, parsed.tags, isUrgent);
 
   const canSubmit = parsed.cleanContent.trim() || effectiveEnd || submittedTags.length > 0;
 
@@ -82,7 +53,7 @@ export default function TodoInput({ onAdd }) {
   const handleDateTextBlur = useCallback((e) => {
     const val = e.target.value;
     if (!val || val === displayText) return;
-    const result = tryParseDateText(val);
+    const result = parseDateRangeText(val);
     if (result) {
       if (result.start) setPickedStart(result.start);
       setPickedEnd(result.end);
@@ -94,7 +65,7 @@ export default function TodoInput({ onAdd }) {
     e.preventDefault();
     const val = e.target.value;
     if (!val) return;
-    const result = tryParseDateText(val);
+    const result = parseDateRangeText(val);
     if (result) {
       if (result.start) setPickedStart(result.start);
       setPickedEnd(result.end);

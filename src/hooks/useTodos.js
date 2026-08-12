@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { loadData, saveData, migrateFromLocalStorage } from '../utils/storage';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { loadData, saveData, migrateFromLocalStorage, readJSON } from '../utils/storage';
 import { mergeAndArchive } from '../utils/autoArchive';
 import { normalizeImportedTodo } from '../utils/normalizeTodo';
 import { removeProgressCollapsed } from '../utils/progressViewState';
@@ -10,14 +10,8 @@ const MANUAL_SORT_KEY = 'todo_manual_sort';
 const SETTINGS_KEY = 'todo_app_settings';
 
 function autoArchiveEnabled() {
-  try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw) {
-      const settings = JSON.parse(raw);
-      if (settings && typeof settings === 'object') return settings.autoArchive !== false;
-    }
-  } catch { /* ignore */ }
-  return true;
+  const settings = readJSON(SETTINGS_KEY, null);
+  return settings && typeof settings === 'object' ? settings.autoArchive !== false : true;
 }
 
 function toSafeIso(dateString) {
@@ -390,9 +384,9 @@ export function useTodos() {
     });
   }, []);
 
-  const activeTodos = todos.filter(t => t.status === 'active');
-  const archivedTodos = todos.filter(t => t.status !== 'active');
-  const allTags = [...new Set(todos.flatMap(t => t.tags))].sort();
+  const activeTodos = useMemo(() => todos.filter(t => t.status === 'active'), [todos]);
+  const archivedTodos = useMemo(() => todos.filter(t => t.status !== 'active'), [todos]);
+  const allTags = useMemo(() => [...new Set(todos.flatMap(t => t.tags))].sort(), [todos]);
 
   return { todos, activeTodos, archivedTodos, loaded, isManualMode, setManualMode, addTodo, updateTodo, deleteTodo, commitReorder, setPinStatus, toggleStatus, completeTodo, setRepeatRule, setReminderTime, addProgress, toggleProgressStatus, deleteProgress, updateProgress, updateProgressCompletedAt, updateCompletedAt, importTodos, allTags };
 }

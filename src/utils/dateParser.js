@@ -1,4 +1,4 @@
-import { DATE_PATTERNS, parseLocalDate } from './datePatterns';
+import { parseLocalDate } from './datePatterns';
 import * as chrono from 'chrono-node';
 
 const CN_DATE_ALIASES = {
@@ -16,9 +16,7 @@ const CN_DATE_ALIASES = {
   '月初': { month: () => new Date().getMonth() + 1, day: 1 },
 };
 
-export { DATE_PATTERNS };
-
-export function parseDateText(text) {
+export function parseDateRangeText(text) {
   if (!text || !text.trim()) return null;
   const trimmed = text.trim();
 
@@ -29,26 +27,26 @@ export function parseDateText(text) {
     const month = typeof resolved.month === 'function' ? resolved.month() : resolved.month;
     const day = typeof resolved.day === 'function' ? resolved.day() : resolved.day;
     const year = now.getFullYear();
-    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T23:59:59`;
+    return { start: null, end: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T23:59:59` };
   }
 
   // 处理"今年"前缀：chrono 无法识别"今年"，会把已过去的月份推到明年
   if (trimmed.startsWith('今年')) {
     const now = new Date();
     const rest = trimmed.slice(2).trim();
-    if (!rest) return `${now.getFullYear()}-12-31T23:59:59`;
+    if (!rest) return { start: null, end: `${now.getFullYear()}-12-31T23:59:59` };
     try {
       const results = chrono.zh.parse(rest, now, { forwardDate: true });
       if (results.length > 0 && results[0].start) {
         const date = (results[0].end || results[0].start).date();
         date.setFullYear(now.getFullYear());
-        return toDateString(date);
+        return { start: null, end: toDateString(date) };
       }
     } catch { /* fall through */ }
     const localDate = parseLocalDate(rest);
     if (localDate) {
       localDate.setFullYear(now.getFullYear());
-      return toDateString(localDate);
+      return { start: null, end: toDateString(localDate) };
     }
     return null;
   }
@@ -58,20 +56,35 @@ export function parseDateText(text) {
     if (results.length > 0) {
       const parsed = results[0];
       if (parsed.start) {
-        const date = (parsed.end || parsed.start).date();
-        return toDateString(date);
+        const startDate = parsed.start.date();
+        const endDate = (parsed.end || parsed.start).date();
+        const hasRange = parsed.end && endDate.getTime() !== startDate.getTime();
+        return {
+          start: hasRange ? toDateString(startDate) : null,
+          end: toDateString(endDate),
+        };
       }
     }
   } catch { /* fall through */ }
 
   const dtMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})$/);
-  if (dtMatch) return `${dtMatch[1]}-${dtMatch[2]}-${dtMatch[3]}T${dtMatch[4]}:${dtMatch[5]}:00`;
+  if (dtMatch) return { start: null, end: `${dtMatch[1]}-${dtMatch[2]}-${dtMatch[3]}T${dtMatch[4]}:${dtMatch[5]}:00` };
 
   const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}T23:59:59`;
+  if (isoMatch) return { start: null, end: `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}T23:59:59` };
 
   const date = parseLocalDate(trimmed);
-  return date ? toDateString(date) : null;
+  return date ? { start: null, end: toDateString(date) } : null;
+}
+
+export function parseDateText(text) {
+  const range = parseDateRangeText(text);
+  return range ? range.end : null;
+}
+
+export function isoToDatetimeLocal(iso) {
+  if (!iso) return '';
+  return iso.length >= 16 ? iso.slice(0, 16) : iso.slice(0, 10);
 }
 
 export function formatDate(date) {

@@ -1,12 +1,17 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 
 export function useTagLogic(initialTags = []) {
   const [tags, setTags] = useState(initialTags);
+  const initialKey = useMemo(() => initialTags.join('\u0000'), [initialTags]);
 
   useEffect(() => {
-    if (initialTags.length === 0) return;
-    setTags(prev => [...new Set([...prev, ...initialTags])]);
-  }, [initialTags]);
+    if (!initialKey) return;
+    const initial = initialKey.split('\u0000');
+    setTags(prev => {
+      const next = [...new Set([...prev, ...initial])];
+      return next.length === prev.length && next.every((t, i) => t === prev[i]) ? prev : next;
+    });
+  }, [initialKey]);
 
   const addTag = useCallback((tag) => {
     setTags(prev => prev.includes(tag) ? prev : [...prev, tag]);

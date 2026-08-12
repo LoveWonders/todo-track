@@ -117,6 +117,24 @@ export function currentCycleProgress(todo, now = new Date()) {
   return all.filter(p => new Date(p.createdAt ?? p.time).getTime() >= ws);
 }
 
+export function getCycleStats(todo, now = new Date()) {
+  const items = currentCycleProgress(todo, now);
+  let completed = 0;
+  let active = 0;
+  for (const p of items) {
+    if (p.status === 'completed') completed += 1;
+    else if (p.status === 'active') active += 1;
+  }
+  return {
+    items,
+    completed,
+    active,
+    count: items.length,
+    allDone: items.length > 0 && completed === items.length,
+    cycleDone: hasCycleDoneThisCycle(todo, now),
+  };
+}
+
 export function anchorDateInWindow(rule, anchor, windowStart) {
   const ws = windowStart instanceof Date ? windowStart : new Date(windowStart);
   if (rule === 'daily') return new Date(ws);

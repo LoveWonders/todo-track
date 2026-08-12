@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import { setAutoTrim } from '../utils/logger';
+import { readJSON } from '../utils/storage';
 
 const SETTINGS_KEY = 'todo_app_settings';
 
@@ -11,15 +12,10 @@ const defaultSettings = {
 };
 
 function loadSettings() {
-  try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-        return { ...defaultSettings, ...parsed };
-      }
-    }
-  } catch { /* ignore */ }
+  const parsed = readJSON(SETTINGS_KEY, null);
+  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+    return { ...defaultSettings, ...parsed };
+  }
   return { ...defaultSettings };
 }
 
@@ -50,8 +46,10 @@ export function SettingsProvider({ children }) {
     setSettings(prev => ({ ...prev, [key]: value }));
   }, []);
 
+  const value = useMemo(() => ({ settings, updateSetting }), [settings, updateSetting]);
+
   return (
-    <SettingsContext.Provider value={{ settings, updateSetting }}>
+    <SettingsContext.Provider value={value}>
       {children}
     </SettingsContext.Provider>
   );

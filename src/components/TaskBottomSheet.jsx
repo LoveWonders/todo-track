@@ -2,21 +2,16 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { formatDateOnly } from '../utils/dateParser';
 import { useSmartInput } from '../hooks/useSmartInput';
 import { useTagLogic } from '../hooks/useTagLogic';
-import { URGENT_TAG } from '../constants';
 import { useSettings } from '../hooks/useSettings';
-import { isSafeTagName } from '../utils/tagMeta';
+import { isSafeTagName, mergeSubmitTags } from '../utils/tagMeta';
+import { readJSON } from '../utils/storage';
 import { CYCLE_LABELS, WEEKDAY_LABELS, anchorLabel } from '../utils/repeat';
 
 const DEFAULT_PRESET_TAGS = ['工作', '长期', '个人'];
 const PRESET_TAGS_STORAGE_KEY = 'todo_preset_tags';
 
 function loadPresetTags() {
-  try {
-    const stored = localStorage.getItem(PRESET_TAGS_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : null;
-  } catch {
-    return null;
-  }
+  return readJSON(PRESET_TAGS_STORAGE_KEY, null);
 }
 
 function savePresetTags(tags) {
@@ -74,7 +69,7 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
 
   const pickedStart = parsed.startDate;
   const pickedEnd = parsed.dueDate;
-  const submittedTags = [...new Set([...tags, ...parsed.tags, ...(isUrgent ? [URGENT_TAG] : [])])];
+  const submittedTags = mergeSubmitTags(tags, parsed.tags, isUrgent);
 
   const handlePresetTagClick = useCallback((tag) => {
     if (editMode) return;

@@ -15,10 +15,6 @@ export function toISODateTime(date) {
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}`;
 }
 
-export function extractDatePart(iso) {
-  return typeof iso === 'string' && iso.length >= 10 ? iso.slice(0, 10) : '';
-}
-
 function nextWeekday(dayName, isNextWeek) {
   const dayMap = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '日': 0, '天': 0 };
   const targetDay = dayMap[dayName];

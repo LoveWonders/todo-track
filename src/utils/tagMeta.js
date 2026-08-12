@@ -1,3 +1,10 @@
+import { readJSON } from './storage';
+import { URGENT_TAG } from '../constants';
+
+export function mergeSubmitTags(tags, parsedTags, isUrgent) {
+  return [...new Set([...tags, ...parsedTags, ...(isUrgent ? [URGENT_TAG] : [])])];
+}
+
 export const TAG_COLOR_PALETTE = [
   { name: '蓝', bg: '#e3f2fd', fg: '#1976d2' },
   { name: '绿', bg: '#e8f5e9', fg: '#2e7d32' },
@@ -34,14 +41,8 @@ export function getTagColor(tag, tagMeta) {
 }
 
 export function loadTagMeta() {
-  try {
-    const raw = localStorage.getItem(TAG_META_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
-    }
-  } catch { /* ignore */ }
-  return {};
+  const parsed = readJSON(TAG_META_KEY, {});
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
 }
 
 export function saveTagMeta(meta) {

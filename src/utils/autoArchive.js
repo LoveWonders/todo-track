@@ -1,16 +1,10 @@
-import { save as storageSave, load as storageLoad } from './storage';
+import { save as storageSave, readJSON } from './storage';
 
 const ARCHIVE_KEY = 'todo_archive_data';
 
 export function loadArchive() {
-  try {
-    const raw = storageLoad(ARCHIVE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  const parsed = readJSON(ARCHIVE_KEY, []);
+  return Array.isArray(parsed) ? parsed : [];
 }
 
 export function saveArchive(archive) {

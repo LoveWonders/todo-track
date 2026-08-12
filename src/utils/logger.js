@@ -1,3 +1,5 @@
+import { readJSON } from './storage';
+
 const MAX_LOGS = 200;
 const STORAGE_KEY = 'todotrack_debug_logs';
 
@@ -5,24 +7,12 @@ let logs = [];
 let autoTrim = true;
 
 (function init() {
-  try {
-    const settingsRaw = localStorage.getItem('todo_app_settings');
-    if (settingsRaw) {
-      const settings = JSON.parse(settingsRaw);
-      if (settings && typeof settings === 'object') {
-        autoTrim = settings.autoClearLogs !== false;
-      }
-    }
-  } catch { /* keep default */ }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) logs = parsed;
-    }
-  } catch {
-    logs = [];
+  const settings = readJSON('todo_app_settings', null);
+  if (settings && typeof settings === 'object') {
+    autoTrim = settings.autoClearLogs !== false;
   }
+  const parsedLogs = readJSON(STORAGE_KEY, null);
+  if (Array.isArray(parsedLogs)) logs = parsedLogs;
 })();
 
 export function setAutoTrim(enabled) {

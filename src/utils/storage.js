@@ -225,6 +225,17 @@ export function load(key) {
   }
 }
 
+export function readJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw == null) return fallback;
+    const parsed = JSON.parse(raw);
+    return parsed;
+  } catch {
+    return fallback;
+  }
+}
+
 export function save(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
