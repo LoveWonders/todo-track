@@ -89,6 +89,16 @@ functional_requirements:
       - "通过 MediaStore API 写入 Download/todotrack/"
       - "浏览器环境自动降级为 Blob + a 标签下载"
 
+  FR_11_progress_urgent_reminder:
+    description: "单条进度紧急标记与提醒"
+    details:
+      - "active 进度可标记「紧急」：卡片高亮 + 标签，稳定排序到进行中列表前部"
+      - "active 进度可设置一次性提醒时间：到点发 Web/Android 通知（Ack 防重）"
+      - "提醒时间已过且未完成的进度在应用内高亮，卡片显示时间标签"
+      - "父待办卡片显示「急」角标提示有紧急/过期进度"
+      - "进度完成/作废/删除与待办删除/完成时自动取消已调度提醒"
+      - "新字段可选，旧数据归一化为安全默认值"
+
 non_functional_requirements:
   NFR_01_performance:
     - "页面首屏渲染 < 1s"
@@ -199,6 +209,8 @@ data_model:
     createdAt: "string (ISO 8601)"
     completedAt: "string | null (ISO 8601)"
     status: "active | completed | cancelled"
+    urgent: "boolean (默认 false，仅 active 生效)"
+    reminderTime: "string | null (ISO 绝对时刻，可选)"
   
   LogEntry:
     id: "string (timestamp + random)"
