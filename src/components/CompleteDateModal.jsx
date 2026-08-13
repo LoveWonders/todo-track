@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { showNativeDatePicker } from '../utils/datePicker';
 
 function todayStr() {
   const d = new Date();
@@ -42,38 +43,12 @@ export default function CompleteDateModal({ count, onConfirm, onCancel }) {
       document.body.removeChild(prev);
     }
 
-    const input = document.createElement('input');
-    input.type = 'date';
-    input.value = /^\d{4}-\d{2}-\d{2}$/.test(dateVal) ? dateVal : todayStr();
-    input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0';
-    document.body.appendChild(input);
-    dynamicInputRef.current = input;
-
-    const cleanup = () => {
-      if (document.body.contains(input)) document.body.removeChild(input);
-      if (dynamicInputRef.current === input) dynamicInputRef.current = null;
-    };
-
-    const onChange = (e) => {
-      const picked = e.target.value;
-      if (picked) setDateVal(picked);
-      cleanup();
-    };
-
-    const onBlur = () => {
-      setTimeout(cleanup, 200);
-    };
-
-    input.addEventListener('change', onChange);
-    input.addEventListener('blur', onBlur);
-
-    requestAnimationFrame(() => {
-      if (typeof input.showPicker === 'function') {
-        input.showPicker();
-      } else {
-        input.focus();
-      }
+    const input = showNativeDatePicker({
+      type: 'date',
+      value: /^\d{4}-\d{2}-\d{2}$/.test(dateVal) ? dateVal : todayStr(),
+      onPick: (picked) => setDateVal(picked),
     });
+    dynamicInputRef.current = input;
   }, [dateVal]);
 
   return (

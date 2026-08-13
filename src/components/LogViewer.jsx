@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getLogs, clearLogs, logTypeLabel, getSelectedLogsText } from '../utils/logger';
+import { getLogs, clearLogs, deleteLogs, logTypeLabel, getSelectedLogsText } from '../utils/logger';
 import { copyToClipboard } from '../utils/clipboard';
 
 export default function LogViewer({ open, onClose, onToast }) {
@@ -18,6 +18,17 @@ export default function LogViewer({ open, onClose, onToast }) {
     setLogs([]);
     setSelectedIds(new Set());
     onClose();
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedIds.size === 0) {
+      onToast({ type: 'error', message: '请先选择要删除的日志' });
+      return;
+    }
+    deleteLogs(selectedIds);
+    setLogs(getLogs());
+    setSelectedIds(new Set());
+    onToast({ type: 'success', path: null, uri: null });
   };
 
   const handleCopyLogs = async () => {
@@ -146,6 +157,9 @@ export default function LogViewer({ open, onClose, onToast }) {
           )}
           {logs.length > 0 && (
             <button className="btn-mini btn-mini-save" onClick={handleExportLogs}>导出 TXT</button>
+          )}
+          {logs.length > 0 && selectedIds.size > 0 && (
+            <button className="btn-mini btn-mini-save" style={{ background: 'var(--danger)' }} onClick={handleDeleteSelected}>删除选中</button>
           )}
           {logs.length > 0 && (
             <button className="btn-mini btn-mini-save" style={{ background: 'var(--warn)' }} onClick={handleClearLogs}>清空</button>

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { formatDateOnly } from '../utils/dateParser';
+import { showNativeDatePicker } from '../utils/datePicker';
 import { useSmartInput } from '../hooks/useSmartInput';
 import { useTagLogic } from '../hooks/useTagLogic';
 import { useSettings } from '../hooks/useSettings';
@@ -167,18 +168,12 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
   const safePresetTags = Array.isArray(presetTags) ? presetTags : [];
 
   const openCalendar = useCallback(() => {
-    const input = document.createElement('input');
-    input.type = 'datetime-local';
-    if (pickedEnd) {
-      input.value = pickedEnd.slice(0, 16);
-    }
-    input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0';
-    document.body.appendChild(input);
-    input.addEventListener('change', (e) => {
-      const picked = e.target.value;
-      if (picked) {
+    showNativeDatePicker({
+      type: 'datetime-local',
+      value: pickedEnd ? pickedEnd.slice(0, 16) : '',
+      onPick: (picked) => {
         const iso = picked + ':00';
-        onAdd({ 
+        onAdd({
           title: text.trim() || formatDateOnly(iso) || '待办',
           startDate: pickedStart,
           dueDate: iso,
@@ -194,15 +189,7 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
         setRepeatRule(null);
         setRepeatAnchor(null);
         onClose();
-      }
-      if (document.body.contains(input)) document.body.removeChild(input);
-    }, { once: true });
-    requestAnimationFrame(() => {
-      if (typeof input.showPicker === 'function') {
-        input.showPicker();
-      } else {
-        input.focus();
-      }
+      },
     });
   }, [pickedEnd, pickedStart, submittedTags, text, onAdd, clearSmart, clearTags, isChecklist, repeatRule, repeatAnchor, onClose]);
 

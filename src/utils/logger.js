@@ -56,6 +56,13 @@ export function addLog(type, message, detail) {
   return entry;
 }
 
+export function deleteLogs(ids) {
+  const idSet = ids instanceof Set ? ids : new Set(ids);
+  if (idSet.size === 0) return;
+  logs = logs.filter(e => !idSet.has(e.id));
+  persist();
+}
+
 export function getLogs() {
   return logs;
 }

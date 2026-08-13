@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { formatDate, formatDateTime, parseDateText, isoToDatetimeLocal } from '../utils/dateParser';
+import { showNativeDatePicker } from '../utils/datePicker';
 
 function isoToDateLocal(iso) {
   if (!iso) return '';
@@ -38,40 +39,17 @@ export default function DateEdit({ value, onSave, overdue, inBatch }) {
   }, [handleSave, value]);
 
   const openCalendar = useCallback(() => {
-    const input = document.createElement('input');
     const hasTime = typeof value === 'string' && value.includes('T') && /[1-9]/.test(value.slice(11, 13) + value.slice(14, 16));
-    input.type = hasTime ? 'datetime-local' : 'date';
-    input.value = hasTime ? isoToDatetimeLocal(value) : isoToDateLocal(value);
-    input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0';
-    document.body.appendChild(input);
-
-    let cleaned = false;
-    const cleanup = () => {
-      if (cleaned) return;
-      cleaned = true;
-      if (document.body.contains(input)) document.body.removeChild(input);
-      if (!mountedRef.current) return;
-      setEditing(false);
-    };
-
-    input.addEventListener('change', (e) => {
-      const picked = e.target.value;
-      if (picked) {
+    showNativeDatePicker({
+      type: hasTime ? 'datetime-local' : 'date',
+      value: hasTime ? isoToDatetimeLocal(value) : isoToDateLocal(value),
+      onPick: (picked) => {
+        if (!mountedRef.current) return;
         const iso = picked.length === 16 ? picked + ':00' : picked + 'T23:59:59';
         onSave(iso);
         setText(formatDateTime(iso));
-      }
-      cleanup();
-    }, { once: true });
-
-    input.addEventListener('blur', () => { setTimeout(cleanup, 200); }, { once: true });
-
-    requestAnimationFrame(() => {
-      if (typeof input.showPicker === 'function') {
-        input.showPicker();
-      } else {
-        input.focus();
-      }
+        setEditing(false);
+      },
     });
   }, [value, onSave]);
 
