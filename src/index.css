@@ -4314,6 +4314,75 @@ body.compact-mode .todo-tag {
   line-height: 1.5;
 }
 
+.p-action.urgent {
+  color: var(--danger);
+  border-color: var(--danger);
+  font-weight: 600;
+}
+
+.p-action.urgent.on {
+  background: var(--danger);
+  color: #fff;
+}
+
+.p-action.reminder {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.p-action.reminder.on {
+  background: var(--warn);
+  color: #fff;
+}
+
+.progress-urgent-tag {
+  font-size: 10px;
+  padding: 0 4px;
+  background: var(--danger);
+  color: #fff;
+  border-radius: 3px;
+  flex-shrink: 0;
+  line-height: 1.5;
+  margin-right: 4px;
+}
+
+.progress-reminder-tag {
+  font-size: 10px;
+  padding: 0 4px;
+  border: 1px solid var(--warn);
+  border-radius: 3px;
+  color: var(--warn);
+  flex-shrink: 0;
+  line-height: 1.5;
+  margin-right: 4px;
+}
+
+.progress-active-row .progress-entry.active.progress-urgent {
+  border-color: var(--danger);
+  background: rgba(231, 76, 60, 0.05);
+}
+
+.progress-active-row .progress-entry.active.progress-urgent .progress-text {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.progress-active-row .progress-entry.active.progress-reminder-due {
+  border-color: var(--warn);
+  background: rgba(243, 156, 18, 0.06);
+}
+
+.progress-urgent-badge {
+  font-size: 10px;
+  padding: 0 5px;
+  margin-left: 4px;
+  background: var(--danger);
+  color: #fff;
+  border-radius: 3px;
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
 .temp-edit-option {
   display: flex;
   align-items: center;

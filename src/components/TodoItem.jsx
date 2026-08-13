@@ -77,6 +77,16 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
   const isUrgent = (todo.tags || []).includes(URGENT_TAG);
 
+  const hasUrgentProgress = (todo.progress || []).some(p => {
+    if (p.status !== 'active') return false;
+    if (p.urgent) return true;
+    if (p.reminderTime) {
+      const t = new Date(p.reminderTime).getTime();
+      if (!Number.isNaN(t) && t <= Date.now()) return true;
+    }
+    return false;
+  });
+
   const handleItemClick = () => {
     if (!batchMode) return;
     handleBatchToggle(todo.id);
@@ -204,6 +214,9 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
               <span className={`repeat-badge repeat-${todo.repeatRule}`}>
                 {anchorLabel(todo.repeatRule, todo.repeatAnchor)}
               </span>
+            )}
+            {hasUrgentProgress && (
+              <span className="progress-urgent-badge" title="含紧急/待提醒进度">急</span>
             )}
             {checklistMode && progressCount > 0 && (
               <span

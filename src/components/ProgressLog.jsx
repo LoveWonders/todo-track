@@ -4,6 +4,7 @@ import CompleteDateModal from './CompleteDateModal';
 import ProgressManageBar from './ProgressManageBar';
 import ProgressDefaultBar from './ProgressDefaultBar';
 import { getCycleStats } from '../utils/repeat';
+import { showNativeDatePicker } from '../utils/datePicker';
 
 const LONG_TEXT_WIDTH = 18;
 
@@ -32,8 +33,21 @@ function archiveDateRange(p) {
   return completed || recorded;
 }
 
+function formatDateTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function isReminderDue(p) {
+  if (!p.reminderTime) return false;
+  const t = new Date(p.reminderTime).getTime();
+  return !Number.isNaN(t) && t <= Date.now();
+}
+
 export default function ProgressLog({ progress, todoId, collapsed, checklistMode, repeatRule }) {
-  const { toggleProgressStatus, completeTodo, deleteProgress, addProgress, updateProgress, updateProgressCompletedAt, setFabHidden } = useTodoActions();
+  const { toggleProgressStatus, completeTodo, deleteProgress, addProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, setFabHidden } = useTodoActions();
   const { batchMode } = useTodoView();
   
   // 状态定义
@@ -133,6 +147,33 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
     return { activeProgress: active, archivedProgress: archived };
   }, [items]);
 
+  const sortedActive = useMemo(() => {
+    const urgentList = [];
+    const normalList = [];
+    for (const p of activeProgress) {
+      (p.urgent ? urgentList : normalList).push(p);
+    }
+    return [...urgentList, ...normalList];
+  }, [activeProgress]);
+
+  const toggleUrgent = useCallback((p) => {
+    setProgressUrgent(todoId, p.id, !p.urgent);
+  }, [todoId, setProgressUrgent]);
+
+  const openReminderPicker = useCallback((p) => {
+    if (p.reminderTime) {
+      setProgressReminder(todoId, p.id, null);
+      return;
+    }
+    showNativeDatePicker({
+      type: 'datetime-local',
+      value: '',
+      onPick: (picked) => {
+        setProgressReminder(todoId, p.id, picked ? `${picked}:00` : null);
+      },
+    });
+  }, [todoId, setProgressReminder]);
+
   const completedCount = cycleStats.completed;
   const allCompleted = cycleStats.allDone;
   const summaryPct = progressCount > 0 ? Math.round((completedCount / progressCount) * 100) : 0;
@@ -231,15 +272,17 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
         </div>
       )}
 
-      {activeProgress.length > 0 && (
+      {sortedActive.length > 0 && (
         <div className="progress-active-row">
-          {activeProgress.map(p => (
+          {sortedActive.map(p => (
             <div key={p.id}
-              className={`progress-entry active progress-card ${isLongProgressText(p.text) ? 'progress-long' : 'progress-short'} ${manageMode ? 'progress-manage' : 'progress-clickable'} ${selectedPIds.has(p.id) ? 'progress-selected' : ''}`}
+              className={`progress-entry active progress-card ${isLongProgressText(p.text) ? 'progress-long' : 'progress-short'} ${manageMode ? 'progress-manage' : 'progress-clickable'} ${selectedPIds.has(p.id) ? 'progress-selected' : ''} ${p.urgent ? 'progress-urgent' : ''} ${isReminderDue(p) ? 'progress-reminder-due' : ''}`}
               onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenEdit(p)}>
               {!inBatch && !manageMode && (
                 <span className="progress-actions">
                   <button className="p-action done" onClick={(e) => { e.stopPropagation(); toggleProgressStatus(todoId, p.id, 'completed'); }} title="完成">&#x2713;</button>
+                  <button className={`p-action urgent ${p.urgent ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); toggleUrgent(p); }} title={p.urgent ? '取消紧急' : '标记紧急'}>急</button>
+                  <button className={`p-action reminder ${p.reminderTime ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); openReminderPicker(p); }} title="设置提醒">铃</button>
                 </span>
               )}
               {manageMode && (
@@ -248,6 +291,8 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
                 </span>
               )}
               <span className="progress-date">{new Date(p.createdAt ?? p.time).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span>
+              {p.urgent && <span className="progress-urgent-tag">急</span>}
+              {p.reminderTime && <span className="progress-reminder-tag">提醒 {formatDateTime(p.reminderTime)}</span>}
               {p.temporary && <span className="progress-temp-tag">临时</span>}
               <span className="progress-text">{String(p.text)}</span>
             </div>

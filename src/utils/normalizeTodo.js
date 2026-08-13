@@ -37,6 +37,8 @@ function normalizeProgress(p, index) {
     completedAt: normalizeIso(p.completedAt),
     kind: p.kind === 'cycle-done' ? 'cycle-done' : undefined,
     temporary: p.temporary === true,
+    urgent: p.urgent === true,
+    reminderTime: normalizeIso(p.reminderTime),
   };
 }
 
