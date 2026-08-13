@@ -25,14 +25,15 @@
 3. WHEN 某条进度的 `urgent` 为 `true`，系统 SHALL 在卡片上显示「急」标签并应用高亮样式。
 4. WHEN 某条进度为 archived（completed/cancelled），系统 SHALL 忽略其紧急标记状态（不显示紧急样式）。
 
-### R2 紧急进度排序
+### R2 紧急进度列表位置
 
-**User Story:** AS 用户, I want 紧急进度排在前面, so that 我无需翻找即可看到
+**User Story:** AS 用户, I want 标记紧急时进度卡片在原位高亮, so that 点击哪条紧急哪条，不因重排跳动造成错位感知
 
 #### Acceptance Criteria
 
-1. WHEN 进行中进度列表渲染，系统 SHALL 将 `urgent=true` 的 active 进度排列在普通 active 进度之前。
-2. WHEN 多条紧急进度存在，系统 SHALL 保持其原有相对顺序（稳定排序）。
+1. WHEN 标记/取消紧急标记，系统 SHALL 保持进行中进度列表原有顺序，卡片原位切换高亮与「急」标签。
+2. WHEN 多条紧急进度存在，系统 SHALL 不改变其相对顺序。
+3. WHEN 待办存在紧急或提醒过期的 active 进度，系统 SHALL 在待办卡片显示「急」角标以提示紧急分布。
 
 ### R3 提醒时间设置
 

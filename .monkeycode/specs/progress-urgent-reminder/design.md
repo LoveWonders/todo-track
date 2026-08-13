@@ -6,7 +6,7 @@ Updated: 2026-08-13
 ## Description
 
 为 Progress 条目新增「紧急标记」与「一次性提醒时间」两级能力：
-- **紧急（urgent）**：纯视觉标记，无通知。紧急 active 进度卡片高亮 + 「急」标签，并稳定排序到进行中进度列表前部。
+- **紧急（urgent）**：纯视觉标记，无通知。紧急 active 进度卡片高亮 + 「急」标签；保持原列表位置不重排，避免标记时卡片跳动造成点击错位。紧急进度由父待办「急」角标统一提示。
 - **提醒（reminderTime）**：绝对时刻。到点触发 Web/Android 通知（Ack 防重），应用内显示提醒时间标签；提醒已过且仍未完成时卡片高亮。
 
 父待办联动：TodoItem 卡片在存在紧急或提醒过期的 active 进度时显示「急」角标。
@@ -56,7 +56,7 @@ graph TD
 
 | 组件 | 变更 |
 |------|------|
-| `ProgressLog.jsx` | active 卡片操作区新增「!」（紧急）与「⏰」（提醒）按钮；紧急/过期高亮样式类；`sortedActive` 稳定排序（urgent 优先）；提醒时间标签（点击改/清）；设置提醒复用 `showNativeDatePicker('datetime-local')` |
+| `ProgressLog.jsx` | active 卡片操作区新增「急」（紧急）与「铃」（提醒）按钮；紧急/过期高亮样式类；提醒时间标签（已有提醒时点击直接清除，toggle 语义）；设置提醒复用 `showNativeDatePicker('datetime-local')`；active 列表保持原顺序不因紧急重排 |
 | `TodoItem.jsx` | 计算 `hasUrgentProgress`，渲染卡片「急」角标 |
 | `normalizeTodo.js` | `normalizeProgress` 增加 `urgent` / `reminderTime` 归一化 |
 | `datePicker.js` | 复用，无需改动 |
@@ -88,7 +88,7 @@ Ack 防重记录（Web，不进业务数据）：
 - P2：`reminderTime` 为 ISO 字符串或 `null`；非 ISO 一律归一化为 `null`。
 - P3：同一 `(todoId, progressId, reminderTime)` 通知至多触发一次（Ack 防重）。
 - P4：进度完成/作废/删除与待办删除/完成时，对应已调度通知被取消。
-- P5：紧急排序稳定——`urgent` 进度在前，组内保持原 `items` 相对顺序。
+- P5：紧急标记不改变列表顺序——标记/取消紧急时卡片在原位置高亮，不触发重排跳动。
 - P6：通知权限缺失或 API 不可用时静默降级，应用内标记不受影响。
 - P7：旧数据无新字段时 `normalizeProgress` 产出安全默认值。
 
@@ -104,7 +104,7 @@ Ack 防重记录（Web，不进业务数据）：
 ## Test Strategy
 
 - **单测级**（Playwright UI 回归）：
-  1. 标记紧急 → 卡片出现「急」标签 + 高亮样式类，且排列到 active 列表首部；取消后恢复。
+  1. 标记紧急 → 卡片原位出现「急」标签 + 高亮样式类，列表顺序不变；取消后恢复。
   2. 设置提醒 → 卡片出现时间标签；再次点击可清除（`reminderTime=null`）。
   3. 注入 `reminderTime` 在过去且 `status=active` 的进度 → 打开详情页验证高亮；Web 通知因 headless 无权限静默跳过，验证无页面错误。
   4. 归档进度不显示紧急样式；完成/作废后取消调度（验证无副作用报错）。

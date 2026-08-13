@@ -147,15 +147,6 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
     return { activeProgress: active, archivedProgress: archived };
   }, [items]);
 
-  const sortedActive = useMemo(() => {
-    const urgentList = [];
-    const normalList = [];
-    for (const p of activeProgress) {
-      (p.urgent ? urgentList : normalList).push(p);
-    }
-    return [...urgentList, ...normalList];
-  }, [activeProgress]);
-
   const toggleUrgent = useCallback((p) => {
     setProgressUrgent(todoId, p.id, !p.urgent);
   }, [todoId, setProgressUrgent]);
@@ -272,9 +263,9 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
         </div>
       )}
 
-      {sortedActive.length > 0 && (
+      {activeProgress.length > 0 && (
         <div className="progress-active-row">
-          {sortedActive.map(p => (
+          {activeProgress.map(p => (
             <div key={p.id}
               className={`progress-entry active progress-card ${isLongProgressText(p.text) ? 'progress-long' : 'progress-short'} ${manageMode ? 'progress-manage' : 'progress-clickable'} ${selectedPIds.has(p.id) ? 'progress-selected' : ''} ${p.urgent ? 'progress-urgent' : ''} ${isReminderDue(p) ? 'progress-reminder-due' : ''}`}
               onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenEdit(p)}>
