@@ -82,4 +82,13 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 使用方式：`export NODE_PATH=/usr/local/lib/node_modules` 后 `require('playwright')`，headless 启动
   - dev server 在 `http://localhost:5173/` 可直接验证；注入数据需写入 `todo_app_data`（todo id 必须为数字，字符串 id 会被 normalizeImportedTodo 丢弃）
 
+### showNativeDatePicker 空值不回调
+- Date: 2026-08-13
+- Context: Agent 在实现进度提醒清除功能时发现，日期选择器对空选择不触发回调
+- Category: 排错调试
+- Instructions:
+  - `showNativeDatePicker` 的 change 监听为 `if (picked && onPick) onPick(picked)`，空值不会回调
+  - 依赖「用户取消选择=清除」的方案不可行；清除类交互需用 toggle 语义（已有值时点击直接清除，而非打开选择器等待空选择）
+  - Playwright 注入日期选择器值：dispatch `change` 事件到隐藏 input（`style.opacity === '0'`），多次点击时取最后一个新建 input，避免误用已消费 listener 的旧 input
+
 (Showing lines 52-72 of 72.)
