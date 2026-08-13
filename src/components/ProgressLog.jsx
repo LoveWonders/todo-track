@@ -16,6 +16,22 @@ function isLongProgressText(text) {
   return w > LONG_TEXT_WIDTH;
 }
 
+function formatMD(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+}
+
+function archiveDateRange(p) {
+  const recorded = formatMD(p.createdAt ?? p.time);
+  const completed = formatMD(p.completedAt);
+  if (recorded && completed && completed !== recorded) {
+    return `${recorded} - ${completed}`;
+  }
+  return completed || recorded;
+}
+
 export default function ProgressLog({ progress, todoId, collapsed, checklistMode, repeatRule }) {
   const { toggleProgressStatus, completeTodo, deleteProgress, addProgress, updateProgress, updateProgressCompletedAt, setFabHidden } = useTodoActions();
   const { batchMode } = useTodoView();
@@ -287,7 +303,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
                     </span>
                   )}
                   <span className="progress-status-tag">{p.status === 'completed' ? '已完成' : '已作废'}</span>
-                  <span className="progress-date">{new Date(p.completedAt ?? p.createdAt ?? p.time).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span>
+                  <span className="progress-date">{archiveDateRange(p)}</span>
                   {p.temporary && <span className="progress-temp-tag">临时</span>}
                   {String(p.text)}
                 </div>
