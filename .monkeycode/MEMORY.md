@@ -100,4 +100,13 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - APK 构建流程：`npx cap sync android` → `export ANDROID_HOME=/root/android-sdk && export JAVA_HOME=/usr/local/jdk-21.0.11+10 && ./gradlew assembleDebug`（在 `android/` 目录）
   - 产物重命名 `todotrack-v{版本}-{YYYYMMDD}-{HHmm}.apk` 复制到工作区根目录，APK 被 gitignore 不入库
 
+### Playwright headless 无法授予通知权限，验证需注入假 Notification
+- Date: 2026-08-15
+- Context: Agent 在验证 Web 端提醒轮询时发现，headless chromium 的 notifications 权限始终为 denied，浏览器通知触发逻辑无法真实验证
+- Category: 排错调试
+- Instructions:
+  - `context.grantPermissions(['notifications'])` 在 headless 下不生效，`Notification.permission` 恒为 denied
+  - 验证通知触发逻辑：在页面 evaluate 注入自定义 `window.Notification`（`permission='granted'` + `requestPermission()` 返回 granted），应用模块运行时读取全局 Notification 即生效
+  - 通过断言 `todo_reminder_ack`（localStorage）中是否出现 `progress:{todoId}:{progressId}:{reminderTime}` 键来验证触发与 Ack 防重
+
 (Showing lines 52-72 of 72.)
