@@ -91,4 +91,13 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 依赖「用户取消选择=清除」的方案不可行；清除类交互需用 toggle 语义（已有值时点击直接清除，而非打开选择器等待空选择）
   - Playwright 注入日期选择器值：dispatch `change` 事件到隐藏 input（`style.opacity === '0'`），多次点击时取最后一个新建 input，避免误用已消费 listener 的旧 input
 
+### Android 通知需声明 POST_NOTIFICATIONS 权限
+- Date: 2026-08-15
+- Context: Agent 在 v1.19.0 构建 APK 时发现，Android 13+ 原生通知（LocalNotifications）需在 manifest 声明权限
+- Category: 构建编译
+- Instructions:
+  - `android/app/src/main/AndroidManifest.xml` 需声明 `<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />`，否则 Android 13+ 通知不显示
+  - APK 构建流程：`npx cap sync android` → `export ANDROID_HOME=/root/android-sdk && export JAVA_HOME=/usr/local/jdk-21.0.11+10 && ./gradlew assembleDebug`（在 `android/` 目录）
+  - 产物重命名 `todotrack-v{版本}-{YYYYMMDD}-{HHmm}.apk` 复制到工作区根目录，APK 被 gitignore 不入库
+
 (Showing lines 52-72 of 72.)
