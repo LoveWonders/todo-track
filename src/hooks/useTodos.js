@@ -108,6 +108,14 @@ export function useTodos() {
 
   useEffect(() => {
     if (!loaded) return;
+    const timer = setInterval(() => {
+      checkDueReminders(todosRef.current);
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [loaded]);
+
+  useEffect(() => {
+    if (!loaded) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       saveData(todos);
