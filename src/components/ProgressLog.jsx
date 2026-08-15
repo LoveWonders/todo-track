@@ -3,6 +3,7 @@ import { useTodoActions, useTodoView } from '../hooks/TodoContext';
 import CompleteDateModal from './CompleteDateModal';
 import ProgressManageBar from './ProgressManageBar';
 import ProgressDefaultBar from './ProgressDefaultBar';
+import ProgressModal from './ProgressModal';
 import { getCycleStats } from '../utils/repeat';
 import { showNativeDatePicker } from '../utils/datePicker';
 
@@ -51,15 +52,12 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
   const { batchMode } = useTodoView();
   
   // 状态定义
-  const [progressText, setProgressText] = useState('');
-  const [showInput, setShowInput] = useState(false);
+  const [progressModal, setProgressModal] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
   const [manageMode, setManageMode] = useState(false);
   const [selectedPIds, setSelectedPIds] = useState(new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showDateModal, setShowDateModal] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [temporaryInput, setTemporaryInput] = useState(false);
 
   // 数据预处理（所有变量定义必须在条件 return 之前）
   const items = Array.isArray(progress) ? progress : [];
@@ -75,22 +73,70 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
     setShowDateModal(false);
   }, []);
 
-  const handleSubmit = useCallback(() => {
-    const trimmed = progressText.trim();
-    if (!trimmed) return;
-    addProgress(todoId, trimmed, temporaryInput);
-    setProgressText('');
-    setShowInput(false);
-    setTemporaryInput(false);
-    setFabHidden(false);
-  }, [progressText, todoId, addProgress, temporaryInput, setFabHidden]);
+  const openAddModal = useCallback(() => {
+    setFabHidden(true);
+    setProgressModal({ mode: 'add', text: '', temporary: false, urgent: false, reminderTime: null });
+  }, [setFabHidden]);
 
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSubmit();
+  const handleOpenEdit = useCallback((p) => {
+    setFabHidden(true);
+    setProgressModal({
+      mode: 'edit',
+      progress: p,
+      text: p.text ?? '',
+      temporary: p.temporary === true,
+      urgent: p.urgent === true,
+      reminderTime: p.reminderTime || null,
+    });
+  }, [setFabHidden]);
+
+  const handleModalCancel = useCallback(() => {
+    setProgressModal(null);
+    setFabHidden(false);
+  }, [setFabHidden]);
+
+  const handleModalChange = useCallback((patch) => {
+    setProgressModal(prev => (prev ? { ...prev, ...patch } : prev));
+  }, []);
+
+  const handleModalSetReminder = useCallback(() => {
+    showNativeDatePicker({
+      type: 'datetime-local',
+      value: progressModal?.reminderTime ? progressModal.reminderTime.slice(0, 16) : '',
+      onPick: (picked) => {
+        if (picked) {
+          setProgressModal(prev => (prev ? { ...prev, reminderTime: `${picked}:00` } : prev));
+        }
+      },
+    });
+  }, [progressModal]);
+
+  const handleSaveModal = useCallback(() => {
+    if (!progressModal) return;
+    const text = progressModal.text.trim();
+    if (progressModal.mode === 'add') {
+      if (!text) return;
+      addProgress(todoId, text, progressModal.temporary, {
+        urgent: progressModal.urgent === true,
+        reminderTime: progressModal.reminderTime || null,
+      });
+    } else {
+      const p = progressModal.progress;
+      if (text && text !== p.text) {
+        updateProgress(todoId, p.id, text, progressModal.temporary);
+      } else if (progressModal.temporary !== (p.temporary === true)) {
+        updateProgress(todoId, p.id, p.text, progressModal.temporary);
+      }
+      if (progressModal.urgent !== (p.urgent === true)) {
+        setProgressUrgent(todoId, p.id, progressModal.urgent === true);
+      }
+      if ((progressModal.reminderTime || null) !== (p.reminderTime || null)) {
+        setProgressReminder(todoId, p.id, progressModal.reminderTime || null);
+      }
     }
-  }, [handleSubmit]);
+    setProgressModal(null);
+    setFabHidden(false);
+  }, [progressModal, todoId, addProgress, updateProgress, setProgressUrgent, setProgressReminder, setFabHidden]);
 
   const toggleSelect = useCallback((pid) => {
     setSelectedPIds(prev => {
@@ -103,22 +149,6 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
       return next;
     });
   }, []);
-
-  const handleOpenEdit = useCallback((p) => {
-    setEditing({ progress: p, text: p.text ?? '', temporary: p.temporary === true });
-  }, []);
-
-  const handleSaveEdit = useCallback(() => {
-    if (!editing) return;
-    const trimmed = editing.text.trim();
-    if (trimmed && trimmed !== editing.progress.text) {
-      updateProgress(todoId, editing.progress.id, trimmed, editing.temporary);
-    } else if (editing.temporary !== editing.progress.temporary) {
-      updateProgress(todoId, editing.progress.id, editing.progress.text, editing.temporary);
-    }
-    setEditing(null);
-    setFabHidden(false);
-  }, [editing, todoId, updateProgress, setFabHidden]);
 
   const handleBatchDelete = useCallback(() => {
     if (!confirmDelete) { setConfirmDelete(true); return; }
@@ -147,24 +177,6 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
     return { activeProgress: active, archivedProgress: archived };
   }, [items]);
 
-  const toggleUrgent = useCallback((p) => {
-    setProgressUrgent(todoId, p.id, !p.urgent);
-  }, [todoId, setProgressUrgent]);
-
-  const openReminderPicker = useCallback((p) => {
-    if (p.reminderTime) {
-      setProgressReminder(todoId, p.id, null);
-      return;
-    }
-    showNativeDatePicker({
-      type: 'datetime-local',
-      value: '',
-      onPick: (picked) => {
-        setProgressReminder(todoId, p.id, picked ? `${picked}:00` : null);
-      },
-    });
-  }, [todoId, setProgressReminder]);
-
   const completedCount = cycleStats.completed;
   const allCompleted = cycleStats.allDone;
   const summaryPct = progressCount > 0 ? Math.round((completedCount / progressCount) * 100) : 0;
@@ -192,48 +204,11 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
       <div className="progress-section">
         {!inBatch && (
           <div className="todo-progress-bar">
-            {!showInput ? (
-              <ProgressDefaultBar
-                showInput={false}
-                progressText=""
-                allCount={0}
-                onShowInput={() => setShowInput(true)}
-                onTextChange={setProgressText}
-                onKeyDown={handleKeyDown}
-                onSubmit={handleSubmit}
-                onCancelInput={() => setShowInput(false)}
-                onManage={() => {}}
-                temporary={temporaryInput}
-                onToggleTemporary={() => setTemporaryInput(v => !v)}
-              />
-            ) : (
-              <>
-                <input
-                  type="text"
-                  className="progress-input-field-compact"
-                  value={progressText}
-                  onChange={(e) => setProgressText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  onFocus={() => setFabHidden(true)}
-                  onBlur={() => setFabHidden(false)}
-                  placeholder="输入进度内容..."
-                  autoFocus
-                />
-                <button
-                  className="btn-progress-submit-compact"
-                  onClick={handleSubmit}
-                  disabled={!progressText.trim()}
-                >
-                  确定
-                </button>
-                <button
-                  className="btn-progress-cancel-compact"
-                  onClick={() => { setShowInput(false); setProgressText(''); setFabHidden(false); }}
-                >
-                  取消
-                </button>
-              </>
-            )}
+            <ProgressDefaultBar
+              allCount={0}
+              onShowInput={openAddModal}
+              onManage={() => {}}
+            />
           </div>
         )}
       </div>
@@ -272,8 +247,6 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
               {!inBatch && !manageMode && (
                 <span className="progress-actions">
                   <button className="p-action done" onClick={(e) => { e.stopPropagation(); toggleProgressStatus(todoId, p.id, 'completed'); }} title="完成">&#x2713;</button>
-                  <button className={`p-action urgent ${p.urgent ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); toggleUrgent(p); }} title={p.urgent ? '取消紧急' : '标记紧急'}>急</button>
-                  <button className={`p-action reminder ${p.reminderTime ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); openReminderPicker(p); }} title="设置提醒">铃</button>
                 </span>
               )}
               {manageMode && (
@@ -303,14 +276,9 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
             />
           ) : (
             <ProgressDefaultBar
-              showInput={showInput} progressText={progressText}
               allCount={progressCount}
-              onShowInput={() => setShowInput(true)} onTextChange={setProgressText}
-              onKeyDown={handleKeyDown} onSubmit={handleSubmit}
-              onCancelInput={() => { setShowInput(false); setTemporaryInput(false); setFabHidden(false); }}
+              onShowInput={openAddModal}
               onManage={() => { setManageMode(true); setConfirmDelete(false); }}
-              temporary={temporaryInput}
-              onToggleTemporary={() => setTemporaryInput(v => !v)}
             />
           )}
         </div>
@@ -355,37 +323,14 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
           onCancel={() => setShowDateModal(false)} />
       )}
 
-      {editing && (
-        <div className="modal-full-overlay" onClick={() => { setEditing(null); setFabHidden(false); }}>
-          <div className="modal-full-sheet" onClick={e => e.stopPropagation()}>
-            <div className="modal-full-header">
-              <span className="modal-full-title">编辑进度</span>
-              <button className="modal-full-close" onClick={() => { setEditing(null); setFabHidden(false); }}>&times;</button>
-            </div>
-            <div className="modal-full-body">
-              <textarea
-                className="modal-edit-textarea"
-                value={editing.text}
-                onChange={e => setEditing(prev => ({ ...prev, text: e.target.value }))}
-                onFocus={() => setFabHidden(true)}
-                onBlur={() => setFabHidden(false)}
-                autoFocus
-              />
-              <label className="temp-edit-option">
-                <input
-                  type="checkbox"
-                  checked={editing.temporary === true}
-                  onChange={e => setEditing(prev => ({ ...prev, temporary: e.target.checked }))}
-                />
-                临时子项（完成后不带到下一期）
-              </label>
-            </div>
-            <div className="modal-full-footer">
-              <button className="btn-cancel" onClick={() => { setEditing(null); setFabHidden(false); }}>取消</button>
-              <button className="btn-save" onClick={handleSaveEdit}>保存</button>
-            </div>
-          </div>
-        </div>
+      {progressModal && (
+        <ProgressModal
+          modal={progressModal}
+          onChange={handleModalChange}
+          onSave={handleSaveModal}
+          onCancel={handleModalCancel}
+          onSetReminder={handleModalSetReminder}
+        />
       )}
     </div>
   );

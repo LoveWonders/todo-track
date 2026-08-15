@@ -56,7 +56,9 @@ graph TD
 
 | 组件 | 变更 |
 |------|------|
-| `ProgressLog.jsx` | active 卡片操作区新增「急」（紧急）与「铃」（提醒）按钮；紧急/过期高亮样式类；提醒时间标签（已有提醒时点击直接清除，toggle 语义）；设置提醒复用 `showNativeDatePicker('datetime-local')`；active 列表保持原顺序不因紧急重排 |
+| `ProgressLog.jsx` | 新增/编辑进度统一走 `ProgressModal` 弹窗（复用 modal-full 样式）；添加与编辑弹窗均含文本、临时、「急」开关、「铃」提醒（设置/清除）；卡片操作区仅保留「完成」快捷按钮；紧急/过期高亮样式类；提醒时间标签；active 列表保持原顺序不因紧急重排；弹窗打开时隐藏 FAB |
+| `ProgressModal.jsx` | 新增组件：弹窗表单（textarea + 临时勾选 + 「急」toggle + 「铃」提醒行 + 保存/取消）；提醒选择复用 `showNativeDatePicker('datetime-local')` |
+| `ProgressDefaultBar.jsx` | 移除行内输入分支，简化为「+ 添加进度」「管理进度」按钮 |
 | `TodoItem.jsx` | 计算 `hasUrgentProgress`，渲染卡片「急」角标 |
 | `normalizeTodo.js` | `normalizeProgress` 增加 `urgent` / `reminderTime` 归一化 |
 | `datePicker.js` | 复用，无需改动 |

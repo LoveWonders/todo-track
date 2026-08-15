@@ -4383,6 +4383,58 @@ body.compact-mode .todo-tag {
   line-height: 1.5;
 }
 
+.progress-modal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.progress-modal-urgent-btn {
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  background: transparent;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.progress-modal-urgent-btn.active {
+  background: var(--danger);
+  color: #fff;
+}
+
+.progress-modal-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.progress-modal-reminder-btn {
+  border: 1px solid var(--warn);
+  color: var(--warn);
+  background: transparent;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.progress-modal-reminder-clear {
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  background: transparent;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
 .temp-edit-option {
   display: flex;
   align-items: center;

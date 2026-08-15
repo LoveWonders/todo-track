@@ -328,20 +328,35 @@ export function useTodos() {
     }
   }, []);
 
-  const addProgress = useCallback((id, text, temporary) => {
+  const addProgress = useCallback((id, text, temporary, options) => {
     if (!text.trim()) return;
+    const opts = options || {};
+    const newId = progressIdRef.current++;
     setTodos(prev => prev.map(t =>
       t.id === id ? {
         ...t,
         progress: [...(t.progress || []), {
-          id: progressIdRef.current++,
+          id: newId,
           text: text.trim(),
           createdAt: new Date().toISOString(),
           status: 'active',
           temporary: temporary === true,
+          urgent: opts.urgent === true,
+          reminderTime: opts.reminderTime || null,
         }]
       } : t
     ));
+    if (opts.reminderTime) {
+      const target = todosRef.current.find(t => t.id === id);
+      if (target) {
+        scheduleProgressReminder({ ...target }, {
+          id: newId,
+          text: text.trim(),
+          status: 'active',
+          reminderTime: opts.reminderTime,
+        });
+      }
+    }
   }, []);
 
   const toggleProgressStatus = useCallback((todoId, progressId, newStatus) => {
