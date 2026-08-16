@@ -7,9 +7,10 @@ import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
 import ProgressLog from './ProgressLog';
 import { useTodoActions } from '../hooks/TodoContext';
+import { showNativeDatePicker } from '../utils/datePicker';
 
 export default function TodoDetail({ todo, onClose }) {
-  const { updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime, setPinStatus, setFabHidden } = useTodoActions();
+  const { updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, setPinStatus, setFabHidden } = useTodoActions();
   const [editTitle, setEditTitle] = useState(false);
   const [title, setTitle] = useState(todo.title);
   const [showPinActions, setShowPinActions] = useState(false);
@@ -21,6 +22,19 @@ export default function TodoDetail({ todo, onClose }) {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(() => setAutoSaved(false), 1500);
   }, []);
+
+  const openTodoReminderPicker = useCallback(() => {
+    showNativeDatePicker({
+      type: 'datetime-local',
+      value: todo.reminderAt ? todo.reminderAt.slice(0, 16) : '',
+      onPick: (picked) => {
+        if (picked) {
+          setReminderAt(todo.id, `${picked}:00`);
+          triggerAutoSave();
+        }
+      },
+    });
+  }, [todo.reminderAt, todo.id, setReminderAt, triggerAutoSave]);
 
   useEffect(() => {
     return () => {
@@ -259,6 +273,20 @@ export default function TodoDetail({ todo, onClose }) {
                 </span>
               </div>
             )}
+
+            <div className="detail-row">
+              <span className="detail-label">一次性提醒</span>
+              <span className="detail-value">
+                {todo.reminderAt ? (
+                  <>
+                    <span className="detail-time-text">{formatDateTime(todo.reminderAt)}</span>
+                    <button className="detail-mini-btn" onClick={() => { setReminderAt(todo.id, null); triggerAutoSave(); }}>清除</button>
+                  </>
+                ) : (
+                  <button className="detail-mini-btn" onClick={openTodoReminderPicker}>设置提醒</button>
+                )}
+              </span>
+            </div>
 
             {todo.tags.includes(URGENT_TAG) && (
               <div className="detail-row">

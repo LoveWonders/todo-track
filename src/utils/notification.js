@@ -78,6 +78,18 @@ function progressNotifId(progressId) {
   return id;
 }
 
+function todoNotifId(todoId) {
+  const map = loadProgressNotifMap();
+  const key = `todo:${todoId}`;
+  let id = map[key];
+  if (id == null) {
+    id = progressNotifSeq++;
+    map[key] = id;
+    saveProgressNotifMap(map);
+  }
+  return id;
+}
+
 export async function scheduleProgressReminder(todo, progress) {
   if (!isNative()) return;
   if (!progress || progress.status !== 'active' || !progress.reminderTime) return;
@@ -118,6 +130,36 @@ export async function cancelTodoProgressReminders(todo) {
   }
 }
 
+export async function scheduleTodoReminder(todo) {
+  if (!isNative()) return;
+  if (!todo || todo.status !== 'active' || !todo.reminderAt) return;
+  const at = new Date(todo.reminderAt);
+  if (isNaN(at.getTime()) || at.getTime() <= Date.now()) return;
+  const id = todoNotifId(todo.id);
+  try {
+    await LocalNotifications.schedule({
+      notifications: [{
+        id,
+        title: todo.title || '待办',
+        body: '待办提醒',
+        schedule: { at },
+      }],
+    });
+  } catch { /* ignore */ }
+}
+
+export async function cancelTodoReminder(todoId) {
+  if (!isNative()) return;
+  const map = loadProgressNotifMap();
+  const id = map[`todo:${todoId}`];
+  if (id == null) return;
+  try {
+    await LocalNotifications.cancel({ notifications: [{ id }] });
+  } catch { /* ignore */ }
+  delete map[`todo:${todoId}`];
+  saveProgressNotifMap(map);
+}
+
 export async function rescheduleAll(todos) {
   if (!isNative()) return;
   const targets = todos.filter(t => t.status === 'active' && t.repeatRule && t.reminderTime);
@@ -130,6 +172,9 @@ export async function rescheduleAll(todos) {
     await scheduleReminder(t);
   }
   for (const t of todos) {
+    if (t.status === 'active' && t.reminderAt) {
+      await scheduleTodoReminder(t);
+    }
     for (const p of (t.progress || [])) {
       await scheduleProgressReminder(t, p);
     }
@@ -176,6 +221,22 @@ export function checkDueReminders(todos) {
             });
           } catch { /* ignore */ }
           ack[t.id] = key;
+          changed = true;
+        }
+      }
+    }
+    if (t.reminderAt) {
+      const at = new Date(t.reminderAt);
+      if (!isNaN(at.getTime())) {
+        const key = `todo:${t.id}:${t.reminderAt}`;
+        if (now.getTime() >= at.getTime() && ack[key] !== '1') {
+          try {
+            new Notification(t.title || '待办', {
+              body: '待办提醒',
+              tag: key,
+            });
+          } catch { /* ignore */ }
+          ack[key] = '1';
           changed = true;
         }
       }

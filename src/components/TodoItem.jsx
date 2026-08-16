@@ -19,6 +19,19 @@ function getStatusClass(todo) {
   return '';
 }
 
+function formatReminderAt(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function isReminderAtDue(todo) {
+  if (!todo.reminderAt) return false;
+  const t = new Date(todo.reminderAt).getTime();
+  return !Number.isNaN(t) && t <= Date.now();
+}
+
 const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragListeners }) {
   const { toggleStatus, completeTodo, updateTodo, handleBatchToggle, setPinStatus, setFabHidden } = useTodoActions();
   const { batchMode, isArchive, devMode, openMenuId, setOpenMenuId } = useTodoView();
@@ -86,6 +99,8 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
     }
     return false;
   });
+
+  const reminderAtDue = isReminderAtDue(todo);
 
   const handleItemClick = () => {
     if (!batchMode) return;
@@ -155,7 +170,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
   return (
     <div
-      className={`todo-item ${statusClass} ${tier === 3 ? 'long-term' : ''} ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''} ${batchMode ? 'batch-mode' : ''} ${isUrgent ? 'urgent' : ''}`}
+      className={`todo-item ${statusClass} ${tier === 3 ? 'long-term' : ''} ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''} ${batchMode ? 'batch-mode' : ''} ${isUrgent ? 'urgent' : ''} ${reminderAtDue ? 'reminder-due' : ''}`}
       onClick={handleItemClick}
     >
       <div className="todo-header">
@@ -217,6 +232,9 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
             )}
             {hasUrgentProgress && (
               <span className="progress-urgent-badge" title="含紧急/待提醒进度">急</span>
+            )}
+            {todo.reminderAt && (
+              <span className={`todo-reminder-tag ${reminderAtDue ? 'due' : ''}`}>提醒 {formatReminderAt(todo.reminderAt)}</span>
             )}
             {checklistMode && progressCount > 0 && (
               <span

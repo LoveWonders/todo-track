@@ -3335,6 +3335,49 @@ body.compact-mode .todo-tag {
   border-color: var(--accent);
 }
 
+.detail-time-text {
+  font-size: 13px;
+  color: var(--warn);
+  margin-right: 6px;
+}
+
+.detail-mini-btn {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.detail-mini-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.todo-reminder-tag {
+  font-size: 10px;
+  padding: 0 5px;
+  margin-left: 4px;
+  border: 1px solid var(--warn);
+  border-radius: 3px;
+  color: var(--warn);
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
+.todo-reminder-tag.due {
+  background: var(--warn);
+  color: #fff;
+  font-weight: 600;
+}
+
+.todo-item.reminder-due {
+  border-color: var(--warn);
+  box-shadow: 0 0 0 1px var(--warn) inset;
+}
+
 .settings-row-status {
   font-size: var(--font-size-small);
   padding: 2px 8px;

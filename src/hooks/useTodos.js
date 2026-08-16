@@ -4,7 +4,7 @@ import { mergeAndArchive } from '../utils/autoArchive';
 import { normalizeImportedTodo } from '../utils/normalizeTodo';
 import { removeProgressCollapsed } from '../utils/progressViewState';
 import { getCycleKey, getWindowStart, isRepeatRule, isValidAnchor } from '../utils/repeat';
-import { scheduleReminder, cancelReminder, rescheduleAll, checkDueReminders, requestNotificationPermission, scheduleProgressReminder, cancelProgressReminder, cancelTodoProgressReminders } from '../utils/notification';
+import { scheduleReminder, cancelReminder, rescheduleAll, checkDueReminders, requestNotificationPermission, scheduleProgressReminder, cancelProgressReminder, cancelTodoProgressReminders, scheduleTodoReminder, cancelTodoReminder } from '../utils/notification';
 
 const MANUAL_SORT_KEY = 'todo_manual_sort';
 const SETTINGS_KEY = 'todo_app_settings';
@@ -160,6 +160,7 @@ export function useTodos() {
     const target = todosRef.current.find(t => t.id === id);
     if (target) {
       cancelTodoProgressReminders(target);
+      if (target.reminderAt) cancelTodoReminder(id);
       if (target.reminderTime) cancelReminder(id);
     }
     removeProgressCollapsed(id);
@@ -249,7 +250,10 @@ export function useTodos() {
     const idSet = ids instanceof Set ? ids : new Set(ids);
     if (idSet.size === 0) return;
     for (const t of todosRef.current) {
-      if (idSet.has(t.id)) cancelTodoProgressReminders(t);
+      if (!idSet.has(t.id)) continue;
+      cancelTodoProgressReminders(t);
+      if (t.reminderAt) cancelTodoReminder(t.id);
+      if (t.reminderTime) cancelReminder(t.id);
     }
     idSet.forEach(id => removeProgressCollapsed(id));
     setTodos(prev => prev.filter(t => !idSet.has(t.id)));
@@ -291,6 +295,7 @@ export function useTodos() {
     if (!target) return;
     if (target.status === 'active') {
       cancelTodoProgressReminders(target);
+      if (target.reminderAt) cancelTodoReminder(id);
     }
     if (target?.repeatRule && target.reminderTime) {
       scheduleReminder(target);
@@ -333,6 +338,23 @@ export function useTodos() {
     const granted = await requestNotificationPermission();
     if (granted && isRepeatRule(target.repeatRule)) {
       scheduleReminder({ ...target, reminderTime: normalized });
+    }
+  }, []);
+
+  const setReminderAt = useCallback(async (id, timeStr) => {
+    const normalized = timeStr ? String(timeStr) : null;
+    setTodos(prev => prev.map(t =>
+      t.id === id ? { ...t, reminderAt: normalized } : t
+    ));
+    const target = todosRef.current.find(t => t.id === id);
+    if (!target) return;
+    if (!normalized) {
+      cancelTodoReminder(id);
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (granted) {
+      scheduleTodoReminder({ ...target, reminderAt: normalized });
     }
   }, []);
 
@@ -499,5 +521,5 @@ export function useTodos() {
   const archivedTodos = useMemo(() => todos.filter(t => t.status !== 'active'), [todos]);
   const allTags = useMemo(() => [...new Set(todos.flatMap(t => t.tags))].sort(), [todos]);
 
-  return { todos, activeTodos, archivedTodos, loaded, isManualMode, setManualMode, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, updateCompletedAt, batchUpdateCompletedAt, importTodos, allTags };
+  return { todos, activeTodos, archivedTodos, loaded, isManualMode, setManualMode, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, updateCompletedAt, batchUpdateCompletedAt, importTodos, allTags };
 }

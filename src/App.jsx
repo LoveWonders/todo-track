@@ -25,7 +25,7 @@ import { loadArchive, saveArchive } from './utils/autoArchive';
 import { formatDate } from './utils/dateParser';
 
 export default function App() {
-  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, batchUpdateCompletedAt, importTodos, allTags, isManualMode, setManualMode } = useTodos();
+  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, batchUpdateCompletedAt, importTodos, allTags, isManualMode, setManualMode } = useTodos();
   const [filterConfig, setFilterConfig] = useState({ includeTags: [], excludeTags: [] });
   const [view, setView] = useState('active');
   const [dragId, setDragId] = useState(null);
@@ -122,11 +122,11 @@ export default function App() {
   }, [importTodos]);
 
   const actionsValue = useMemo(() => ({
-    updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime,
+    updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt,
     addProgress, toggleProgressStatus,
     deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt,
     handleBatchToggle, setPinStatus, setFabHidden,
-  }), [updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime,
+  }), [updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt,
     addProgress, toggleProgressStatus,
     deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt,
     handleBatchToggle, setPinStatus, setFabHidden]);

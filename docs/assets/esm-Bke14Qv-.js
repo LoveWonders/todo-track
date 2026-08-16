@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/web-CyflaTxG.js","assets/index-CFuztp21.js","assets/index-CHvHF8VG.css"])))=>i.map(i=>d[i]);
+import{a as e,i as t}from"./index-CFuztp21.js";var n=t(`App`,{web:()=>e(()=>import(`./web-CyflaTxG.js`).then(e=>new e.AppWeb),__vite__mapDeps([0,1,2]))});export{n as App};
