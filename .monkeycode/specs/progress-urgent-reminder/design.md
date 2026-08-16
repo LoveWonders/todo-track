@@ -59,8 +59,9 @@ graph TD
 | `ProgressLog.jsx` | 新增/编辑进度统一走 `ProgressModal` 弹窗（复用 modal-full 样式）；添加与编辑弹窗均含文本、临时、「急」开关、「铃」提醒（设置/清除）；卡片操作区仅保留「完成」快捷按钮；紧急/过期高亮样式类；提醒时间标签；active 列表保持原顺序不因紧急重排；弹窗打开时隐藏 FAB |
 | `ProgressModal.jsx` | 新增组件：弹窗表单（textarea + 临时勾选 + 「急」toggle + 「铃」提醒行 + 保存/取消）；提醒选择复用 `showNativeDatePicker('datetime-local')` |
 | `ProgressDefaultBar.jsx` | 移除行内输入分支，简化为「+ 添加进度」「管理进度」按钮 |
-| `TodoItem.jsx` | 计算 `hasUrgentProgress`，渲染卡片「急」角标 |
-| `normalizeTodo.js` | `normalizeProgress` 增加 `urgent` / `reminderTime` 归一化 |
+| `TodoItem.jsx` | 计算 `hasUrgentProgress`，渲染卡片「急」角标；渲染待办一次性提醒标签（`todo-reminder-tag`），过期时卡片 `reminder-due` 高亮 |
+| `TodoDetail.jsx` | 新增「一次性提醒」行（所有待办可见）：`setReminderAt` 设置/清除 ISO 绝对时刻，复用 `showNativeDatePicker('datetime-local')`；重复任务既有「提醒时间」HH:mm 输入保留 |
+| `normalizeTodo.js` | `normalizeProgress` 增加 `urgent` / `reminderTime` 归一化；`normalizeImportedTodo` 增加 `reminderAt` 归一化 |
 | `datePicker.js` | 复用，无需改动 |
 
 ## Data Models
@@ -81,8 +82,17 @@ Progress 条目扩展字段（均可选，向后兼容）：
 ```
 
 Ack 防重记录（Web，不进业务数据）：
-- key: `todo:{todoId}:progress:{progressId}:{reminderTime}`
-- 存储：localStorage `todo_progress_reminder_ack`
+- 进度：key `todo:{todoId}:progress:{progressId}:{reminderTime}`
+- 待办一次性：key `todo:{todoId}:{reminderAt}`
+- 存储：localStorage `todo_reminder_ack`
+
+Todo 条目新增字段（可选，向后兼容）：
+
+```js
+{
+  reminderAt: string | null,  // 一次性绝对提醒时刻（ISO），任意待办可设
+}
+```
 
 ## Correctness Properties
 
@@ -91,6 +101,8 @@ Ack 防重记录（Web，不进业务数据）：
 - P3：同一 `(todoId, progressId, reminderTime)` 通知至多触发一次（Ack 防重）。
 - P4：进度完成/作废/删除与待办删除/完成时，对应已调度通知被取消。
 - P5：紧急标记不改变列表顺序——标记/取消紧急时卡片在原位置高亮，不触发重排跳动。
+- P6：待办 `reminderAt` 为 ISO 字符串或 `null`；同一 `(todoId, reminderAt)` 通知至多触发一次（Ack 防重）。
+- P7：待办完成/删除/批量删除时取消一次性提醒调度；重复任务 `reminderTime` 每日提醒与 `reminderAt` 独立共存。
 - P6：通知权限缺失或 API 不可用时静默降级，应用内标记不受影响。
 - P7：旧数据无新字段时 `normalizeProgress` 产出安全默认值。
 

@@ -103,3 +103,15 @@
 #### Acceptance Criteria
 
 1. WHEN 浏览器/原生通知权限被拒绝或通知 API 不可用，系统 SHALL 静默跳过通知触发，且应用内高亮与标签仍正常显示。
+
+### R10 待办一次性提醒
+
+**User Story:** AS 用户, I want 任意待办（不限重复任务）设置一次性提醒, so that 到期收到提醒
+
+#### Acceptance Criteria
+
+1. WHEN 用户为任意 active 待办设置一次性提醒，系统 SHALL 将该待办 `reminderAt` 存为 ISO 绝对时刻。
+2. WHEN 待办已设置一次性提醒，系统 SHALL 在待办卡片与详情页显示提醒时间标签。
+3. WHEN 到达待办 `reminderAt`，系统 SHALL 触发通知（Web 浏览器 Notification / Android 本地通知），且同一 `(todoId, reminderAt)` 不重复触发（Ack 防重）。
+4. WHEN 待办被完成或删除，系统 SHALL 取消该一次性提醒调度。
+5. WHEN 重复任务已设置 `reminderTime`（每日 HH:mm 提醒），系统 SHALL 保留该既有行为，与一次性 `reminderAt` 互不影响。

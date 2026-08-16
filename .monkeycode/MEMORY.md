@@ -109,4 +109,12 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 验证通知触发逻辑：在页面 evaluate 注入自定义 `window.Notification`（`permission='granted'` + `requestPermission()` 返回 granted），应用模块运行时读取全局 Notification 即生效
   - 通过断言 `todo_reminder_ack`（localStorage）中是否出现 `progress:{todoId}:{progressId}:{reminderTime}` 键来验证触发与 Ack 防重
 
+### useCallback 依赖数组引用后置 const 会触发 TDZ 错误
+- Date: 2026-08-16
+- Context: Agent 在 TodoDetail 新增 openTodoReminderPicker 时，将 useCallback 定义在 triggerAutoSave 之前导致运行时 "Cannot access 'triggerAutoSave' before initialization"
+- Category: 排错调试
+- Instructions:
+  - React 组件内 `const` 定义的函数没有提升，useCallback 的依赖数组在初始化时求值，若引用后文定义的 const 会抛 TDZ 错误
+  - 修复：将 useCallback 移动到其依赖的函数定义之后，或改用函数式引用（依赖数组中直接内联定义）
+
 (Showing lines 52-72 of 72.)
