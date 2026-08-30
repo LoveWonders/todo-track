@@ -77,6 +77,7 @@ export function logTypeLabel(type) {
     case 'error': return '错误';
     case 'success': return '成功';
     case 'info': return '信息';
+    case 'data': return '数据';
     default: return type;
   }
 }

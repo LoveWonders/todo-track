@@ -8,6 +8,7 @@ import TagsEdit from './TagsEdit';
 import ProgressLog from './ProgressLog';
 import { useTodoActions } from '../hooks/TodoContext';
 import { showNativeDatePicker } from '../utils/datePicker';
+import ModalShell from './ModalShell';
 
 export default function TodoDetail({ todo, onClose }) {
   const { updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, setPinStatus, setFabHidden } = useTodoActions();
@@ -61,19 +62,42 @@ export default function TodoDetail({ todo, onClose }) {
   };
 
   return (
-    <div className="modal-full-overlay" onClick={onClose}>
+    <>
       {autoSaved && (
         <div className="autosave-toast">
           <span>已自动保存</span>
         </div>
       )}
-      <div className="modal-full-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
-        <div className="modal-full-header">
-          <span className="modal-full-title">待办详情</span>
-          <button className="modal-full-close" onClick={onClose}>&times;</button>
-        </div>
-
-        <div className="modal-full-body" style={{ padding: '12px 16px' }}>
+      <ModalShell
+        title="待办详情"
+        onClose={onClose}
+        bodyStyle={{ padding: '12px 16px' }}
+        footerClassName="detail-footer"
+        footer={
+          <>
+            {todo.status === 'active' ? (
+              <>
+                {hasCycleDoneThisCycle(todo) ? (
+                  <button className="btn-primary-lg" disabled title="本期已完成，下一周期继续">
+                    本期已完成
+                  </button>
+                ) : (
+                  <button className="btn-primary-lg" onClick={() => { completeTodo(todo.id); onClose(); }}>
+                    标记完成
+                  </button>
+                )}
+                <button className="btn-danger-lg" onClick={() => { toggleStatus(todo.id, 'cancelled'); onClose(); }}>
+                  作废
+                </button>
+              </>
+            ) : (
+              <button className="btn-primary-lg" onClick={() => { toggleStatus(todo.id, todo.status); onClose(); }}>
+                恢复
+              </button>
+            )}
+          </>
+        }
+      >
           <div className="detail-section">
             <div
               className="detail-title-area"
@@ -300,31 +324,7 @@ export default function TodoDetail({ todo, onClose }) {
             <div className="detail-section-title">进度记录</div>
             <ProgressLog progress={todo.progress} todoId={todo.id} checklistMode={todo.checklistMode === true} repeatRule={todo.repeatRule} />
           </div>
-        </div>
-
-        <div className="modal-full-footer" style={{ justifyContent: 'center', gap: 10, padding: '12px 16px' }}>
-          {todo.status === 'active' ? (
-            <>
-              {hasCycleDoneThisCycle(todo) ? (
-                <button className="btn-primary-lg" disabled title="本期已完成，下一周期继续">
-                  本期已完成
-                </button>
-              ) : (
-                <button className="btn-primary-lg" onClick={() => { completeTodo(todo.id); onClose(); }}>
-                  标记完成
-                </button>
-              )}
-              <button className="btn-danger-lg" onClick={() => { toggleStatus(todo.id, 'cancelled'); onClose(); }}>
-                作废
-              </button>
-            </>
-          ) : (
-            <button className="btn-primary-lg" onClick={() => { toggleStatus(todo.id, todo.status); onClose(); }}>
-              恢复
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+      </ModalShell>
+    </>
   );
 }

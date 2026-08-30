@@ -5,6 +5,7 @@ import { normalizeImportedTodo } from '../utils/normalizeTodo';
 import { removeProgressCollapsed } from '../utils/progressViewState';
 import { getCycleKey, getWindowStart, isRepeatRule, isValidAnchor } from '../utils/repeat';
 import { scheduleReminder, cancelReminder, rescheduleAll, checkDueReminders, requestNotificationPermission, scheduleProgressReminder, cancelProgressReminder, cancelTodoProgressReminders, scheduleTodoReminder, cancelTodoReminder } from '../utils/notification';
+import { addLog } from '../utils/logger';
 
 const MANUAL_SORT_KEY = 'todo_manual_sort';
 const SETTINGS_KEY = 'todo_app_settings';
@@ -148,6 +149,7 @@ export function useTodos() {
       reminderTime: null,
     };
     setTodos(prev => [...prev, todo]);
+    addLog('data', '新增待办', { id: todo.id, title: todo.title });
   }, []);
 
   const updateTodo = useCallback((id, updates) => {
@@ -165,6 +167,7 @@ export function useTodos() {
     }
     removeProgressCollapsed(id);
     setTodos(prev => prev.filter(t => t.id !== id));
+    addLog('data', '删除待办', { id, title: target ? target.title : String(id) });
   }, []);
 
   const commitReorder = useCallback((idOrder, movedId, manual) => {
@@ -231,6 +234,20 @@ export function useTodos() {
         }
       }
     }
+    const affected = entries
+      .map(({ id, newStatus }) => {
+        const t = todosRef.current.find(x => x.id === id);
+        return t ? { id, title: t.title, oldStatus: t.status, newStatus } : null;
+      })
+      .filter(Boolean);
+    const archived = affected.filter(e => e.oldStatus === 'active' && e.newStatus !== 'active');
+    const restored = affected.filter(e => e.oldStatus !== 'active' && e.newStatus !== e.oldStatus);
+    if (archived.length > 0) {
+      addLog('data', '作废待办', { count: archived.length, titles: archived.map(e => e.title).slice(0, 20), target: archived[0].newStatus });
+    }
+    if (restored.length > 0) {
+      addLog('data', '恢复待办', { count: restored.length, titles: restored.map(e => e.title).slice(0, 20) });
+    }
   }, []);
 
   const toggleStatus = useCallback((id, newStatus) => {
@@ -257,6 +274,8 @@ export function useTodos() {
     }
     idSet.forEach(id => removeProgressCollapsed(id));
     setTodos(prev => prev.filter(t => !idSet.has(t.id)));
+    const deleted = todosRef.current.filter(t => idSet.has(t.id));
+    addLog('data', '批量删除待办', { count: deleted.length, titles: deleted.map(t => t.title).slice(0, 20) });
   }, []);
 
   const completeTodo = useCallback((id) => {
@@ -296,6 +315,13 @@ export function useTodos() {
     if (target.status === 'active') {
       cancelTodoProgressReminders(target);
       if (target.reminderAt) cancelTodoReminder(id);
+      addLog('data', isRepeatRule(target.repeatRule) ? '完成本期' : '标记完成', {
+        id,
+        title: target.title,
+        repeatRule: target.repeatRule || null,
+      });
+    } else {
+      addLog('data', '恢复待办', { id, title: target.title });
     }
     if (target?.repeatRule && target.reminderTime) {
       scheduleReminder(target);
@@ -322,6 +348,7 @@ export function useTodos() {
     } else if (target.reminderTime) {
       scheduleReminder({ ...target, repeatRule: rule, repeatAnchor: isValidAnchor(rule, anchor) ? anchor : null });
     }
+    addLog('data', '设置重复规则', { id, title: target.title, rule: rule || 'none', anchor: isRepeatRule(rule) ? anchor : null });
   }, []);
 
   const setReminderTime = useCallback(async (id, timeStr) => {
@@ -333,12 +360,14 @@ export function useTodos() {
     if (!target) return;
     if (!normalized) {
       cancelReminder(id);
+      addLog('data', '清除重复提醒', { id, title: target.title });
       return;
     }
     const granted = await requestNotificationPermission();
     if (granted && isRepeatRule(target.repeatRule)) {
       scheduleReminder({ ...target, reminderTime: normalized });
     }
+    addLog('data', '设置重复提醒', { id, title: target.title, time: normalized });
   }, []);
 
   const setReminderAt = useCallback(async (id, timeStr) => {
@@ -350,12 +379,14 @@ export function useTodos() {
     if (!target) return;
     if (!normalized) {
       cancelTodoReminder(id);
+      addLog('data', '清除一次性提醒', { id, title: target.title });
       return;
     }
     const granted = await requestNotificationPermission();
     if (granted) {
       scheduleTodoReminder({ ...target, reminderAt: normalized });
     }
+    addLog('data', '设置一次性提醒', { id, title: target.title, at: normalized });
   }, []);
 
   const addProgress = useCallback((id, text, temporary, options) => {
@@ -387,6 +418,15 @@ export function useTodos() {
         });
       }
     }
+    const targetTodo = todosRef.current.find(t => t.id === id);
+    addLog('data', '新增进度记录', {
+      todoId: id,
+      todoTitle: targetTodo ? targetTodo.title : String(id),
+      progressId: newId,
+      text: text.trim(),
+      temporary: temporary === true,
+      urgent: opts.urgent === true,
+    });
   }, []);
 
   const toggleProgressStatus = useCallback((todoId, progressId, newStatus) => {
@@ -414,16 +454,38 @@ export function useTodos() {
         cancelProgressReminder(progressId);
       }
     }
+    const t0 = todosRef.current.find(t => t.id === todoId);
+    const p0 = t0 ? (t0.progress || []).find(x => x.id === progressId) : null;
+    if (p0) {
+      const action = p0.status === 'active' && newStatus !== 'active' ? '完成进度记录'
+        : p0.status !== 'active' && newStatus !== p0.status ? '恢复进度记录'
+        : '切换进度记录';
+      addLog('data', action, {
+        todoId,
+        todoTitle: t0 ? t0.title : String(todoId),
+        progressId,
+        text: p0.text,
+        newStatus,
+      });
+    }
   }, []);
 
   const deleteProgress = useCallback((todoId, progressId) => {
     cancelProgressReminder(progressId);
+    const target = todosRef.current.find(t => t.id === todoId);
+    const p = target ? (target.progress || []).find(x => x.id === progressId) : null;
     setTodos(prev => prev.map(t =>
       t.id === todoId ? {
         ...t,
         progress: (t.progress || []).filter(p => p.id !== progressId)
       } : t
     ));
+    addLog('data', '删除进度记录', {
+      todoId,
+      todoTitle: target ? target.title : String(todoId),
+      progressId,
+      text: p ? p.text : String(progressId),
+    });
   }, []);
 
   const updateProgress = useCallback((todoId, progressId, text, temporary) => {
@@ -483,6 +545,15 @@ export function useTodos() {
         )
       } : t
     ));
+    const target = todosRef.current.find(t => t.id === todoId);
+    const p = target ? (target.progress || []).find(x => x.id === progressId) : null;
+    addLog('data', '修改进度完成时间', {
+      todoId,
+      todoTitle: target ? target.title : String(todoId),
+      progressId,
+      text: p ? p.text : String(progressId),
+      completedAt: isoString,
+    });
   }, []);
 
   const updateCompletedAt = useCallback((id, dateString) => {
@@ -498,6 +569,9 @@ export function useTodos() {
       if (isoString) mapped.push({ id, updates: { status: 'completed', completedAt: isoString } });
     }
     batchUpdateTodos(mapped);
+    if (mapped.length > 0) {
+      addLog('data', '批量修改完成时间', { count: mapped.length });
+    }
   }, [batchUpdateTodos]);
 
   const importTodos = useCallback((importData, strategy) => {
@@ -513,6 +587,10 @@ export function useTodos() {
       }
       const maxId = Math.max(...merged.map(t => t.id), 0);
       todoIdRef.current = maxId + 1;
+      addLog('data', '导入待办数据', {
+        strategy: strategy === 'overwrite' ? '覆盖' : '跳过重复',
+        count: normalized.length,
+      });
       return merged;
     });
   }, []);

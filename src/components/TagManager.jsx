@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { TAG_COLOR_PALETTE, getTagColor, findDuplicateGroups, isSafeTagName } from '../utils/tagMeta';
 import { useTagMeta } from '../hooks/useTagMeta';
+import ModalShell from './ModalShell';
 
 export default function TagManager({ todos, onClose, onRenameTag, onDeleteTag, onMergeTag }) {
   const { tagMeta, setTagColor, renameTagMeta, removeTagMeta } = useTagMeta();
@@ -102,14 +103,11 @@ export default function TagManager({ todos, onClose, onRenameTag, onDeleteTag, o
   };
 
   return (
-    <div className="modal-full-overlay" onClick={onClose}>
-      <div className="modal-full-sheet tag-manager-sheet" onClick={e => e.stopPropagation()}>
-        <div className="modal-full-header">
-          <span className="modal-full-title">标签管理</span>
-          <button className="modal-full-close" onClick={onClose}>&times;</button>
-        </div>
-
-        <div className="modal-full-body tag-manager-body">
+    <ModalShell
+      title="标签管理"
+      onClose={onClose}
+      bodyClassName="tag-manager-body"
+    >
           {duplicateGroups.length > 0 && (
             <div className="tag-merge-banner">
               <div className="tag-merge-banner-title">
@@ -247,10 +245,8 @@ export default function TagManager({ todos, onClose, onRenameTag, onDeleteTag, o
                   </div>
                 );
               })}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+          </div>
+        )}
+    </ModalShell>
   );
 }

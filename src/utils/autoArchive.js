@@ -1,4 +1,5 @@
 import { save as storageSave, readJSON } from './storage';
+import { addLog } from './logger';
 
 const ARCHIVE_KEY = 'todo_archive_data';
 
@@ -41,6 +42,11 @@ export function mergeAndArchive(todos, maxAgeDays = 30) {
   if (newlyArchived.length > 0) {
     const merged = [...existingArchive, ...newlyArchived];
     saveArchive(merged);
+    addLog('data', '自动归档完成待办', {
+      count: newlyArchived.length,
+      titles: newlyArchived.map(t => t.title).slice(0, 20),
+      reason: '完成超过 30 天，已移入归档存储',
+    });
   }
 
   return remaining;

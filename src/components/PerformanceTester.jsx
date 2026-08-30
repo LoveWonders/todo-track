@@ -65,7 +65,7 @@ export default function PerformanceTester({ todos, importTodos, deleteTodo, visi
   const [collapsed, setCollapsed] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [archiveResult, setArchiveResult] = useState(null);
-  const [testCount, setTestCount] = useState(1000);
+  const [countInput, setCountInput] = useState('1000');
   const draggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const testIdBaseRef = useRef(900000);
@@ -74,23 +74,31 @@ export default function PerformanceTester({ todos, importTodos, deleteTodo, visi
   const testTodoCount = todos.filter(t => (t.tags || []).includes(TEST_DATA_TAG)).length;
 
   const handleCountChange = useCallback((e) => {
-    const val = parseInt(e.target.value, 10);
-    if (!isNaN(val) && val > 0) {
-      setTestCount(Math.min(val, 50000));
-    } else if (e.target.value === '') {
-      setTestCount(1);
-    }
+    const raw = e.target.value;
+    if (!/^\d*$/.test(raw)) return;
+    setCountInput(raw);
   }, []);
 
+  const handleCountBlur = useCallback(() => {
+    const val = parseInt(countInput, 10);
+    if (isNaN(val) || val <= 0) {
+      setCountInput('1');
+    } else {
+      setCountInput(String(Math.min(val, 50000)));
+    }
+  }, [countInput]);
+
   const injectData = useCallback(async () => {
+    const val = parseInt(countInput, 10);
+    const count = isNaN(val) || val <= 0 ? 1 : Math.min(val, 50000);
     setBusy(true);
     setArchiveResult(null);
     testIdBaseRef.current += 10000;
     await new Promise(r => setTimeout(r, 0));
-    const mockData = generateMockTodos(testCount, testIdBaseRef.current);
+    const mockData = generateMockTodos(count, testIdBaseRef.current);
     importTodos(mockData, 'skip');
     setBusy(false);
-  }, [importTodos, testCount]);
+  }, [importTodos, countInput]);
 
   const clearData = useCallback(async () => {
     const ids = todos.filter(t => (t.tags || []).includes(TEST_DATA_TAG)).map(t => t.id);
@@ -181,8 +189,9 @@ export default function PerformanceTester({ todos, importTodos, deleteTodo, visi
           <input
             type="number"
             className="perf-input"
-            value={testCount}
+            value={countInput}
             onChange={handleCountChange}
+            onBlur={handleCountBlur}
             min={1}
             max={50000}
             step={100}
@@ -191,7 +200,7 @@ export default function PerformanceTester({ todos, importTodos, deleteTodo, visi
 
         <div className="perf-tester-btns">
           <button className="perf-btn perf-btn-inject" onClick={injectData} disabled={busy}>
-            {busy ? '注入中...' : `注入 ${testCount} 条测试数据`}
+            {busy ? '注入中...' : `注入 ${countInput ? parseInt(countInput, 10) || 1 : 1} 条测试数据`}
           </button>
           <button className="perf-btn perf-btn-clear" onClick={clearData} disabled={busy || testTodoCount === 0}>
             清空测试数据 ({testTodoCount})

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import ModalShell from './ModalShell';
 import { getLogs, clearLogs, deleteLogs, logTypeLabel, getSelectedLogsText } from '../utils/logger';
 import { copyToClipboard } from '../utils/clipboard';
 
@@ -104,68 +105,66 @@ export default function LogViewer({ open, onClose, onToast }) {
   if (!open) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card log-modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <span className="modal-title">调试日志</span>
-          <button className="modal-close" onClick={onClose}>&times;</button>
-        </div>
-        <div className="modal-body log-body">
-          {logs.length === 0 ? (
-            <div className="log-empty">暂无日志</div>
-          ) : (
-            <>
-              <div className="log-toolbar">
-                <button className="log-toolbar-btn" onClick={handleSelectAll}>全选</button>
-                <button className="log-toolbar-btn" onClick={handleInvert}>反选</button>
-                <span className="log-toolbar-info">
-                  {selectedIds.size > 0 ? `已选 ${selectedIds.size} 条` : ''}
-                </span>
-              </div>
-              {logs.map(entry => (
-                <div
-                  key={entry.id}
-                  className={`log-entry log-${entry.type}${selectedIds.has(entry.id) ? ' log-entry-selected' : ''}`}
-                >
-                  <div className="log-entry-row">
-                    <input
-                      type="checkbox"
-                      className="log-checkbox"
-                      checked={selectedIds.has(entry.id)}
-                      onChange={() => toggleLogSelect(entry.id)}
-                    />
-                    <div className="log-entry-body">
-                      <div className="log-head">
-                        <span className={`log-badge log-badge-${entry.type}`}>{logTypeLabel(entry.type)}</span>
-                        <span className="log-ts">{entry.ts}</span>
-                      </div>
-                      <div className="log-msg">{entry.message}</div>
-                      {entry.detail && (
-                        <pre className="log-detail">{JSON.stringify(entry.detail, null, 2)}</pre>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-        <div className="modal-footer">
-          <button className="btn-mini btn-mini-cancel" onClick={onClose}>关闭</button>
+    <ModalShell
+      title="调试日志"
+      onClose={onClose}
+      bodyClassName="log-body"
+      footer={
+        <>
+          <button className="btn-secondary" onClick={onClose}>关闭</button>
           {logs.length > 0 && (
-            <button className="btn-mini btn-mini-save" onClick={handleCopyLogs}>复制</button>
+            <button className="btn-primary" onClick={handleCopyLogs}>复制</button>
           )}
           {logs.length > 0 && (
-            <button className="btn-mini btn-mini-save" onClick={handleExportLogs}>导出 TXT</button>
+            <button className="btn-secondary" onClick={handleExportLogs}>导出 TXT</button>
           )}
           {logs.length > 0 && selectedIds.size > 0 && (
-            <button className="btn-mini btn-mini-save" style={{ background: 'var(--danger)' }} onClick={handleDeleteSelected}>删除选中</button>
+            <button className="btn-danger" onClick={handleDeleteSelected}>删除选中</button>
           )}
           {logs.length > 0 && (
-            <button className="btn-mini btn-mini-save" style={{ background: 'var(--warn)' }} onClick={handleClearLogs}>清空</button>
+            <button className="btn-secondary" style={{ background: 'var(--warn)', borderColor: 'var(--warn)', color: '#fff' }} onClick={handleClearLogs}>清空</button>
           )}
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      {logs.length === 0 ? (
+        <div className="log-empty">暂无日志</div>
+      ) : (
+        <>
+          <div className="log-toolbar">
+            <button className="log-toolbar-btn" onClick={handleSelectAll}>全选</button>
+            <button className="log-toolbar-btn" onClick={handleInvert}>反选</button>
+            <span className="log-toolbar-info">
+              {selectedIds.size > 0 ? `已选 ${selectedIds.size} 条` : ''}
+            </span>
+          </div>
+          {logs.map(entry => (
+            <div
+              key={entry.id}
+              className={`log-entry log-${entry.type}${selectedIds.has(entry.id) ? ' log-entry-selected' : ''}`}
+            >
+              <div className="log-entry-row">
+                <input
+                  type="checkbox"
+                  className="log-checkbox"
+                  checked={selectedIds.has(entry.id)}
+                  onChange={() => toggleLogSelect(entry.id)}
+                />
+                <div className="log-entry-body">
+                  <div className="log-head">
+                    <span className={`log-badge log-badge-${entry.type}`}>{logTypeLabel(entry.type)}</span>
+                    <span className="log-ts">{entry.ts}</span>
+                  </div>
+                  <div className="log-msg">{entry.message}</div>
+                  {entry.detail && (
+                    <pre className="log-detail">{JSON.stringify(entry.detail, null, 2)}</pre>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+    </ModalShell>
   );
 }

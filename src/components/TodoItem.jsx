@@ -11,6 +11,7 @@ import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
 import ProgressLog from './ProgressLog';
 import TodoDetail from './TodoDetail';
+import ModalShell from './ModalShell';
 
 function getStatusClass(todo) {
   if (todo.status === 'completed') return 'completed';
@@ -337,46 +338,36 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
       )}
 
       {showEditModal && (
-        <div
-          className="modal-full-overlay"
-          onClick={(e) => { e.stopPropagation(); setFabHidden(false); setShowEditModal(false); }}
-        >
-          <div className="modal-full-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-full-header">
-              <span className="modal-full-title">编辑内容</span>
+        <ModalShell
+          title="编辑内容"
+          onClose={() => { setFabHidden(false); setShowEditModal(false); }}
+          bodyClassName=""
+          footer={
+            <>
               <button
-                className="modal-full-close"
-                onClick={(e) => { e.stopPropagation(); setFabHidden(false); setShowEditModal(false); }}
-              >
-                &times;
-              </button>
-            </div>
-            <div className="modal-full-body">
-              <textarea
-                className="modal-edit-textarea"
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                onFocus={() => setFabHidden(true)}
-                onBlur={() => setFabHidden(false)}
-                autoFocus
-              />
-            </div>
-            <div className="modal-full-footer">
-              <button
-                className="btn-cancel"
-                onClick={(e) => { e.stopPropagation(); setFabHidden(false); setShowEditModal(false); }}
+                className="btn-secondary"
+                onClick={() => { setFabHidden(false); setShowEditModal(false); }}
               >
                 取消
               </button>
               <button
-                className="btn-save"
-                onClick={(e) => { e.stopPropagation(); handleSaveEdit(); }}
+                className="btn-primary"
+                onClick={handleSaveEdit}
               >
                 保存
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+          <textarea
+            className="modal-edit-textarea"
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            onFocus={() => setFabHidden(true)}
+            onBlur={() => setFabHidden(false)}
+            autoFocus
+          />
+        </ModalShell>
       )}
 
       {showDetail && createPortal(

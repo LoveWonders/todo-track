@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSettings } from '../hooks/useSettings';
 import TagManager from './TagManager';
+import ModalShell from './ModalShell';
+import SegmentedControl from './SegmentedControl';
+import ConfirmDialog from './ConfirmDialog';
 import pkg from '../../package.json';
 import { clearAllData } from '../utils/storage';
 import { checkDataIntegrity } from '../utils/dataIntegrity';
@@ -86,15 +89,18 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
   };
 
   return (
-    <div className="modal-full-overlay" onClick={onClose}>
-      <div className="modal-full-sheet settings-full-sheet" onClick={e => e.stopPropagation()}>
-        <div className="modal-full-header">
-          <span className="modal-full-title">设置</span>
-          <button className="modal-full-close" onClick={onClose}>&times;</button>
-        </div>
-
-        <div className="modal-full-body settings-scroll">
-          <div className="settings-section-title">内容管理</div>
+    <ModalShell
+      title="设置"
+      onClose={onClose}
+      bodyClassName="settings-scroll"
+      footer={
+        <>
+          <button className="btn-secondary" onClick={onClose}>取消</button>
+          <button className="btn-primary" onClick={handleSave}>保存</button>
+        </>
+      }
+    >
+      <div className="settings-section-title">内容管理</div>
           <div className="settings-group">
             <div className="settings-field">
               <label className="settings-label">标签管理</label>
@@ -132,20 +138,14 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
           <div className="settings-group">
             <div className="settings-row">
               <span className="settings-row-label">界面紧凑度</span>
-              <div className="settings-segmented">
-                <button
-                  className={`settings-seg-item ${!compactDraft ? 'active' : ''}`}
-                  onClick={() => setCompactDraft(false)}
-                >
-                  标准
-                </button>
-                <button
-                  className={`settings-seg-item ${compactDraft ? 'active' : ''}`}
-                  onClick={() => setCompactDraft(true)}
-                >
-                  紧凑
-                </button>
-              </div>
+              <SegmentedControl
+                value={compactDraft ? 'compact' : 'standard'}
+                options={[
+                  { value: 'standard', label: '标准' },
+                  { value: 'compact', label: '紧凑' },
+                ]}
+                onChange={(v) => setCompactDraft(v === 'compact')}
+              />
             </div>
             <p className="settings-desc">紧凑模式缩小待办条目间距与字号，单屏可容纳更多任务。</p>
           </div>
@@ -167,39 +167,27 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
           <div className="settings-group">
             <div className="settings-row">
               <span className="settings-row-label">自动归档</span>
-              <div className="settings-segmented">
-                <button
-                  className={`settings-seg-item ${autoArchiveDraft ? 'active' : ''}`}
-                  onClick={() => setAutoArchiveDraft(true)}
-                >
-                  开启
-                </button>
-                <button
-                  className={`settings-seg-item ${!autoArchiveDraft ? 'active' : ''}`}
-                  onClick={() => setAutoArchiveDraft(false)}
-                >
-                  关闭
-                </button>
-              </div>
+              <SegmentedControl
+                value={autoArchiveDraft ? 'on' : 'off'}
+                options={[
+                  { value: 'on', label: '开启' },
+                  { value: 'off', label: '关闭' },
+                ]}
+                onChange={(v) => setAutoArchiveDraft(v === 'on')}
+              />
             </div>
             <p className="settings-desc">开启后，完成超过 30 天的待办在下次启动时自动移入归档。关闭则全部保留。</p>
 
             <div className="settings-row">
               <span className="settings-row-label">日志自动清理</span>
-              <div className="settings-segmented">
-                <button
-                  className={`settings-seg-item ${autoClearLogsDraft ? 'active' : ''}`}
-                  onClick={() => setAutoClearLogsDraft(true)}
-                >
-                  开启
-                </button>
-                <button
-                  className={`settings-seg-item ${!autoClearLogsDraft ? 'active' : ''}`}
-                  onClick={() => setAutoClearLogsDraft(false)}
-                >
-                  关闭
-                </button>
-              </div>
+              <SegmentedControl
+                value={autoClearLogsDraft ? 'on' : 'off'}
+                options={[
+                  { value: 'on', label: '开启' },
+                  { value: 'off', label: '关闭' },
+                ]}
+                onChange={(v) => setAutoClearLogsDraft(v === 'on')}
+              />
             </div>
             <p className="settings-desc">开启后调试日志最多保留 200 条，自动清理最旧记录。关闭则不限制数量。</p>
           </div>
@@ -235,80 +223,59 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
               </span>
             </button>
           </div>
-        </div>
 
-        <div className="modal-full-footer">
-          <button className="btn-mini btn-mini-cancel" onClick={onClose}>取消</button>
-          <button className="btn-mini btn-mini-save" onClick={handleSave}>保存</button>
-        </div>
+      {showTagManager && (
+        <TagManager
+          todos={todos}
+          onClose={() => setShowTagManager(false)}
+          onRenameTag={onRenameTag}
+          onDeleteTag={onDeleteTag}
+          onMergeTag={onMergeTag}
+        />
+      )}
 
-        {showTagManager && (
-          <TagManager
-            todos={todos}
-            onClose={() => setShowTagManager(false)}
-            onRenameTag={onRenameTag}
-            onDeleteTag={onDeleteTag}
-            onMergeTag={onMergeTag}
-          />
-        )}
-
-        {integrityReport && (
-          <div className="modal-overlay" onClick={() => setIntegrityReport(null)}>
-            <div className="modal-card" onClick={e => e.stopPropagation()}>
-              <div className="modal-header">
-                <span className="modal-title">数据完整性检查</span>
+      <ConfirmDialog
+        open={!!integrityReport}
+        title="数据完整性检查"
+        confirmText="知道了"
+        cancelText=""
+        onConfirm={() => setIntegrityReport(null)}
+        onCancel={() => setIntegrityReport(null)}
+      >
+        <p className="modal-desc">
+          已检查：{integrityReport?.checked['待办数据'] ?? 0} 条待办、
+          {integrityReport?.checked['归档数据'] ?? 0} 条归档、
+          {integrityReport?.checked['设置'] ?? 0} 份设置。
+        </p>
+        {integrityReport?.problems.length === 0 ? (
+          <p className="modal-desc">未发现异常，数据完整。</p>
+        ) : (
+          <div className="integrity-list">
+            {integrityReport?.problems.map((p, i) => (
+              <div key={i} className="integrity-item">
+                <span className="integrity-item-title">
+                  {p.source}
+                  {p.title ? `：${p.title}` : ''}
+                  {p.id != null ? `（id:${p.id}）` : ''}
+                </span>
+                {p.issues.map((issue, j) => (
+                  <span key={j} className="integrity-item-issue">- {issue}</span>
+                ))}
               </div>
-              <div className="modal-body">
-                <p className="modal-desc">
-                  已检查：{integrityReport.checked['待办数据'] ?? 0} 条待办、
-                  {integrityReport.checked['归档数据'] ?? 0} 条归档、
-                  {integrityReport.checked['设置'] ?? 0} 份设置。
-                </p>
-                {integrityReport.problems.length === 0 ? (
-                  <p className="modal-desc">未发现异常，数据完整。</p>
-                ) : (
-                  <div className="integrity-list">
-                    {integrityReport.problems.map((p, i) => (
-                      <div key={i} className="integrity-item">
-                        <span className="integrity-item-title">
-                          {p.source}
-                          {p.title ? `：${p.title}` : ''}
-                          {p.id != null ? `（id:${p.id}）` : ''}
-                        </span>
-                        {p.issues.map((issue, j) => (
-                          <span key={j} className="integrity-item-issue">- {issue}</span>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button className="btn-mini btn-mini-save" onClick={() => setIntegrityReport(null)}>知道了</button>
-              </div>
-            </div>
+            ))}
           </div>
         )}
+      </ConfirmDialog>
 
-        {factoryResetConfirm && (
-          <div className="modal-overlay" onClick={() => setFactoryResetConfirm(false)}>
-            <div className="modal-card" onClick={e => e.stopPropagation()}>
-              <div className="modal-header">
-                <span className="modal-title">恢复出厂设置</span>
-              </div>
-              <div className="modal-body">
-                <p className="modal-desc">
-                  此操作将清空全部待办、归档、标签设置与调试日志，且无法恢复。确定继续？
-                </p>
-              </div>
-              <div className="modal-footer">
-                <button className="btn-mini btn-mini-cancel" onClick={() => setFactoryResetConfirm(false)}>取消</button>
-                <button className="btn-mini btn-mini-save" onClick={confirmFactoryReset} style={{ background: 'var(--danger)' }}>确认重置</button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      <ConfirmDialog
+        open={factoryResetConfirm}
+        title="恢复出厂设置"
+        description="此操作将清空全部待办、归档、标签设置与调试日志，且无法恢复。确定继续？"
+        confirmText="确认重置"
+        danger
+        onConfirm={confirmFactoryReset}
+        onCancel={() => setFactoryResetConfirm(false)}
+      />
+    </ModalShell>
   );
 }

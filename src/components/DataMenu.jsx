@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { exportTodos, exportTodosNative, shareExportedFile, parseImportFile, findConflicts } from '../utils/exportImport';
 import { getIsNative } from '../utils/storage';
 import LogViewer from './LogViewer';
+import ConfirmDialog from './ConfirmDialog';
 
 export default function DataMenu({ todos, onImport, devMode, onToggleDev, onOpenSettings }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -135,51 +136,36 @@ export default function DataMenu({ todos, onImport, devMode, onToggleDev, onOpen
         )}
       </div>
 
-      {devConfirm && (
-        <div className="modal-overlay" onClick={() => setDevConfirm(false)}>
-          <div className="modal-card" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <span className="modal-title">开发者测试模式</span>
-            </div>
-            <div className="modal-body">
-              <p className="modal-desc">
-                {devMode
-                  ? '确认关闭开发者测试面板？关闭后性能测试悬浮窗将隐藏。'
-                  : '确认开启开发者测试面板？此模式仅供开发调试使用。'}
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-mini btn-mini-cancel" onClick={() => setDevConfirm(false)}>取消</button>
-              <button className="btn-mini btn-mini-save" onClick={confirmDevToggle}>确认</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={devConfirm}
+        title="开发者测试模式"
+        description={devMode
+          ? '确认关闭开发者测试面板？关闭后性能测试悬浮窗将隐藏。'
+          : '确认开启开发者测试面板？此模式仅供开发调试使用。'}
+        confirmText="确认"
+        onConfirm={confirmDevToggle}
+        onCancel={() => setDevConfirm(false)}
+      />
 
-      {conflictModal && (
-        <div className="modal-overlay" onClick={() => setConflictModal(null)}>
-          <div className="modal-card" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <span className="modal-title">ID 冲突</span>
-            </div>
-            <div className="modal-body">
-              <p className="modal-desc">
-                有 {conflictModal.length} 个待办的 ID 与现有数据冲突：
-              </p>
-              <div className="conflict-list">
-                {conflictModal.map(t => (
-                  <span key={t.id} className="conflict-item">{t.title}</span>
-                ))}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-mini btn-mini-cancel" onClick={() => setConflictModal(null)}>取消</button>
-              <button className="btn-mini btn-mini-save" onClick={() => handleConflictResolve('skip')}>跳过重复</button>
-              <button className="btn-mini btn-mini-save" onClick={() => handleConflictResolve('overwrite')} style={{ background: 'var(--warn)' }}>覆盖</button>
-            </div>
+      <ConfirmDialog
+        open={!!conflictModal}
+        title="ID 冲突"
+        description={conflictModal ? `有 ${conflictModal.length} 个待办的 ID 与现有数据冲突：` : ''}
+        confirmText="跳过重复"
+        onConfirm={() => handleConflictResolve('skip')}
+        onCancel={() => setConflictModal(null)}
+      >
+        {conflictModal && (
+          <div className="conflict-list">
+            {conflictModal.map(t => (
+              <span key={t.id} className="conflict-item">{t.title}</span>
+            ))}
           </div>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+          <button className="btn-danger" onClick={() => handleConflictResolve('overwrite')}>覆盖</button>
         </div>
-      )}
+      </ConfirmDialog>
 
       <LogViewer open={logModal} onClose={() => setLogModal(false)} onToast={setToast} />
 

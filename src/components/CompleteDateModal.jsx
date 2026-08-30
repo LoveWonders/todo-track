@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import ModalShell from './ModalShell';
 import { showNativeDatePicker } from '../utils/datePicker';
 
 function todayStr() {
@@ -24,10 +25,6 @@ export default function CompleteDateModal({ count, onConfirm, onCancel }) {
     };
   }, []);
 
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) onCancel();
-  };
-
   const handleConfirm = () => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
       setError('日期格式应为 YYYY-MM-DD');
@@ -52,30 +49,28 @@ export default function CompleteDateModal({ count, onConfirm, onCancel }) {
   }, [dateVal]);
 
   return (
-    <div className="modal-overlay" onClick={handleOverlayClick}>
-      <div className="modal-card">
-        <div className="modal-header">
-          <span className="modal-title">批量修改完成时间</span>
-        </div>
-        <div className="modal-body">
-          <p className="modal-desc">为选中的 {count} 个待办设置完成时间</p>
-          <div className="modal-date-row">
-            <input
-              type="text"
-              className="modal-date-input"
-              value={dateVal}
-              onChange={e => { setDateVal(e.target.value); setError(''); }}
-              placeholder="YYYY-MM-DD"
-            />
-            <button type="button" className="calendar-btn" onClick={openCalendar} title="选择日期">&#x1F4C5;</button>
-          </div>
-          {error && <p className="modal-date-error">{error}</p>}
-        </div>
-        <div className="modal-footer">
-          <button className="btn-mini btn-mini-cancel" onClick={onCancel}>取消</button>
-          <button className="btn-mini btn-mini-save" onClick={handleConfirm}>确认</button>
-        </div>
+    <ModalShell
+      title="批量修改完成时间"
+      onClose={onCancel}
+      footer={
+        <>
+          <button className="btn-secondary" onClick={onCancel}>取消</button>
+          <button className="btn-primary" onClick={handleConfirm}>确认</button>
+        </>
+      }
+    >
+      <p className="modal-desc">为选中的 {count} 个待办设置完成时间</p>
+      <div className="modal-date-row">
+        <input
+          type="text"
+          className="modal-date-input"
+          value={dateVal}
+          onChange={e => { setDateVal(e.target.value); setError(''); }}
+          placeholder="YYYY-MM-DD"
+        />
+        <button type="button" className="calendar-btn" onClick={openCalendar} title="选择日期">&#x1F4C5;</button>
       </div>
-    </div>
+      {error && <p className="modal-date-error">{error}</p>}
+    </ModalShell>
   );
 }

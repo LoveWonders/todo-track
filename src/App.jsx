@@ -342,7 +342,7 @@ export default function App() {
             onInvertSelection={invertSelection}
           />
         ) : (
-          <FloatingActionButton onClick={() => setBottomSheetOpen(true)} hidden={fabHidden} />
+          <FloatingActionButton onClick={() => setBottomSheetOpen(true)} hidden={fabHidden || devMode} />
         )
       )}
 
