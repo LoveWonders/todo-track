@@ -21,12 +21,14 @@ import SettingsModal from './components/SettingsModal';
 import TaskBottomSheet from './components/TaskBottomSheet';
 import TodoDetail from './components/TodoDetail';
 import FloatingActionButton from './components/FloatingActionButton';
+import SearchBar from './components/SearchBar';
 import { loadArchive, saveArchive } from './utils/autoArchive';
 import { formatDate } from './utils/dateParser';
 
 export default function App() {
   const { todos, activeTodos, archivedTodos, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, batchUpdateCompletedAt, importTodos, allTags, isManualMode, setManualMode } = useTodos();
   const [filterConfig, setFilterConfig] = useState({ includeTags: [], excludeTags: [] });
+  const [searchQuery, setSearchQuery] = useState('');
   const [view, setView] = useState('active');
   const [dragId, setDragId] = useState(null);
   const [devMode, setDevMode] = useState(false);
@@ -76,7 +78,7 @@ export default function App() {
 
   const source = view === 'active' ? activeTodos : archivedTodos;
   const isArchive = view === 'archive';
-  const filteredTodos = useFilteredTodos(source, filterConfig, isManualMode);
+  const filteredTodos = useFilteredTodos(source, filterConfig, isManualMode, searchQuery);
 
   const {
     batchMode, selectedIds, exitBatch, handleBatchToggle,
@@ -206,6 +208,12 @@ export default function App() {
         </button>
       </div>
 
+      {view !== 'weekly' && !batchMode && (
+        <div className="list-toolbar">
+          <SearchBar value={searchQuery} onChange={setSearchQuery} />
+        </div>
+      )}
+
       {allTags.length > 0 && !dragId && !batchMode && view !== 'weekly' && (
         <TagFilterBar allTags={allTags} filterConfig={filterConfig} onFilterChange={setFilterConfig} />
       )}
@@ -226,8 +234,8 @@ export default function App() {
                 {filteredTodos.length === 0 && !showArchivedHistory ? (
                   <div className="empty-state">
                     <div className="empty-icon">&#x1F4CB;</div>
-                    <p>{isArchive ? '暂无归档待办' : '暂无待办事项'}</p>
-                    {!isArchive && <p style={{ fontSize: 12, marginTop: 8 }}>长按待办可拖动排序</p>}
+                    <p>{searchQuery.trim() ? '未找到匹配的待办' : (isArchive ? '暂无归档待办' : '暂无待办事项')}</p>
+                    {!isArchive && !searchQuery.trim() && <p style={{ fontSize: 12, marginTop: 8 }}>长按待办可拖动排序</p>}
                   </div>
                 ) : (
                   <>
@@ -238,6 +246,7 @@ export default function App() {
                             key={todo.id}
                             todo={todo}
                             selectedIds={selectedIds}
+                            highlight={searchQuery.trim()}
                           />
                         ))}
                       </SortableContext>
@@ -319,7 +328,7 @@ export default function App() {
           </DndContext>
 
           {archiveDetailItem && createPortal(
-            <TodoDetail todo={archiveDetailItem} onClose={() => setArchiveDetailItem(null)} />,
+            <TodoDetail todo={archiveDetailItem} onClose={() => setArchiveDetailItem(null)} highlight={searchQuery.trim()} />,
             document.body
           )}
         </TodoProvider>

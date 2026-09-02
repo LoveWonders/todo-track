@@ -1,18 +1,19 @@
 import { useMemo } from 'react';
 import sortTodos from '../utils/sortTodos';
+import { matchTodo } from '../utils/highlight';
 
-export default function useFilteredTodos(source, filterConfig, isManualMode) {
+export default function useFilteredTodos(source, filterConfig, isManualMode, searchQuery = '') {
   return useMemo(() => {
-    const hasFilter = filterConfig.includeTags.length > 0 || filterConfig.excludeTags.length > 0;
-    const base = hasFilter
-      ? source.filter(t => {
-          const tags = t.tags || [];
-          if (filterConfig.excludeTags.some(tag => tags.includes(tag))) return false;
-          if (filterConfig.includeTags.length > 0) return filterConfig.includeTags.some(tag => tags.includes(tag));
-          return true;
-        })
-      : source;
+    const q = (searchQuery || '').trim();
+
+    const base = source.filter(t => {
+      if (!matchTodo(t, q)) return false;
+      const tags = t.tags || [];
+      if (filterConfig.excludeTags.some(tag => tags.includes(tag))) return false;
+      if (filterConfig.includeTags.length > 0) return filterConfig.includeTags.some(tag => tags.includes(tag));
+      return true;
+    });
 
     return sortTodos(base, isManualMode);
-  }, [source, filterConfig, isManualMode]);
+  }, [source, filterConfig, isManualMode, searchQuery]);
 }

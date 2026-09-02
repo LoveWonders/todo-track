@@ -6,6 +6,7 @@ import ProgressDefaultBar from './ProgressDefaultBar';
 import ProgressModal from './ProgressModal';
 import { getCycleStats } from '../utils/repeat';
 import { showNativeDatePicker } from '../utils/datePicker';
+import { highlightText } from '../utils/highlight';
 
 const LONG_TEXT_WIDTH = 18;
 
@@ -47,7 +48,7 @@ function isReminderDue(p) {
   return !Number.isNaN(t) && t <= Date.now();
 }
 
-export default function ProgressLog({ progress, todoId, collapsed, checklistMode, repeatRule }) {
+export default function ProgressLog({ progress, todoId, collapsed, checklistMode, repeatRule, highlight }) {
   const { toggleProgressStatus, completeTodo, deleteProgress, addProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, setFabHidden } = useTodoActions();
   const { batchMode } = useTodoView();
   
@@ -258,7 +259,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
               {p.urgent && <span className="progress-urgent-tag">急</span>}
               {p.reminderTime && <span className="progress-reminder-tag">提醒 {formatDateTime(p.reminderTime)}</span>}
               {p.temporary && <span className="progress-temp-tag">临时</span>}
-              <span className="progress-text">{String(p.text)}</span>
+              <span className="progress-text">{highlightText(String(p.text), highlight)}</span>
             </div>
           ))}
         </div>
@@ -309,7 +310,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
                   <span className="progress-status-tag">{p.status === 'completed' ? '已完成' : '已作废'}</span>
                   <span className="progress-date">{archiveDateRange(p)}</span>
                   {p.temporary && <span className="progress-temp-tag">临时</span>}
-                  {String(p.text)}
+                  {highlightText(String(p.text), highlight)}
                 </div>
               ))}
             </div>

@@ -9,8 +9,9 @@ import ProgressLog from './ProgressLog';
 import { useTodoActions } from '../hooks/TodoContext';
 import { showNativeDatePicker } from '../utils/datePicker';
 import ModalShell from './ModalShell';
+import { highlightText } from '../utils/highlight';
 
-export default function TodoDetail({ todo, onClose }) {
+export default function TodoDetail({ todo, onClose, highlight }) {
   const { updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, setPinStatus, setFabHidden } = useTodoActions();
   const [editTitle, setEditTitle] = useState(false);
   const [title, setTitle] = useState(todo.title);
@@ -121,7 +122,7 @@ export default function TodoDetail({ todo, onClose }) {
                     className="detail-title"
                     onClick={() => { setEditTitle(true); setTitle(todo.title); }}
                   >
-                    {todo.title || '待办内容'}
+                    {highlightText(todo.title || '待办内容', highlight)}
                   </div>
                   <div className={`detail-pin-actions ${showPinActions ? 'visible' : ''}`}>
                     <button
@@ -322,7 +323,7 @@ export default function TodoDetail({ todo, onClose }) {
 
           <div className="detail-section" style={{ marginTop: 12 }}>
             <div className="detail-section-title">进度记录</div>
-            <ProgressLog progress={todo.progress} todoId={todo.id} checklistMode={todo.checklistMode === true} repeatRule={todo.repeatRule} />
+            <ProgressLog progress={todo.progress} todoId={todo.id} checklistMode={todo.checklistMode === true} repeatRule={todo.repeatRule} highlight={highlight} />
           </div>
       </ModalShell>
     </>

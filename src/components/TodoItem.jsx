@@ -10,6 +10,7 @@ import Countdown from './Countdown';
 import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
 import ProgressLog from './ProgressLog';
+import { highlightText } from '../utils/highlight';
 import TodoDetail from './TodoDetail';
 import ModalShell from './ModalShell';
 
@@ -33,7 +34,7 @@ function isReminderAtDue(todo) {
   return !Number.isNaN(t) && t <= Date.now();
 }
 
-const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragListeners }) {
+const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragListeners, highlight }) {
   const { toggleStatus, completeTodo, updateTodo, handleBatchToggle, setPinStatus, setFabHidden } = useTodoActions();
   const { batchMode, isArchive, devMode, openMenuId, setOpenMenuId } = useTodoView();
   const statusClass = getStatusClass(todo);
@@ -224,7 +225,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
               className="todo-title-text"
               onClick={(e) => { e.stopPropagation(); handleOpenEdit(); }}
             >
-              {todo.title || '待办内容'}
+              {highlightText(todo.title || '待办内容', highlight)}
             </span>
             {todo.repeatRule && (
               <span className={`repeat-badge repeat-${todo.repeatRule}`}>
@@ -315,7 +316,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
       </div>
 
       {!isArchive && todo.status === 'active' && canCollapse && !collapsed && (
-        <ProgressLog progress={todo.progress} todoId={todo.id} collapsed={collapsed} checklistMode={checklistMode} repeatRule={todo.repeatRule} />
+        <ProgressLog progress={todo.progress} todoId={todo.id} collapsed={collapsed} checklistMode={checklistMode} repeatRule={todo.repeatRule} highlight={highlight} />
       )}
 
       {isArchive && todo.progress && todo.progress.length > 0 && (
@@ -331,7 +332,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
                   day: 'numeric',
                 })}
               </span>
-              {p.text}
+              {highlightText(p.text, highlight)}
             </div>
           ))}
         </div>
@@ -371,7 +372,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
       )}
 
       {showDetail && createPortal(
-        <TodoDetail todo={todo} onClose={() => setShowDetail(false)} />,
+        <TodoDetail todo={todo} onClose={() => setShowDetail(false)} highlight={highlight} />,
         document.body
       )}
     </div>

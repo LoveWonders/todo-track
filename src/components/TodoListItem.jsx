@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import TodoItem from './TodoItem';
 
-const TodoListItem = memo(function TodoListItem({ todo, selectedIds }) {
+const TodoListItem = memo(function TodoListItem({ todo, selectedIds, highlight }) {
   const {
     attributes,
     listeners,
@@ -28,6 +28,7 @@ const TodoListItem = memo(function TodoListItem({ todo, selectedIds }) {
         isDragging={isDragging}
         isSelected={isSelected}
         dragListeners={listeners}
+        highlight={highlight}
       />
     </div>
   );
@@ -35,6 +36,7 @@ const TodoListItem = memo(function TodoListItem({ todo, selectedIds }) {
 
 function areEqual(prev, next) {
   if (prev.todo !== next.todo) return false;
+  if (prev.highlight !== next.highlight) return false;
   if (prev.selectedIds.has(prev.todo.id) !== next.selectedIds.has(next.todo.id)) return false;
   return true;
 }

@@ -4165,6 +4165,218 @@ body.compact-mode .todo-tag {
   cursor: not-allowed;
 }
 
+/* ---------- 新增待办卡片式布局 ---------- */
+.add-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.add-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.add-card .preset-tags-header {
+  margin-bottom: 8px;
+}
+
+.add-card .preset-tags-scroll {
+  padding-bottom: 2px;
+}
+
+.add-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+}
+
+.add-row + .add-row {
+  margin-top: 6px;
+}
+
+.add-row-label {
+  width: 60px;
+  flex-shrink: 0;
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+}
+
+.add-row-value {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--font-size);
+  color: var(--text);
+}
+
+.add-row-value .repeat-selector {
+  flex-shrink: 0;
+}
+
+.repeat-state-hint {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.add-date-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.add-date-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.add-date-clear {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.add-date-clear:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.urgent-pill {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.urgent-pill.active {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn-cancel-lg {
+  min-width: 110px;
+  padding: 10px 22px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-cancel-lg:active {
+  opacity: 0.8;
+  transform: scale(0.97);
+}
+
+.btn-cancel-lg:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Search Bar ---------- */
+.list-toolbar {
+  padding: 8px 16px 0;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0 10px;
+  height: 36px;
+  transition: border-color 0.15s;
+}
+
+.search-bar:focus-within {
+  border-color: var(--accent);
+}
+
+.search-bar-icon {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.search-bar-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-size: var(--font-size);
+}
+
+.search-bar-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.search-bar-clear {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: var(--border);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.search-bar-clear:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.search-highlight {
+  background: #ffe58f;
+  color: #8a5a00;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
 /* ---------- FAB ---------- */
 .fab {
   position: fixed;

@@ -7,6 +7,8 @@ import { useSettings } from '../hooks/useSettings';
 import { isSafeTagName, mergeSubmitTags } from '../utils/tagMeta';
 import { readJSON } from '../utils/storage';
 import { CYCLE_LABELS, WEEKDAY_LABELS, anchorLabel } from '../utils/repeat';
+import { URGENT_TAG } from '../constants';
+import ModalShell from './ModalShell';
 
 const DEFAULT_PRESET_TAGS = ['工作', '长期', '个人'];
 const PRESET_TAGS_STORAGE_KEY = 'todo_preset_tags';
@@ -68,8 +70,9 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
     }
   }, [showAddInput]);
 
+  const [manualDue, setManualDue] = useState(null);
   const pickedStart = parsed.startDate;
-  const pickedEnd = parsed.dueDate;
+  const pickedEnd = manualDue || parsed.dueDate;
   const submittedTags = useMemo(() => mergeSubmitTags(tags, parsed.tags, isUrgent), [tags, parsed.tags, isUrgent]);
 
   const handlePresetTagClick = useCallback((tag) => {
@@ -153,6 +156,7 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
     setIsChecklist(false);
     setRepeatRule(null);
     setRepeatAnchor(null);
+    setManualDue(null);
     onClose();
   }, [pickedStart, pickedEnd, submittedTags, parsed, onAdd, clearSmart, clearTags, isChecklist, repeatRule, repeatAnchor, onClose]);
 
@@ -172,117 +176,87 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
       type: 'datetime-local',
       value: pickedEnd ? pickedEnd.slice(0, 16) : '',
       onPick: (picked) => {
-        const iso = picked + ':00';
-        onAdd({
-          title: text.trim() || formatDateOnly(iso) || '待办',
-          startDate: pickedStart,
-          dueDate: iso,
-          tags: submittedTags,
-          checklistMode: isChecklist,
-          repeatRule,
-          repeatAnchor,
-        });
-        clearSmart();
-        clearTags();
-        setIsUrgent(false);
-        setIsChecklist(false);
-        setRepeatRule(null);
-        setRepeatAnchor(null);
-        onClose();
+        setManualDue(picked + ':00');
       },
     });
-  }, [pickedEnd, pickedStart, submittedTags, text, onAdd, clearSmart, clearTags, isChecklist, repeatRule, repeatAnchor, onClose]);
+  }, [pickedEnd]);
+
+  const clearManualDue = useCallback(() => {
+    setManualDue(null);
+  }, []);
 
   if (!isOpen) return null;
 
   return (
-    <>
-      <div className="bottom-sheet-overlay" onClick={onClose} />
-      <div className="bottom-sheet">
-        <div className="bottom-sheet-handle" />
-
-        <div className="sheet-section">
-          <div className="preset-tags-header">
-            <label className="sheet-label">快捷标签</label>
-            <button className="btn-edit-tags" onClick={() => setEditMode(v => !v)}>
-              {editMode ? '完成' : '编辑'}
-            </button>
-          </div>
-          <div className="preset-tags-scroll">
-            {safePresetTags.map((tag, index) => (
-              editingTagIndex === index ? (
-                <input
-                  key={tag}
-                  ref={editInputRef}
-                  className="preset-tag-edit-input"
-                  value={editText}
-                  onChange={e => setEditText(e.target.value)}
-                  onBlur={handleSaveEditTag}
-                  onKeyDown={handleKeyDownEdit}
-                />
-              ) : (
-                <button
-                  key={tag}
-                  className={`preset-tag ${tags.includes(tag) ? 'active' : ''} ${editMode ? 'editing' : ''}`}
-                  onClick={() => editMode ? handleStartEditTag(index, tag) : handlePresetTagClick(tag)}
-                >
-                  #{tag}
-                  {editMode && (
-                    <span className="preset-tag-delete" onClick={(e) => { e.stopPropagation(); handleDeleteTag(index); }}>
-                      ×
-                    </span>
-                  )}
-                </button>
-              )
-            ))}
-            {editMode && showAddInput && (
-              <input
-                ref={addInputRef}
-                className="preset-tag-edit-input"
-                value={newTagText}
-                onChange={e => setNewTagText(e.target.value)}
-                onBlur={handleBlurAdd}
-                onKeyDown={handleKeyDownAdd}
-                placeholder="标签名..."
-              />
+    <ModalShell
+      title="新增待办"
+      onClose={onClose}
+      bodyStyle={{ padding: '12px 16px' }}
+      footerClassName="detail-footer"
+      footer={
+        <>
+          <button className="btn-cancel-lg" onClick={onClose}>取消</button>
+          <button className="btn-primary-lg" onClick={handleSubmit} disabled={!canSubmit}>添加</button>
+        </>
+      }
+    >
+      <div className="add-card">
+        <div className="add-card-title">任务内容</div>
+        <textarea
+          ref={inputRef}
+          className="task-input-textarea"
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="输入任务内容... (支持 @日期 #标签)"
+          rows={4}
+        />
+        {(pickedEnd || submittedTags.length > 0) && (
+          <div className="parsed-preview">
+            {pickedEnd && (
+              <span className="parsed-date-preview" onClick={openCalendar} title="点击修改日期">
+                &#x1F4C5; {formatDateOnly(pickedEnd)}
+              </span>
             )}
-            {editMode && !showAddInput && (
-              <button className="preset-tag-add" onClick={() => setShowAddInput(true)}>
-                + 添加
+            {submittedTags.map(tag => (
+              <span key={tag} className="parsed-tag-preview">#{tag}</span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="add-card">
+        <div className="add-card-title">时间</div>
+        <div className="add-row">
+          <span className="add-row-label">截止时间</span>
+          <span className="add-row-value">
+            <button className="add-date-btn" onClick={openCalendar}>
+              {pickedEnd ? formatDateOnly(pickedEnd) : '选择日期'}
+            </button>
+            {manualDue && (
+              <button className="add-date-clear" onClick={clearManualDue} title="清除日期">
+                &#x2715;
               </button>
             )}
-          </div>
+          </span>
         </div>
-
-        <div className="sheet-section">
-          <label className="sheet-label">紧急程度</label>
-          <button
-            className={`urgent-toggle ${isUrgent ? 'active' : ''}`}
-            onClick={() => setIsUrgent(v => !v)}
-          >
-            <span className="urgent-icon">!</span>
-            <span className="urgent-text">{isUrgent ? '已设为紧急' : '设为紧急'}</span>
-          </button>
-        </div>
-
-        <div className="sheet-section">
-          <label className="sheet-label">清单模式</label>
-          <div className="sheet-option-row">
-            <button
+        <div className="add-row">
+          <span className="add-row-label">清单模式</span>
+          <span className="add-row-value">
+            <span
               className={`detail-toggle ${isChecklist ? 'on' : ''}`}
               onClick={() => setIsChecklist(v => !v)}
               role="switch"
               aria-checked={isChecklist}
             >
               <span className="detail-toggle-knob" />
-            </button>
+            </span>
             <span className="detail-toggle-hint">{isChecklist ? '拆解勾选' : '流水账'}</span>
-          </div>
+          </span>
         </div>
-
-        <div className="sheet-section">
-          <label className="sheet-label">设为重复</label>
-          <div className="sheet-option-row">
+        <div className="add-row">
+          <span className="add-row-label">设为重复</span>
+          <span className="add-row-value">
             <div className="repeat-selector">
               {['daily', 'weekly', 'monthly'].map(rule => (
                 <button
@@ -297,81 +271,109 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
                 </button>
               ))}
             </div>
-            <span className="detail-toggle-hint">
-              {repeatRule ? `重复任务 · ${anchorLabel(repeatRule, repeatAnchor)}` : '不重复'}
-            </span>
-          </div>
-          {repeatRule === 'weekly' && (
-            <div className="repeat-anchor-row">
-              {WEEKDAY_LABELS.map((label, i) => (
-                <button
-                  key={i}
-                  className={`repeat-anchor-opt ${repeatAnchor === i + 1 ? 'active' : ''}`}
-                  onClick={() => setRepeatAnchor(repeatAnchor === i + 1 ? null : i + 1)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-          {repeatRule === 'monthly' && (
-            <div className="repeat-anchor-row">
-              <input
-                type="number"
-                min="1"
-                max="31"
-                className="repeat-anchor-input"
-                value={Number.isInteger(repeatAnchor) ? repeatAnchor : ''}
-                placeholder="号数"
-                onChange={e => {
-                  const raw = e.target.value;
-                  if (raw === '') { setRepeatAnchor(null); return; }
-                  const v = Math.min(31, Math.max(1, Number(raw)));
-                  setRepeatAnchor(Number.isNaN(v) ? null : v);
-                }}
-              />
+            <span className="repeat-state-hint">{repeatRule ? anchorLabel(repeatRule, repeatAnchor) : '不重复'}</span>
+          </span>
+        </div>
+        {repeatRule === 'weekly' && (
+          <div className="repeat-anchor-row" style={{ marginLeft: 70 }}>
+            {WEEKDAY_LABELS.map((label, i) => (
               <button
-                className={`repeat-anchor-opt ${repeatAnchor === 'last' ? 'active' : ''}`}
-                onClick={() => setRepeatAnchor(repeatAnchor === 'last' ? null : 'last')}
+                key={i}
+                className={`repeat-anchor-opt ${repeatAnchor === i + 1 ? 'active' : ''}`}
+                onClick={() => setRepeatAnchor(repeatAnchor === i + 1 ? null : i + 1)}
               >
-                月末
+                {label}
               </button>
-              <span className="detail-toggle-hint">不选则每月最后一天到期</span>
-            </div>
-          )}
-        </div>
-
-        <div className="sheet-section">
-          <label className="sheet-label">任务内容</label>
-          <textarea
-            ref={inputRef}
-            className="task-input-textarea"
-            value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="输入任务内容... (支持 @日期 #标签)"
-            rows={4}
-          />
-        </div>
-
-        {(pickedEnd || submittedTags.length > 0) && (
-          <div className="parsed-preview">
-            {pickedEnd && (
-              <span className="parsed-date-preview" onClick={openCalendar} title="点击修改日期">
-                📅 {formatDateOnly(pickedEnd)}
-              </span>
-            )}
-            {submittedTags.map(tag => (
-              <span key={tag} className="parsed-tag-preview">#{tag}</span>
             ))}
           </div>
         )}
+        {repeatRule === 'monthly' && (
+          <div className="repeat-anchor-row" style={{ marginLeft: 70 }}>
+            <input
+              type="number"
+              min="1"
+              max="31"
+              className="repeat-anchor-input"
+              value={Number.isInteger(repeatAnchor) ? repeatAnchor : ''}
+              placeholder="号数"
+              onChange={e => {
+                const raw = e.target.value;
+                if (raw === '') { setRepeatAnchor(null); return; }
+                const v = Math.min(31, Math.max(1, Number(raw)));
+                setRepeatAnchor(Number.isNaN(v) ? null : v);
+              }}
+            />
+            <button
+              className={`repeat-anchor-opt ${repeatAnchor === 'last' ? 'active' : ''}`}
+              onClick={() => setRepeatAnchor(repeatAnchor === 'last' ? null : 'last')}
+            >
+              月末
+            </button>
+            <span className="detail-toggle-hint">不选则每月最后一天到期</span>
+          </div>
+        )}
+      </div>
 
-        <div className="sheet-actions">
-          <button className="btn-sheet-cancel" onClick={onClose}>取消</button>
-          <button className="btn-sheet-submit" onClick={handleSubmit} disabled={!canSubmit}>添加</button>
+      <div className="add-card">
+        <div className="preset-tags-header">
+          <span className="add-card-title">标签</span>
+          <button className="btn-edit-tags" onClick={() => setEditMode(v => !v)}>
+            {editMode ? '完成' : '编辑'}
+          </button>
+        </div>
+        <div className="preset-tags-scroll">
+          <button
+            className={`urgent-pill ${isUrgent ? 'active' : ''}`}
+            onClick={() => setIsUrgent(v => !v)}
+            title={isUrgent ? '取消紧急' : '设为紧急'}
+          >
+            #{URGENT_TAG}
+          </button>
+          {safePresetTags.map((tag, index) => (
+            editingTagIndex === index ? (
+              <input
+                key={tag}
+                ref={editInputRef}
+                className="preset-tag-edit-input"
+                value={editText}
+                onChange={e => setEditText(e.target.value)}
+                onBlur={handleSaveEditTag}
+                onKeyDown={handleKeyDownEdit}
+              />
+            ) : (
+              <button
+                key={tag}
+                className={`preset-tag ${tags.includes(tag) ? 'active' : ''} ${editMode ? 'editing' : ''}`}
+                onClick={() => editMode ? handleStartEditTag(index, tag) : handlePresetTagClick(tag)}
+              >
+                #{tag}
+                {editMode && (
+                  <span className="preset-tag-delete" onClick={(e) => { e.stopPropagation(); handleDeleteTag(index); }}>
+                    ×
+                  </span>
+                )}
+              </button>
+            )
+          ))}
+          {editMode && showAddInput && (
+            <input
+              ref={addInputRef}
+              className="preset-tag-edit-input"
+              value={newTagText}
+              onChange={e => setNewTagText(e.target.value)}
+              onBlur={handleBlurAdd}
+              onKeyDown={handleKeyDownAdd}
+              placeholder="标签名..."
+            />
+          )}
+          {editMode && !showAddInput && (
+            <button className="preset-tag-add" onClick={() => setShowAddInput(true)}>
+              + 添加
+            </button>
+          )}
         </div>
       </div>
-    </>
+
+    </ModalShell>
   );
 }

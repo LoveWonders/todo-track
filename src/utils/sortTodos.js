@@ -1,4 +1,3 @@
-import { getTaskTier } from './taskTier';
 import { isRepeatRule, getRepeatDue } from './repeat';
 
 const TOP = 'top';
@@ -10,6 +9,11 @@ function todoDueTime(t, now) {
     return due != null ? due : Infinity;
   }
   return t.dueDate ? new Date(t.dueDate).getTime() : Infinity;
+}
+
+function todoCreatedTime(t) {
+  const ts = t && t.createdAt ? new Date(t.createdAt).getTime() : 0;
+  return Number.isNaN(ts) ? 0 : ts;
 }
 
 export default function sortTodos(list, isManualMode) {
@@ -29,28 +33,17 @@ export default function sortTodos(list, isManualMode) {
   if (!isManualMode) {
     const now = new Date();
 
-    const byDue = (a, b) => {
-      const aDue = todoDueTime(a, now);
-      const bDue = todoDueTime(b, now);
-      return aDue - bDue;
+    // 混合排序：
+    // 第一优先级：创建时间倒序（刚添加的任务永远在最上面，无论是否有截止日期）
+    // 第二优先级：截止日期正序（已过期的在最前，无日期的排在最后）
+    const byMixed = (a, b) => {
+      const aCreated = todoCreatedTime(a);
+      const bCreated = todoCreatedTime(b);
+      if (aCreated !== bCreated) return bCreated - aCreated;
+      return todoDueTime(a, now) - todoDueTime(b, now);
     };
 
-    const tier1 = [];
-    const tier2 = [];
-    const tier3 = [];
-
-    for (const t of normal) {
-      const tier = getTaskTier(t, now);
-      if (tier === 1) tier1.push(t);
-      else if (tier === 2) tier2.push(t);
-      else tier3.push(t);
-    }
-
-    tier1.sort(byDue);
-    tier2.sort(byDue);
-    tier3.sort(byDue);
-
-    normal = [...tier1, ...tier2, ...tier3];
+    normal.sort(byMixed);
   }
 
   return [...pinned, ...normal, ...bottom];
