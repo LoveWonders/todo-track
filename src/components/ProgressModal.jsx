@@ -12,6 +12,7 @@ export default function ProgressModal({ modal, onChange, onSave, onCancel, onSet
   return (
     <ModalShell
       title={isAdd ? '添加进度' : '编辑进度'}
+      overlayClassName="nested"
       onClose={onCancel}
       footer={
         <>

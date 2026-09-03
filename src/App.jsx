@@ -29,6 +29,7 @@ export default function App() {
   const { todos, activeTodos, archivedTodos, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, batchUpdateCompletedAt, importTodos, allTags, isManualMode, setManualMode } = useTodos();
   const [filterConfig, setFilterConfig] = useState({ includeTags: [], excludeTags: [] });
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [view, setView] = useState('active');
   const [dragId, setDragId] = useState(null);
   const [devMode, setDevMode] = useState(false);
@@ -166,25 +167,49 @@ export default function App() {
     <SettingsProvider>
     <div className="app-shell">
       <header className="app-header">
-        <h1>待办</h1>
-        <div className="app-header-right">
-          {dragId && (
-            <span style={{ fontSize: 12, color: 'var(--accent)' }}>拖动排序中...</span>
-          )}
-          {batchMode && (
-            <span style={{ fontSize: 12, color: 'var(--accent)' }}>批量操作</span>
-          )}
-          {isManualMode && !batchMode && (
-            <button
-              className="sort-mode-btn"
-              onClick={() => setManualMode(false)}
-              title="重置为自动排序（置顶/置底保留，其余按紧急度与截止日期重排）"
-            >
-              重置排序
-            </button>
-          )}
-          <DataMenu todos={todos} onImport={importTodos} devMode={devMode} onToggleDev={setDevMode} onOpenSettings={() => { setSettingsOpen(true); setFabHidden(true); }} />
-        </div>
+        {searchOpen ? (
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            onClose={() => setSearchOpen(false)}
+          />
+        ) : (
+          <>
+            <h1>待办</h1>
+            <div className="app-header-right">
+              {dragId && (
+                <span style={{ fontSize: 12, color: 'var(--accent)' }}>拖动排序中...</span>
+              )}
+              {batchMode && (
+                <span style={{ fontSize: 12, color: 'var(--accent)' }}>批量操作</span>
+              )}
+              {isManualMode && !batchMode && (
+                <button
+                  className="sort-mode-btn"
+                  onClick={() => setManualMode(false)}
+                  title="重置为自动排序（置顶/置底保留，其余按紧急度与截止日期重排）"
+                >
+                  重置排序
+                </button>
+              )}
+              {view !== 'weekly' && !batchMode && (
+                <button
+                  className={`header-search-btn ${searchQuery.trim() ? 'has-query' : ''}`}
+                  onClick={() => setSearchOpen(true)}
+                  title="搜索"
+                  aria-label="搜索"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" />
+                    <line x1="21" y1="21" x2="16.5" y2="16.5" />
+                  </svg>
+                  {searchQuery.trim() && <span className="header-search-dot" />}
+                </button>
+              )}
+              <DataMenu todos={todos} onImport={importTodos} devMode={devMode} onToggleDev={setDevMode} onOpenSettings={() => { setSettingsOpen(true); setFabHidden(true); }} />
+            </div>
+          </>
+        )}
       </header>
 
       <div className="view-tabs">
@@ -208,13 +233,7 @@ export default function App() {
         </button>
       </div>
 
-      {view !== 'weekly' && !batchMode && (
-        <div className="list-toolbar">
-          <SearchBar value={searchQuery} onChange={setSearchQuery} />
-        </div>
-      )}
-
-      {allTags.length > 0 && !dragId && !batchMode && view !== 'weekly' && (
+      {!dragId && !batchMode && view !== 'weekly' && (
         <TagFilterBar allTags={allTags} filterConfig={filterConfig} onFilterChange={setFilterConfig} />
       )}
 

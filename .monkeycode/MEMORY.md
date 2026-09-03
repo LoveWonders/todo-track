@@ -126,4 +126,14 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 检测到明显重复的输入（如反复出现的同一句「What did we do so far?」）且无新任务时，不逐一回复相同内容，保持简短并提示需要新指令
   - 每次任务不要重复执行两次以上
 
+### 浏览器端提醒不弹窗（已知延期 bug）
+- Date: 2026-09-03
+- Context: 用户确认此前验证过：浏览器端提醒不会跳出通知弹窗或其他可见提示；视为 bug，但修复成本高、实用性低，先搁置
+- Category: 排错调试
+- Instructions:
+  - Web 端提醒走 `src/utils/notification.js` 的 `checkDueReminders`：非 native 时用 `new Notification(...)`，依赖 `Notification.permission === 'granted'`
+  - 原生端走 Capacitor `LocalNotifications`（`scheduleReminder` / `scheduleTodoReminder` / `scheduleProgressReminder`），与浏览器路径分离
+  - 此前实测：浏览器端到期后不弹系统通知、也不出应用内弹窗；headless Playwright 也无法真实验证（`Notification.permission` 恒为 denied）
+  - 当前策略：不主动修；Android 原生通知仍是主路径。以后若修，优先核对权限申请、`todo_reminder_ack` 防重、以及是否需要应用内 toast 兜底
+
 (Showing lines 52-72 of 72.)

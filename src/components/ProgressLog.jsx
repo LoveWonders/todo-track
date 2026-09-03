@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useTodoActions, useTodoView } from '../hooks/TodoContext';
 import CompleteDateModal from './CompleteDateModal';
 import ProgressManageBar from './ProgressManageBar';
@@ -183,6 +184,17 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
   const summaryPct = progressCount > 0 ? Math.round((completedCount / progressCount) * 100) : 0;
   const cycleDone = cycleStats.cycleDone;
 
+  const progressModalNode = progressModal ? createPortal(
+    <ProgressModal
+      modal={progressModal}
+      onChange={handleModalChange}
+      onSave={handleSaveModal}
+      onCancel={handleModalCancel}
+      onSetReminder={handleModalSetReminder}
+    />,
+    document.body
+  ) : null;
+
   const sortedArchived = useMemo(() => {
     const completed = [];
     const cancelled = [];
@@ -212,6 +224,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
             />
           </div>
         )}
+        {progressModalNode}
       </div>
     );
   }
@@ -324,15 +337,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
           onCancel={() => setShowDateModal(false)} />
       )}
 
-      {progressModal && (
-        <ProgressModal
-          modal={progressModal}
-          onChange={handleModalChange}
-          onSave={handleSaveModal}
-          onCancel={handleModalCancel}
-          onSetReminder={handleModalSetReminder}
-        />
-      )}
+      {progressModalNode}
     </div>
   );
 }

@@ -146,8 +146,12 @@ export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) 
     emitFilter('wps', draftTags, []);
   };
 
-  const handleCancelWps = () => {
-    setDropdownOpen(false);
+  const handleSelectAll = () => {
+    setDraftTags([...allTags]);
+  };
+
+  const handleInvertSelection = () => {
+    setDraftTags(allTags.filter(tag => !draftTags.includes(tag)));
   };
 
   const handleSlotClick = (slot) => {
@@ -233,12 +237,44 @@ export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) 
 
   return (
     <div className="filter-bar-v2" ref={barRef}>
+      <div className="filter-bar-scroll">
       <button
         className={`filter-btn-all ${isAllActive ? 'active' : ''}`}
         onClick={handleAllClick}
       >
         全部
       </button>
+
+      {slots.filter(slot => slot.tags.length > 0 || (undoSlot && undoSlot.slotId === slot.id)).map(slot => (
+        <div
+          key={slot.id}
+          className={`filter-slot ${activeSlotId === slot.id ? 'active' : ''}`}
+          onClick={() => {
+            if (slot.tags.length > 0) {
+              handleSlotClick(slot);
+            }
+          }}
+        >
+          {renderSlotLabel(slot)}
+          {slot.tags.length > 0 && (
+            <span
+              className="filter-slot-close"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClearSlot(slot.id);
+              }}
+            >
+              &times;
+            </span>
+          )}
+          {tooltipSlot === slot.id && slot.tags.length > 0 && (
+            <div className="filter-tooltip">
+              {buildSlotLabel(slot)}
+            </div>
+          )}
+        </div>
+      ))}
+      </div>
 
       <div className="filter-wps-wrap">
         <button
@@ -253,6 +289,24 @@ export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) 
 
         {dropdownOpen && (
           <div className="filter-dropdown">
+            {allTags.length > 0 && (
+              <div className="filter-dropdown-toolbar">
+                <button
+                  type="button"
+                  className="filter-toolbar-btn"
+                  onClick={handleSelectAll}
+                >
+                  全选
+                </button>
+                <button
+                  type="button"
+                  className="filter-toolbar-btn"
+                  onClick={handleInvertSelection}
+                >
+                  反选
+                </button>
+              </div>
+            )}
             <div className="filter-dropdown-list">
               {allTags.length === 0 ? (
                 <div className="filter-dropdown-empty">暂无标签</div>
@@ -275,12 +329,6 @@ export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) 
             </div>
             {allTags.length > 0 && (
               <div className="filter-dropdown-footer">
-                <button
-                  className="btn-mini btn-mini-cancel filter-footer-btn"
-                  onClick={handleCancelWps}
-                >
-                  取消
-                </button>
                 <button
                   className="btn-mini btn-mini-save filter-footer-btn"
                   onClick={handleConfirmWps}
@@ -321,36 +369,6 @@ export default function TagFilterBar({ allTags, onFilterChange, filterConfig }) 
           </div>
         )}
       </div>
-
-      {slots.map(slot => (
-        <div
-          key={slot.id}
-          className={`filter-slot ${activeSlotId === slot.id ? 'active' : ''}`}
-          onClick={() => {
-            if (slot.tags.length > 0) {
-              handleSlotClick(slot);
-            }
-          }}
-        >
-          {renderSlotLabel(slot)}
-          {slot.tags.length > 0 && (
-            <span
-              className="filter-slot-close"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClearSlot(slot.id);
-              }}
-            >
-              &times;
-            </span>
-          )}
-          {tooltipSlot === slot.id && slot.tags.length > 0 && (
-            <div className="filter-tooltip">
-              {buildSlotLabel(slot)}
-            </div>
-          )}
-        </div>
-      ))}
     </div>
   );
 }

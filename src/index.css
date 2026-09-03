@@ -85,6 +85,36 @@ body {
   gap: 8px;
 }
 
+.header-search-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s;
+}
+
+.header-search-btn:active {
+  background: var(--bg);
+}
+
+.header-search-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
 .data-menu {
   position: relative;
   flex-shrink: 0;
@@ -592,18 +622,34 @@ body {
 .filter-bar-v2 {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
-  overflow: visible;
-  gap: 4px;
+  gap: 8px;
   padding: 0 0 8px;
   flex-shrink: 0;
   position: relative;
+  min-height: 38px;
+}
+
+.filter-bar-scroll {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 2px 0;
+}
+
+.filter-bar-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .filter-btn-all {
   flex-shrink: 0;
   padding: 5px 14px;
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--card);
   font-size: var(--font-size-small);
@@ -648,7 +694,8 @@ body {
 .filter-dropdown {
   position: absolute;
   top: 36px;
-  left: 0;
+  right: 0;
+  left: auto;
   min-width: 180px;
   background: var(--card);
   border-radius: var(--radius);
@@ -693,11 +740,35 @@ body {
   text-align: center;
 }
 
+.filter-dropdown-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-toolbar-btn {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  line-height: 1.2;
+}
+
+.filter-toolbar-btn:active {
+  background: var(--bg);
+}
+
 .filter-dropdown-footer {
   padding: 6px 10px;
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
   position: relative;
 }
@@ -751,21 +822,21 @@ body {
 
 /* Slot */
 .filter-slot {
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 auto;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 4px;
+  padding: 0 12px;
   height: 30px;
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--card);
   cursor: pointer;
   transition: all 0.15s;
   position: relative;
-  gap: 2px;
+  gap: 4px;
+  max-width: 160px;
 }
 
 .filter-slot.active {
@@ -2838,6 +2909,10 @@ body.compact-mode .todo-tag {
   animation: fade-in 0.2s ease;
 }
 
+.modal-full-overlay.nested {
+  z-index: 400;
+}
+
 .modal-full-sheet {
   background: var(--card);
   width: 100%;
@@ -4217,6 +4292,10 @@ body.compact-mode .todo-tag {
   color: var(--text);
 }
 
+.detail-value-muted {
+  color: var(--text-secondary);
+}
+
 .add-row-value .repeat-selector {
   flex-shrink: 0;
 }
@@ -4323,6 +4402,28 @@ body.compact-mode .todo-tag {
   padding: 0 10px;
   height: 36px;
   transition: border-color 0.15s;
+}
+
+.header-search-bar {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  height: 34px;
+  border-radius: 18px;
+}
+
+.search-bar-back {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
 }
 
 .search-bar:focus-within {
