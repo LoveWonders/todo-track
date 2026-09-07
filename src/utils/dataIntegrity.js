@@ -19,6 +19,7 @@ function checkTodo(t, source, problems) {
   if (typeof t.title !== 'string') issues.push('title 无效（需要字符串）');
   if (t.status != null && !VALID_STATUSES.includes(t.status)) issues.push(`status 无效（${t.status}）`);
   if (t.pinStatus != null && !VALID_PINS.includes(t.pinStatus)) issues.push(`pinStatus 无效（${t.pinStatus}）`);
+  if (t.manualOrder != null && !Number.isFinite(t.manualOrder)) issues.push('manualOrder 无效（需要数字）');
   if (!isNullableIso(t.dueDate)) issues.push('dueDate 无效（可为空或合法时间）');
   if (!isNullableIso(t.startDate)) issues.push('startDate 无效（可为空或合法时间）');
   if (!isNullableIso(t.createdAt)) issues.push('createdAt 无效（可为空或合法时间）');

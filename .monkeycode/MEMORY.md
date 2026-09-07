@@ -31,47 +31,19 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
 
 ## 条目
 
-### APK 构建环境需要 Java 21
-- Date: 2026-07-24
-- Context: Agent 在执行 APK 构建时发现 JDK 17 不满足 Capacitor Android 依赖的编译要求
+### APK 构建与发版
+- Date: 2026-09-06
+- Context: Agent 在 v1.23.0 云端打包时重装 JDK/SDK，并启用 Gradle 加速
 - Category: 构建编译
 - Instructions:
-  - APK 构建需要 JDK 21，已安装到 `/usr/local/jdk-21.0.11+10`
-  - 构建命令：`export ANDROID_HOME=/root/android-sdk && export JAVA_HOME=/usr/local/jdk-21.0.11+10 && ./gradlew assembleDebug`
-  - Android SDK 路径：`/root/android-sdk`，platforms: android-34/android-36，build-tools: 34.0.0/35.0.0
-  - `local.properties` 中配置 `sdk.dir=/root/android-sdk`
-
-### APK 文件名需包含版本号和日期时间后缀
-- Date: 2026-07-24
-- Context: 用户明确要求 APK 打包时文件名需带版本号和日期时间（精确到分钟）
-- Instructions:
-  - APK 打包后，输出的文件名格式为 `todotrack-v{版本号}-{YYYYMMDD}-{HHmm}.apk`
-  - 示例：`todotrack-v1.1-20260724-0659.apk`
-  - 同时将 APK 复制到工作区根目录，便于用户获取
-
-### v1.1.1 稳定版本里程碑
-- Date: 2026-07-30
-- Context: 用户确认 v1.1.1 为稳定运行的重要节点，后续开始功能界面优化完善
-- Category: 工作流协作
-- Instructions:
-  - v1.1.1 (versionCode 3) 已打包，作为稳定基线版本
-  - 核心功能完备：待办 CRUD、进度记录、标签系统、批量操作、归档、周报、数据导入导出
-  - 技术债已清理：Portal 渲染修复 opacity 问题、chrono 中文日期解析、依赖漏洞修复
-  - **下一步开始功能和界面优化完善阶段**，基于此版本迭代
-  - 每次优化迭代后如需发布新版本，使用 `npm run release:patch` / `minor` / `major` 命令
-
-### v1.2.0 界面重构里程碑
-- Date: 2026-07-30
-- Context: 完成 v2.0 界面重构，基于 v1.1.1 稳定版本的功能界面优化完善
-- Category: 工作流协作
-- Instructions:
-  - v1.2.0 (versionCode 4) 已打包，APK 位于 `当前工作区/todotrack-v1.2.0-*`
-  - **交互重构**：悬浮按钮 FAB + Bottom Sheet 弹窗，移除底部固定输入栏
-  - **智能排序**：三梯队混合排序（紧急>核心>长期），各梯队内按到期时间排序
-  - **视觉区分**：长期任务边框和文字颜色淡化，与核心工作区分
-  - **智能折叠**：第三梯队任务默认折叠，展开按钮控制，滑动失焦自动收起
-  - **标签自定义**：设置面板支持自定义 Bottom Sheet 快捷标签
-  - 智能识别功能保持不变：@日期 (chrono-node + 中文惯用语) #标签 自动识别
+  - 发版用 `npm run release:patch` / `minor` / `major`，会同步 `package.json` 与 `android/app/build.gradle` 的 versionName/versionCode
+  - JDK 21 当前路径：`/usr/local/jdk-21.0.12.1+1`（Temurin 21.0.12.1+1）；旧路径 `/usr/local/jdk-21.0.11+10` 已不存在
+  - Android SDK：`/root/android-sdk`，platforms: android-36，build-tools: 35.0.0；`android/local.properties` 写 `sdk.dir=/root/android-sdk`（该文件已被 gitignore）
+  - 构建流程：`npm run build` → `npx cap sync android` → `export ANDROID_HOME=/root/android-sdk && export JAVA_HOME=/usr/local/jdk-21.0.12.1+1 && cd android && ./gradlew assembleDebug`
+  - 产物：`android/app/build/outputs/apk/debug/app-debug.apk`，复制到工作区根目录并命名 `todotrack-v{版本}-{YYYYMMDD}-{HHmm}.apk`；`*.apk` 已被 gitignore，不入库
+  - Gradle 加速：`android/gradle.properties` 启用 `org.gradle.parallel=true` 与 `org.gradle.caching=true`；`android/build.gradle` 仓库优先阿里云 maven（google/central/public/gradle-plugin），再兜底 `google()` / `mavenCentral()`
+  - 直连 `dl.google.com` 会 TLS handshake 失败，必须走阿里云镜像
+  - Android 13+ 需在 `android/app/src/main/AndroidManifest.xml` 声明 `POST_NOTIFICATIONS`，否则 LocalNotifications 不显示
 
 ### 布局验证用 Playwright 全局安装
 - Date: 2026-08-10
@@ -90,15 +62,6 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - `showNativeDatePicker` 的 change 监听为 `if (picked && onPick) onPick(picked)`，空值不会回调
   - 依赖「用户取消选择=清除」的方案不可行；清除类交互需用 toggle 语义（已有值时点击直接清除，而非打开选择器等待空选择）
   - Playwright 注入日期选择器值：dispatch `change` 事件到隐藏 input（`style.opacity === '0'`），多次点击时取最后一个新建 input，避免误用已消费 listener 的旧 input
-
-### Android 通知需声明 POST_NOTIFICATIONS 权限
-- Date: 2026-08-15
-- Context: Agent 在 v1.19.0 构建 APK 时发现，Android 13+ 原生通知（LocalNotifications）需在 manifest 声明权限
-- Category: 构建编译
-- Instructions:
-  - `android/app/src/main/AndroidManifest.xml` 需声明 `<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />`，否则 Android 13+ 通知不显示
-  - APK 构建流程：`npx cap sync android` → `export ANDROID_HOME=/root/android-sdk && export JAVA_HOME=/usr/local/jdk-21.0.11+10 && ./gradlew assembleDebug`（在 `android/` 目录）
-  - 产物重命名 `todotrack-v{版本}-{YYYYMMDD}-{HHmm}.apk` 复制到工作区根目录，APK 被 gitignore 不入库
 
 ### Playwright headless 无法授予通知权限，验证需注入假 Notification
 - Date: 2026-08-15
@@ -135,5 +98,14 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 原生端走 Capacitor `LocalNotifications`（`scheduleReminder` / `scheduleTodoReminder` / `scheduleProgressReminder`），与浏览器路径分离
   - 此前实测：浏览器端到期后不弹系统通知、也不出应用内弹窗；headless Playwright 也无法真实验证（`Notification.permission` 恒为 denied）
   - 当前策略：不主动修；Android 原生通知仍是主路径。以后若修，优先核对权限申请、`todo_reminder_ack` 防重、以及是否需要应用内 toast 兜底
+
+### neat-freak 文档/记忆对齐技能
+- Date: 2026-09-06
+- Context: 用户要求安装 https://github.com/lsa03/neat-freak-person，用于会话结束时把改动对齐到项目记忆与文档
+- Category: 环境配置
+- Instructions:
+  - 技能已复制到 `~/.claude/skills/neat-freak/` 与 `/root/.codingmatrix/project-tpl/.ai-ready/skills/neat-freak/`
+  - 当前会话的 Skill 工具列表可能尚未刷新该技能；执行时直接读取上述 `SKILL.md`
+  - 触发语：「同步一下」/ `/neat`；只改文档和记忆，不改业务代码
 
 (Showing lines 52-72 of 72.)

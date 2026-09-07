@@ -11,7 +11,7 @@ const TodoListItem = memo(function TodoListItem({ todo, selectedIds, highlight }
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: todo.id });
+  } = useSortable({ id: todo.id, disabled: !!todo.pinStatus });
 
   const style = {
     transform: CSS.Transform.toString(transform),

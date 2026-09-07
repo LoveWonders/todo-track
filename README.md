@@ -14,9 +14,11 @@
 - **任务折叠**：折叠按钮集成进度徽章，默认折叠减少干扰
 - **清单模式**：按需开启拆解，完成率进度条 + 全部勾选后一键完成待办
 - **重复任务**：每日/每周/每月懒加载流转，打开 App 自动归档过期周期并生成新窗口，无需定时器
-- **本地通知提醒**：重复任务可设提醒时间，Android 到期推送本地通知（应用关闭也生效），网页端到点补发浏览器通知
+- **本地通知提醒**：重复任务可设提醒时间，Android 到期推送本地通知（应用关闭也生效）
 - **日历选择器**：点击日期预览可唤出系统日历选择器快速设置
 - **快捷标签内联编辑**：支持增删改，实时保存到本地
+- **顶栏搜索**：放大镜展开搜索框，匹配标题/内容/标签并高亮
+- **标签筛选胶囊**：横向滑动固定槽位，漏斗下拉支持全选/反选
 
 ## 技术栈
 
@@ -42,19 +44,22 @@ npm run dev
 ## 打包 Android APK
 
 ```bash
-# 清理缓存
-rm -rf android/build android/app/build android/.gradle
-
-# 同步前端资源到原生工程
+# 同步前端资源到原生工程（需先 npm run build）
 npx cap sync android
 
 # 打包 Debug APK
+export ANDROID_HOME=/root/android-sdk
+export JAVA_HOME=/usr/local/jdk-21.0.12.1+1
 cd android && ./gradlew assembleDebug
 ```
 
 APK 输出路径：`android/app/build/outputs/apk/debug/app-debug.apk`
 
-> 需要 JDK 21 和 Android SDK，环境变量 `JAVA_HOME` 和 `ANDROID_HOME` 需正确配置。
+复制到工作区根目录并命名为 `todotrack-v{版本}-{YYYYMMDD}-{HHmm}.apk`，例如 `todotrack-v1.23.0-20260906-0404.apk`。
+
+发版升版本：`npm run release:patch` / `minor` / `major`。
+
+> 需要 JDK 21 和 Android SDK。本环境 `JAVA_HOME=/usr/local/jdk-21.0.12.1+1`，`ANDROID_HOME=/root/android-sdk`。`android/build.gradle` 已配置阿里云 Maven 镜像。
 
 ## 项目结构
 

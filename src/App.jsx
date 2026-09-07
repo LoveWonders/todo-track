@@ -22,11 +22,13 @@ import TaskBottomSheet from './components/TaskBottomSheet';
 import TodoDetail from './components/TodoDetail';
 import FloatingActionButton from './components/FloatingActionButton';
 import SearchBar from './components/SearchBar';
+import SortMenu from './components/SortMenu';
 import { loadArchive, saveArchive } from './utils/autoArchive';
 import { formatDate } from './utils/dateParser';
+import { SORT_MANUAL } from './utils/sortTodos';
 
 export default function App() {
-  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, batchUpdateCompletedAt, importTodos, allTags, isManualMode, setManualMode } = useTodos();
+  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, batchUpdateCompletedAt, importTodos, allTags, sortMode, setSortMode, resetSortMode } = useTodos();
   const [filterConfig, setFilterConfig] = useState({ includeTags: [], excludeTags: [] });
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -79,7 +81,7 @@ export default function App() {
 
   const source = view === 'active' ? activeTodos : archivedTodos;
   const isArchive = view === 'archive';
-  const filteredTodos = useFilteredTodos(source, filterConfig, isManualMode, searchQuery);
+  const filteredTodos = useFilteredTodos(source, filterConfig, sortMode, searchQuery);
 
   const {
     batchMode, selectedIds, exitBatch, handleBatchToggle,
@@ -107,8 +109,9 @@ export default function App() {
     const oldIndex = filteredTodos.findIndex(t => t.id === active.id);
     const newIndex = filteredTodos.findIndex(t => t.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
+    if (filteredTodos[oldIndex].pinStatus || filteredTodos[newIndex].pinStatus) return;
     const reordered = arrayMove(filteredTodos, oldIndex, newIndex);
-    commitReorder(reordered.map(t => t.id), active.id, true);
+    commitReorder(reordered.map(t => t.id), active.id);
   }, [filteredTodos, commitReorder]);
 
   const handleDragCancel = useCallback(() => {
@@ -135,8 +138,8 @@ export default function App() {
     handleBatchToggle, setPinStatus, setFabHidden]);
 
   const viewValue = useMemo(() => ({
-    batchMode, isArchive, devMode, openMenuId, setOpenMenuId,
-  }), [batchMode, isArchive, devMode, openMenuId]);
+    batchMode, isArchive, devMode, openMenuId, setOpenMenuId, sortMode,
+  }), [batchMode, isArchive, devMode, openMenuId, sortMode]);
 
   const sortableIds = useMemo(() => filteredTodos.map(t => t.id), [filteredTodos]);
 
@@ -183,14 +186,8 @@ export default function App() {
               {batchMode && (
                 <span style={{ fontSize: 12, color: 'var(--accent)' }}>批量操作</span>
               )}
-              {isManualMode && !batchMode && (
-                <button
-                  className="sort-mode-btn"
-                  onClick={() => setManualMode(false)}
-                  title="重置为自动排序（置顶/置底保留，其余按紧急度与截止日期重排）"
-                >
-                  重置排序
-                </button>
+              {view !== 'weekly' && !batchMode && (
+                <SortMenu sortMode={sortMode} onChange={setSortMode} onReset={resetSortMode} />
               )}
               {view !== 'weekly' && !batchMode && (
                 <button
@@ -254,7 +251,7 @@ export default function App() {
                   <div className="empty-state">
                     <div className="empty-icon">&#x1F4CB;</div>
                     <p>{searchQuery.trim() ? '未找到匹配的待办' : (isArchive ? '暂无归档待办' : '暂无待办事项')}</p>
-                    {!isArchive && !searchQuery.trim() && <p style={{ fontSize: 12, marginTop: 8 }}>长按待办可拖动排序</p>}
+                     {!isArchive && !searchQuery.trim() && <p style={{ fontSize: 12, marginTop: 8 }}>{sortMode === SORT_MANUAL ? '长按待办可拖动排序' : '长按拖动将锁定为手动排序'}</p>}
                   </div>
                 ) : (
                   <>

@@ -1,5 +1,15 @@
 import { isRepeatRule, getRepeatDue } from './repeat';
 
+export const SORT_CREATED = 'created';
+export const SORT_DUE = 'due';
+export const SORT_MANUAL = 'manual';
+
+export const SORT_MODE_LABELS = {
+  [SORT_CREATED]: '最新创建',
+  [SORT_DUE]: '截止日期',
+  [SORT_MANUAL]: '手动排序',
+};
+
 const TOP = 'top';
 const BOTTOM = 'bottom';
 
@@ -16,7 +26,44 @@ function todoCreatedTime(t) {
   return Number.isNaN(ts) ? 0 : ts;
 }
 
-export default function sortTodos(list, isManualMode) {
+function hasDue(t, now) {
+  return todoDueTime(t, now) !== Infinity;
+}
+
+function manualOrderValue(t) {
+  return Number.isFinite(t && t.manualOrder) ? t.manualOrder : Infinity;
+}
+
+function byCreatedDesc(a, b) {
+  return todoCreatedTime(b) - todoCreatedTime(a);
+}
+
+function byDueAsc(a, b, now) {
+  const aHas = hasDue(a, now);
+  const bHas = hasDue(b, now);
+  if (aHas !== bHas) return aHas ? -1 : 1;
+  if (!aHas && !bHas) return byCreatedDesc(a, b);
+  const dueDiff = todoDueTime(a, now) - todoDueTime(b, now);
+  if (dueDiff !== 0) return dueDiff;
+  return byCreatedDesc(a, b);
+}
+
+function byManual(a, b) {
+  const ao = manualOrderValue(a);
+  const bo = manualOrderValue(b);
+  const aLocked = ao !== Infinity;
+  const bLocked = bo !== Infinity;
+  if (aLocked !== bLocked) return aLocked ? 1 : -1;
+  if (!aLocked) return byCreatedDesc(a, b);
+  return ao - bo;
+}
+
+export function normalizeSortMode(mode) {
+  if (mode === SORT_DUE || mode === SORT_MANUAL || mode === SORT_CREATED) return mode;
+  return SORT_CREATED;
+}
+
+export default function sortTodos(list, sortMode) {
   if (!Array.isArray(list)) return [];
 
   const pinned = [];
@@ -30,20 +77,14 @@ export default function sortTodos(list, isManualMode) {
     else normal.push(t);
   }
 
-  if (!isManualMode) {
+  const mode = normalizeSortMode(sortMode);
+  if (mode === SORT_CREATED) {
+    normal.sort(byCreatedDesc);
+  } else if (mode === SORT_DUE) {
     const now = new Date();
-
-    // 混合排序：
-    // 第一优先级：创建时间倒序（刚添加的任务永远在最上面，无论是否有截止日期）
-    // 第二优先级：截止日期正序（已过期的在最前，无日期的排在最后）
-    const byMixed = (a, b) => {
-      const aCreated = todoCreatedTime(a);
-      const bCreated = todoCreatedTime(b);
-      if (aCreated !== bCreated) return bCreated - aCreated;
-      return todoDueTime(a, now) - todoDueTime(b, now);
-    };
-
-    normal.sort(byMixed);
+    normal.sort((a, b) => byDueAsc(a, b, now));
+  } else {
+    normal.sort(byManual);
   }
 
   return [...pinned, ...normal, ...bottom];

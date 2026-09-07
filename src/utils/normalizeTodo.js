@@ -57,6 +57,8 @@ export function normalizeImportedTodo(t) {
     progress: Array.isArray(t.progress) ? t.progress.map(normalizeProgress).filter(Boolean).slice(0, MAX_PROGRESS) : [],
     status: VALID_STATUSES.includes(t.status) ? t.status : 'active',
     pinStatus: VALID_PIN_STATUSES.includes(t.pinStatus) ? t.pinStatus : null,
+    manualOrder: Number.isFinite(t.manualOrder) ? t.manualOrder : null,
+    manualLocked: t.manualLocked === true,
     completedAt: normalizeIso(t.completedAt),
     createdAt: normalizeIso(t.createdAt) || new Date().toISOString(),
     checklistMode: t.checklistMode === true,

@@ -6,7 +6,9 @@ import { removeProgressCollapsed } from '../utils/progressViewState';
 import { getCycleKey, getWindowStart, isRepeatRule, isValidAnchor } from '../utils/repeat';
 import { scheduleReminder, cancelReminder, rescheduleAll, checkDueReminders, requestNotificationPermission, scheduleProgressReminder, cancelProgressReminder, cancelTodoProgressReminders, scheduleTodoReminder, cancelTodoReminder } from '../utils/notification';
 import { addLog } from '../utils/logger';
+import sortTodos, { SORT_CREATED, SORT_MANUAL, normalizeSortMode } from '../utils/sortTodos';
 
+const SORT_MODE_KEY = 'todo_sort_mode';
 const MANUAL_SORT_KEY = 'todo_manual_sort';
 const SETTINGS_KEY = 'todo_app_settings';
 
@@ -56,11 +58,13 @@ function applyRepeatTick(list, now, allocateId) {
 export function useTodos() {
   const [todos, setTodos] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  const [isManualMode, setIsManualMode] = useState(() => {
+  const [sortMode, setSortModeState] = useState(() => {
     try {
-      return localStorage.getItem(MANUAL_SORT_KEY) === '1';
+      const stored = localStorage.getItem(SORT_MODE_KEY);
+      if (stored) return normalizeSortMode(stored);
+      return localStorage.getItem(MANUAL_SORT_KEY) === '1' ? SORT_MANUAL : SORT_CREATED;
     } catch {
-      return false;
+      return SORT_CREATED;
     }
   });
   const saveTimerRef = useRef(null);
@@ -68,6 +72,8 @@ export function useTodos() {
   const progressIdRef = useRef(Date.now());
   const todosRef = useRef(todos);
   todosRef.current = todos;
+  const sortModeRef = useRef(sortMode);
+  sortModeRef.current = sortMode;
 
   useEffect(() => {
     // 首次加载：从 localStorage 恢复数据（仅一次）
@@ -98,7 +104,21 @@ export function useTodos() {
         const maxProgressId = Math.max(...afterArchive.flatMap(t => (t.progress || []).map(p => p.id)), 0);
         if (maxProgressId > 0) progressIdRef.current = maxProgressId + 1;
       }
-      const afterTick = applyRepeatTick(afterArchive, new Date(), () => progressIdRef.current++);
+      let afterTick = applyRepeatTick(afterArchive, new Date(), () => progressIdRef.current++);
+      if (sortModeRef.current === SORT_MANUAL && !afterTick.some(t => Number.isFinite(t.manualOrder))) {
+        const order = new Map();
+        const groups = [
+          afterTick.filter(t => t.status === 'active'),
+          afterTick.filter(t => t.status !== 'active'),
+        ];
+        for (const group of groups) {
+          let i = 0;
+          for (const t of group) {
+            if (!t.pinStatus) order.set(t.id, i++);
+          }
+        }
+        afterTick = afterTick.map(t => (order.has(t.id) ? { ...t, manualOrder: order.get(t.id) } : t));
+      }
       setTodos(afterTick);
       rescheduleAll(afterTick);
       checkDueReminders(afterTick);
@@ -126,9 +146,10 @@ export function useTodos() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(MANUAL_SORT_KEY, isManualMode ? '1' : '0');
+      localStorage.setItem(SORT_MODE_KEY, sortMode);
+      localStorage.setItem(MANUAL_SORT_KEY, sortMode === SORT_MANUAL ? '1' : '0');
     } catch { /* ignore */ }
-  }, [isManualMode]);
+  }, [sortMode]);
 
   const addTodo = useCallback(({ title, startDate, dueDate, tags, checklistMode, repeatRule, repeatAnchor }) => {
     const rule = isRepeatRule(repeatRule) ? repeatRule : null;
@@ -140,6 +161,8 @@ export function useTodos() {
       tags: tags || [],
       status: 'active',
       pinStatus: null,
+      manualOrder: null,
+      manualLocked: false,
       createdAt: new Date().toISOString(),
       progress: [],
       checklistMode: checklistMode === true,
@@ -170,31 +193,22 @@ export function useTodos() {
     addLog('data', '删除待办', { id, title: target ? target.title : String(id) });
   }, []);
 
-  const commitReorder = useCallback((idOrder, movedId, manual) => {
-    const orderSet = new Set(idOrder);
-    setTodos(prev => {
-      const prevById = new Map(prev.map(t => [t.id, t]));
-      const next = [];
-      let ptr = 0;
-      for (const t of prev) {
-        if (orderSet.has(t.id)) {
-          const targetId = idOrder[ptr];
-          const target = prevById.get(targetId);
-          next.push(target ? { ...target, pinStatus: target.id === movedId ? null : target.pinStatus } : null);
-          ptr++;
-        } else {
-          next.push(t);
-        }
-      }
-      if (ptr < idOrder.length) {
-        for (let i = ptr; i < idOrder.length; i++) {
-          const target = prevById.get(idOrder[i]);
-          if (target) next.push({ ...target, pinStatus: target.id === movedId ? null : target.pinStatus });
-        }
-      }
-      return next.filter(Boolean);
+  const commitReorder = useCallback((idOrder, movedId) => {
+    const prevById = new Map(todosRef.current.map(t => [t.id, t]));
+    const unpinned = idOrder.filter(id => {
+      const t = prevById.get(id);
+      return t && !t.pinStatus;
     });
-    if (manual) setIsManualMode(true);
+    const orderIndex = new Map(unpinned.map((id, i) => [id, i]));
+    setTodos(prev => prev.map(t => {
+      if (!orderIndex.has(t.id)) return t;
+      return {
+        ...t,
+        manualOrder: orderIndex.get(t.id),
+        manualLocked: t.id === movedId ? true : t.manualLocked,
+      };
+    }));
+    setSortModeState(SORT_MANUAL);
   }, []);
 
   const setPinStatus = useCallback((id, pinStatus) => {
@@ -203,8 +217,34 @@ export function useTodos() {
     ));
   }, []);
 
-  const setManualMode = useCallback((mode) => {
-    setIsManualMode(!!mode);
+  const setSortMode = useCallback((mode) => {
+    const next = normalizeSortMode(mode);
+    if (next === SORT_MANUAL && sortModeRef.current !== SORT_MANUAL) {
+      setTodos(prev => {
+        if (prev.some(t => Number.isFinite(t.manualOrder) && !t.pinStatus)) return prev;
+        const order = new Map();
+        const groups = [
+          prev.filter(t => t.status === 'active'),
+          prev.filter(t => t.status !== 'active'),
+        ];
+        for (const group of groups) {
+          const visual = sortTodos(group, sortModeRef.current);
+          let i = 0;
+          for (const t of visual) {
+            if (!t.pinStatus) order.set(t.id, i++);
+          }
+        }
+        return prev.map(t => (order.has(t.id) ? { ...t, manualOrder: order.get(t.id) } : t));
+      });
+    }
+    setSortModeState(next);
+  }, []);
+
+  const resetSortMode = useCallback(() => {
+    setTodos(prev => prev.map(t => (
+      t.manualOrder == null && !t.manualLocked ? t : { ...t, manualOrder: null, manualLocked: false }
+    )));
+    setSortModeState(SORT_CREATED);
   }, []);
 
   const batchToggleStatus = useCallback((entries) => {
@@ -599,5 +639,5 @@ export function useTodos() {
   const archivedTodos = useMemo(() => todos.filter(t => t.status !== 'active'), [todos]);
   const allTags = useMemo(() => [...new Set(todos.flatMap(t => t.tags))].sort(), [todos]);
 
-  return { todos, activeTodos, archivedTodos, loaded, isManualMode, setManualMode, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, updateCompletedAt, batchUpdateCompletedAt, importTodos, allTags };
+  return { todos, activeTodos, archivedTodos, loaded, sortMode, setSortMode, resetSortMode, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, updateCompletedAt, batchUpdateCompletedAt, importTodos, allTags };
 }

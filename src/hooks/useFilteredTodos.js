@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import sortTodos from '../utils/sortTodos';
 import { matchTodo } from '../utils/highlight';
 
-export default function useFilteredTodos(source, filterConfig, isManualMode, searchQuery = '') {
+export default function useFilteredTodos(source, filterConfig, sortMode, searchQuery = '') {
   return useMemo(() => {
     const q = (searchQuery || '').trim();
 
@@ -14,6 +14,6 @@ export default function useFilteredTodos(source, filterConfig, isManualMode, sea
       return true;
     });
 
-    return sortTodos(base, isManualMode);
-  }, [source, filterConfig, isManualMode, searchQuery]);
+    return sortTodos(base, sortMode);
+  }, [source, filterConfig, sortMode, searchQuery]);
 }

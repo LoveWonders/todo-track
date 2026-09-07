@@ -11,6 +11,7 @@ import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
 import ProgressLog from './ProgressLog';
 import { highlightText } from '../utils/highlight';
+import { SORT_MANUAL } from '../utils/sortTodos';
 import TodoDetail from './TodoDetail';
 import ModalShell from './ModalShell';
 
@@ -36,7 +37,7 @@ function isReminderAtDue(todo) {
 
 const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragListeners, highlight }) {
   const { toggleStatus, completeTodo, updateTodo, handleBatchToggle, setPinStatus, setFabHidden } = useTodoActions();
-  const { batchMode, isArchive, devMode, openMenuId, setOpenMenuId } = useTodoView();
+  const { batchMode, isArchive, devMode, openMenuId, setOpenMenuId, sortMode } = useTodoView();
   const statusClass = getStatusClass(todo);
   const tier = getTaskTier(todo);
   const moreOpen = openMenuId === todo.id;
@@ -220,6 +221,9 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
               <span className={`pin-badge ${todo.pinStatus === 'top' ? 'pin-top' : 'pin-bottom'}`}>
                 {todo.pinStatus === 'top' ? '置顶' : '置底'}
               </span>
+            )}
+            {sortMode === SORT_MANUAL && todo.manualLocked && !todo.pinStatus && (
+              <span className="pin-badge manual-lock" title="手动锁定">手</span>
             )}
             <span
               className="todo-title-text"
