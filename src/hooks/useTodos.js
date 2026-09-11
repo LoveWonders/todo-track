@@ -6,6 +6,7 @@ import { removeProgressCollapsed } from '../utils/progressViewState';
 import { getCycleKey, getWindowStart, isRepeatRule, isValidAnchor } from '../utils/repeat';
 import { scheduleReminder, cancelReminder, rescheduleAll, checkDueReminders, requestNotificationPermission, scheduleProgressReminder, cancelProgressReminder, cancelTodoProgressReminders, scheduleTodoReminder, cancelTodoReminder } from '../utils/notification';
 import { addLog } from '../utils/logger';
+import { parseReminderTime } from '../utils/reminder';
 import sortTodos, { SORT_CREATED, SORT_MANUAL, normalizeSortMode } from '../utils/sortTodos';
 
 const SORT_MODE_KEY = 'todo_sort_mode';
@@ -151,7 +152,7 @@ export function useTodos() {
     } catch { /* ignore */ }
   }, [sortMode]);
 
-  const addTodo = useCallback(({ title, startDate, dueDate, tags, checklistMode, repeatRule, repeatAnchor }) => {
+  const addTodo = useCallback(({ title, startDate, dueDate, tags, checklistMode, repeatRule, repeatAnchor, reminderTime }) => {
     const rule = isRepeatRule(repeatRule) ? repeatRule : null;
     const todo = {
       id: todoIdRef.current++,
@@ -169,7 +170,7 @@ export function useTodos() {
       repeatRule: rule,
       repeatAnchor: rule ? (isValidAnchor(rule, repeatAnchor) ? repeatAnchor : null) : null,
       cycleKey: rule ? getCycleKey(rule) : null,
-      reminderTime: null,
+      reminderTime: parseReminderTime(reminderTime) ? reminderTime : null,
     };
     setTodos(prev => [...prev, todo]);
     addLog('data', '新增待办', { id: todo.id, title: todo.title });

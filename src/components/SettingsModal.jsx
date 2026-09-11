@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSettings } from '../hooks/useSettings';
+import { useSettings, getDefaultReminderOffset } from '../hooks/useSettings';
 import TagManager from './TagManager';
 import ModalShell from './ModalShell';
 import SegmentedControl from './SegmentedControl';
@@ -18,6 +18,7 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
   const [compactDraft, setCompactDraft] = useState(!!settings.compactMode);
   const [autoArchiveDraft, setAutoArchiveDraft] = useState(settings.autoArchive !== false);
   const [autoClearLogsDraft, setAutoClearLogsDraft] = useState(settings.autoClearLogs !== false);
+  const [offsetDraft, setOffsetDraft] = useState(String(getDefaultReminderOffset(settings)));
   const [showTagManager, setShowTagManager] = useState(false);
   const [copied, setCopied] = useState(false);
   const [integrityReport, setIntegrityReport] = useState(null);
@@ -53,6 +54,7 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
     updateSetting('compactMode', compactDraft);
     updateSetting('autoArchive', autoArchiveDraft);
     updateSetting('autoClearLogs', autoClearLogsDraft);
+    updateSetting('defaultReminderOffset', Number(offsetDraft) || 60);
     onClose();
   };
 
@@ -157,6 +159,20 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
               <span className="settings-row-status">已上线</span>
             </div>
             <p className="settings-desc">为重复任务设置提醒时间后，Android 端到期自动推送本地通知；网页端打开应用时到点补发浏览器通知。</p>
+            <div className="settings-row">
+              <span className="settings-row-label">默认提前提醒</span>
+              <SegmentedControl
+                value={offsetDraft}
+                options={[
+                  { value: '15', label: '15 分钟' },
+                  { value: '30', label: '30 分钟' },
+                  { value: '60', label: '1 小时' },
+                  { value: '120', label: '2 小时' },
+                ]}
+                onChange={setOffsetDraft}
+              />
+            </div>
+            <p className="settings-desc">开启周期提醒时，默认按截止时间提前此时长填入提醒时间，可再手动改。</p>
             <div className="settings-row settings-row-disabled">
               <span className="settings-row-label">每日晨报推送</span>
               <span className="settings-row-soon">规划中</span>

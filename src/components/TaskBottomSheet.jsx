@@ -3,12 +3,14 @@ import { formatDateOnly } from '../utils/dateParser';
 import { showNativeDatePicker } from '../utils/datePicker';
 import { useSmartInput } from '../hooks/useSmartInput';
 import { useTagLogic } from '../hooks/useTagLogic';
-import { useSettings } from '../hooks/useSettings';
+import { useSettings, getDefaultReminderOffset } from '../hooks/useSettings';
 import { isSafeTagName, mergeSubmitTags } from '../utils/tagMeta';
 import { readJSON } from '../utils/storage';
 import { CYCLE_LABELS, WEEKDAY_LABELS, anchorLabel } from '../utils/repeat';
+import { parseReminderTime, extractDeadlineTime, initReminderTime } from '../utils/reminder';
 import { URGENT_TAG } from '../constants';
 import ModalShell from './ModalShell';
+import ToggleSwitch from './ToggleSwitch';
 
 const DEFAULT_PRESET_TAGS = ['工作', '长期', '个人'];
 const PRESET_TAGS_STORAGE_KEY = 'todo_preset_tags';
@@ -29,6 +31,9 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
   const [isChecklist, setIsChecklist] = useState(false);
   const [repeatRule, setRepeatRule] = useState(null);
   const [repeatAnchor, setRepeatAnchor] = useState(null);
+  const [hasReminder, setHasReminder] = useState(false);
+  const [reminderTime, setReminderTime] = useState(null);
+  const [reminderManual, setReminderManual] = useState(false);
   const [presetTags, setPresetTags] = useState(() => {
     const loaded = loadPresetTags();
     if (Array.isArray(loaded)) return loaded;
@@ -74,6 +79,9 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
   const pickedStart = parsed.startDate;
   const pickedEnd = manualDue || parsed.dueDate;
   const submittedTags = useMemo(() => mergeSubmitTags(tags, parsed.tags, isUrgent), [tags, parsed.tags, isUrgent]);
+  const offset = getDefaultReminderOffset(settings);
+  const deadline = extractDeadlineTime(pickedEnd);
+  const reminderVisible = !!repeatRule && !!deadline;
 
   const handlePresetTagClick = useCallback((tag) => {
     if (editMode) return;
@@ -145,11 +153,27 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
     setShowAddInput(false);
   }, [newTagText, handleAddTag]);
 
+  useEffect(() => {
+    if (!reminderVisible) {
+      setHasReminder(false);
+      setReminderTime(null);
+      setReminderManual(false);
+      return;
+    }
+    if (hasReminder && !reminderManual) {
+      setReminderTime(initReminderTime(deadline, offset));
+    }
+  }, [reminderVisible, deadline, offset]);
+
   const handleSubmit = useCallback(() => {
     const final = parsed.cleanContent.trim();
     const finalDueDate = pickedEnd || null;
     const title = final || formatDateOnly(finalDueDate) || '待办';
-    onAdd({ title, startDate: pickedStart, dueDate: finalDueDate, tags: submittedTags, checklistMode: isChecklist, repeatRule, repeatAnchor });
+    const finalReminderTime =
+      hasReminder && parseReminderTime(reminderTime)
+        ? reminderTime
+        : null;
+    onAdd({ title, startDate: pickedStart, dueDate: finalDueDate, tags: submittedTags, checklistMode: isChecklist, repeatRule, repeatAnchor, reminderTime: finalReminderTime });
     clearSmart();
     clearTags();
     setIsUrgent(false);
@@ -157,8 +181,11 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
     setRepeatRule(null);
     setRepeatAnchor(null);
     setManualDue(null);
+    setHasReminder(false);
+    setReminderTime(null);
+    setReminderManual(false);
     onClose();
-  }, [pickedStart, pickedEnd, submittedTags, parsed, onAdd, clearSmart, clearTags, isChecklist, repeatRule, repeatAnchor, onClose]);
+  }, [pickedStart, pickedEnd, submittedTags, parsed, onAdd, clearSmart, clearTags, isChecklist, repeatRule, repeatAnchor, hasReminder, reminderTime, onClose]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -310,6 +337,51 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
               月末
             </button>
             <span className="detail-toggle-hint">不选则每月最后一天到期</span>
+          </div>
+        )}
+        {reminderVisible && (
+          <div className="add-row">
+            <span className="add-row-label">周期提醒</span>
+            <span className="add-row-value">
+              <ToggleSwitch
+                checked={hasReminder}
+                onChange={(on) => {
+                  setHasReminder(on);
+                  if (!on) {
+                    setReminderTime(null);
+                    setReminderManual(false);
+                  } else if (!reminderManual) {
+                    setReminderTime(initReminderTime(deadline, offset));
+                  }
+                }}
+                label="开启周期提醒"
+              />
+            </span>
+          </div>
+        )}
+        {reminderVisible && hasReminder && (
+          <div className="add-row">
+            <span className="add-row-label">提醒时间</span>
+            <span className="add-row-value">
+              <button
+                type="button"
+                className="add-date-btn"
+                onClick={() => showNativeDatePicker({
+                  type: 'time',
+                  value: parseReminderTime(reminderTime) ? reminderTime : '',
+                  onPick: (v) => {
+                    if (typeof v !== 'string') return;
+                    const hm = v.length >= 5 ? v.slice(0, 5) : v;
+                    if (parseReminderTime(hm)) {
+                      setReminderTime(hm);
+                      setReminderManual(true);
+                    }
+                  },
+                })}
+              >
+                {parseReminderTime(reminderTime) ? reminderTime : '选择提醒时间'}
+              </button>
+            </span>
           </div>
         )}
       </div>

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import { setAutoTrim } from '../utils/logger';
 import { readJSON } from '../utils/storage';
+import { DEFAULT_REMINDER_OFFSET } from '../utils/reminder';
 
 const SETTINGS_KEY = 'todo_app_settings';
 
@@ -9,7 +10,15 @@ const defaultSettings = {
   compactMode: false,
   autoArchive: true,
   autoClearLogs: true,
+  defaultReminderOffset: DEFAULT_REMINDER_OFFSET,
 };
+
+export function getDefaultReminderOffset(settings) {
+  const raw = settings?.defaultReminderOffset;
+  if (raw == null || raw === '') return DEFAULT_REMINDER_OFFSET;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : DEFAULT_REMINDER_OFFSET;
+}
 
 function loadSettings() {
   const parsed = readJSON(SETTINGS_KEY, null);
