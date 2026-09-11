@@ -13,7 +13,6 @@ import ProgressLog from './ProgressLog';
 import { highlightText } from '../utils/highlight';
 import { SORT_MANUAL } from '../utils/sortTodos';
 import TodoDetail from './TodoDetail';
-import ModalShell from './ModalShell';
 
 function getStatusClass(todo) {
   if (todo.status === 'completed') return 'completed';
@@ -36,7 +35,7 @@ function isReminderAtDue(todo) {
 }
 
 const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragListeners, highlight }) {
-  const { toggleStatus, completeTodo, updateTodo, handleBatchToggle, setPinStatus, setFabHidden } = useTodoActions();
+  const { toggleStatus, completeTodo, updateTodo, handleBatchToggle, setPinStatus } = useTodoActions();
   const { batchMode, isArchive, devMode, openMenuId, setOpenMenuId, sortMode } = useTodoView();
   const statusClass = getStatusClass(todo);
   const tier = getTaskTier(todo);
@@ -46,12 +45,13 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   renderCountRef.current += 1;
   const devRenderLabel = devMode ? renderCountRef.current : null;
 
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editText, setEditText] = useState('');
   const [showDetail, setShowDetail] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({});
   const [collapsed, setCollapsed] = useState(() => loadProgressCollapsed(todo.id));
+  const [titleExpanded, setTitleExpanded] = useState(false);
+  const [titleOverflow, setTitleOverflow] = useState(false);
   const dragRef = useRef(null);
+  const titleRef = useRef(null);
 
   const canCollapse = !isArchive && todo.status === 'active';
   const cycleStats = getCycleStats(todo);
@@ -69,6 +69,22 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   };
 
   useEffect(() => {
+    setTitleExpanded(false);
+  }, [todo.id, todo.title]);
+
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el || titleExpanded) return;
+    const measure = () => {
+      setTitleOverflow(el.scrollHeight > el.clientHeight + 1);
+    };
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    if (ro) ro.observe(el);
+    return () => { if (ro) ro.disconnect(); };
+  }, [todo.title, highlight, titleExpanded]);
+
+  useEffect(() => {
     if (!moreOpen) return;
     const close = (e) => {
       if (e.target.closest('.more-dropdown') || e.target.closest('.drag-handle')) return;
@@ -77,19 +93,6 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, [moreOpen, setOpenMenuId]);
-
-  const handleOpenEdit = () => {
-    if (batchMode) return;
-    setEditText(todo.title || '');
-    setShowEditModal(true);
-  };
-
-  const handleSaveEdit = () => {
-    const trimmed = editText.trim();
-    if (trimmed && trimmed !== todo.title) updateTodo(todo.id, { title: trimmed });
-    setFabHidden(false);
-    setShowEditModal(false);
-  };
 
   const isUrgent = (todo.tags || []).includes(URGENT_TAG);
 
@@ -108,6 +111,17 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
   const handleItemClick = () => {
     if (!batchMode) return;
     handleBatchToggle(todo.id);
+  };
+
+  const handleOpenDetail = (e) => {
+    if (batchMode) return;
+    if (e.target.closest('.todo-title-toggle')) return;
+    setShowDetail(true);
+  };
+
+  const handleToggleTitle = (e) => {
+    e.stopPropagation();
+    setTitleExpanded(v => !v);
   };
 
   const handleEnterBatch = (e) => {
@@ -215,8 +229,11 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
           document.body
         )}
 
-        <div className="todo-content">
-          <div style={{ marginBottom: 3 }}>
+        <div
+          className="todo-content"
+          onClick={handleOpenDetail}
+        >
+          <div className="todo-title-row">
             {todo.pinStatus && (
               <span className={`pin-badge ${todo.pinStatus === 'top' ? 'pin-top' : 'pin-bottom'}`}>
                 {todo.pinStatus === 'top' ? '置顶' : '置底'}
@@ -226,10 +243,14 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
               <span className="pin-badge manual-lock" title="手动锁定">手</span>
             )}
             <span
-              className="todo-title-text"
-              onClick={(e) => { e.stopPropagation(); handleOpenEdit(); }}
+              className={`todo-title-clip ${!titleExpanded && titleOverflow ? 'truncated' : ''}`}
             >
-              {highlightText(todo.title || '待办内容', highlight)}
+              <span
+                ref={titleRef}
+                className={`todo-title-text ${titleExpanded ? 'expanded' : ''}`}
+              >
+                {highlightText(todo.title || '待办内容', highlight)}
+              </span>
             </span>
             {todo.repeatRule && (
               <span className={`repeat-badge repeat-${todo.repeatRule}`}>
@@ -260,12 +281,22 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
               </span>
             )}
           </div>
+          {(titleOverflow || titleExpanded) && (
+            <button
+              type="button"
+              className="todo-title-toggle"
+              onClick={handleToggleTitle}
+            >
+              {titleExpanded ? '收起' : '展开'}
+            </button>
+          )}
           <div className="todo-meta">
             <DateEdit
               value={todo.dueDate}
               onSave={(val) => updateTodo(todo.id, { dueDate: val })}
               overdue={false}
               inBatch={batchMode}
+              interactive={false}
             />
             {todo.status === 'active' && todo.dueDate && (
               <Countdown dueDate={todo.dueDate} />
@@ -274,6 +305,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
               tags={todo.tags}
               onSave={(tags) => updateTodo(todo.id, { tags })}
               inBatch={batchMode}
+              interactive={false}
             />
           </div>
         </div>
@@ -340,39 +372,6 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
             </div>
           ))}
         </div>
-      )}
-
-      {showEditModal && (
-        <ModalShell
-          title="编辑内容"
-          onClose={() => { setFabHidden(false); setShowEditModal(false); }}
-          bodyClassName=""
-          footer={
-            <>
-              <button
-                className="btn-secondary"
-                onClick={() => { setFabHidden(false); setShowEditModal(false); }}
-              >
-                取消
-              </button>
-              <button
-                className="btn-primary"
-                onClick={handleSaveEdit}
-              >
-                保存
-              </button>
-            </>
-          }
-        >
-          <textarea
-            className="modal-edit-textarea"
-            value={editText}
-            onChange={(e) => setEditText(e.target.value)}
-            onFocus={() => setFabHidden(true)}
-            onBlur={() => setFabHidden(false)}
-            autoFocus
-          />
-        </ModalShell>
       )}
 
       {showDetail && createPortal(

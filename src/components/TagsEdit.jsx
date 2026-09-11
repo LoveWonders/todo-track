@@ -3,7 +3,7 @@ import { URGENT_TAG } from '../constants';
 import { getTagColor } from '../utils/tagMeta';
 import { useTagMeta } from '../hooks/useTagMeta';
 
-export default function TagsEdit({ tags = [], onSave, inBatch }) {
+export default function TagsEdit({ tags = [], onSave, inBatch, interactive = true }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState('');
   const [showAll, setShowAll] = useState(false);
@@ -42,11 +42,11 @@ export default function TagsEdit({ tags = [], onSave, inBatch }) {
   }, [addTag, text]);
 
   const handleClick = useCallback((e) => {
-    if (inBatch) { e.stopPropagation(); return; }
+    if (!interactive || inBatch) return;
     e.stopPropagation();
     setEditing(true);
     setShowAll(false);
-  }, [inBatch]);
+  }, [interactive, inBatch]);
 
   if (editing) {
     return (
@@ -67,7 +67,11 @@ export default function TagsEdit({ tags = [], onSave, inBatch }) {
   }
 
   return (
-    <span className="todo-tags clickable" onClick={handleClick} title="点击编辑标签">
+    <span
+      className={`todo-tags ${interactive ? 'clickable' : ''}`}
+      onClick={interactive ? handleClick : undefined}
+      title={interactive ? '点击编辑标签' : undefined}
+    >
       {tags.length > 0 ? (
         <>
           {visibleTags.map(tag => {
@@ -86,7 +90,7 @@ export default function TagsEdit({ tags = [], onSave, inBatch }) {
           {hiddenCount > 0 && (
             <span
               className="todo-tag tag-expander"
-              onClick={(e) => { e.stopPropagation(); setShowAll(true); }}
+              onClick={interactive ? (e) => { e.stopPropagation(); setShowAll(true); } : undefined}
             >
               +{hiddenCount}
             </span>

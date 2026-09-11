@@ -7,7 +7,7 @@ function isoToDateLocal(iso) {
   return iso.length >= 10 ? iso.slice(0, 10) : '';
 }
 
-export default function DateEdit({ value, onSave, overdue, inBatch }) {
+export default function DateEdit({ value, onSave, overdue, inBatch, interactive = true }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(value ?? '');
   const inputRef = useRef(null);
@@ -54,10 +54,11 @@ export default function DateEdit({ value, onSave, overdue, inBatch }) {
   }, [value, onSave]);
 
   const handleDateClick = useCallback((e) => {
-    if (inBatch) { e.stopPropagation(); return; }
+    if (!interactive || inBatch) { return; }
+    e.stopPropagation();
     setText(value ?? '');
     setEditing(true);
-  }, [inBatch, value]);
+  }, [interactive, inBatch, value]);
 
   if (editing) {
     return (
@@ -70,7 +71,11 @@ export default function DateEdit({ value, onSave, overdue, inBatch }) {
   }
 
   return (
-    <span className={`todo-date clickable ${overdue ? 'overdue-label' : ''}`} onClick={handleDateClick} title="点击编辑日期">
+    <span
+      className={`todo-date ${interactive ? 'clickable' : ''} ${overdue ? 'overdue-label' : ''}`}
+      onClick={interactive ? handleDateClick : undefined}
+      title={interactive ? '点击编辑日期' : undefined}
+    >
       {value ? formatDate(value) : '+ 日期'}
     </span>
   );

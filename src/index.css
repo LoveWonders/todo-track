@@ -1170,6 +1170,7 @@ body {
 .todo-content {
   flex: 1;
   min-width: 0;
+  cursor: pointer;
 }
 
 .todo-meta {
@@ -2957,6 +2958,22 @@ body.compact-mode .todo-tag {
   background: #95a5a6;
 }
 
+.todo-title-clip {
+  position: relative;
+  display: block;
+}
+
+.todo-title-clip.truncated::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 3.2em;
+  height: 1.4em;
+  background: linear-gradient(to right, transparent, var(--card));
+  pointer-events: none;
+}
+
 .todo-title-text {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -2964,15 +2981,28 @@ body.compact-mode .todo-tag {
   overflow: hidden;
   word-break: break-word;
   line-height: 1.4;
-  cursor: pointer;
-  padding: 2px 4px;
-  margin: -2px -4px;
-  border-radius: 4px;
-  transition: background 0.15s;
 }
 
-.todo-title-text:hover {
-  background: #e8f4fd;
+.todo-title-text.expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+.todo-title-toggle {
+  display: block;
+  margin: 2px 0 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.todo-title-toggle:active {
+  opacity: 0.7;
 }
 
 /* ---------- Full Modal (View / Edit) ---------- */
@@ -4345,6 +4375,7 @@ body.compact-mode .todo-tag {
 .add-row {
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 10px;
   min-height: 32px;
 }
@@ -4354,8 +4385,10 @@ body.compact-mode .todo-tag {
 }
 
 .add-row-label {
-  width: 60px;
+  width: auto;
+  min-width: 4em;
   flex-shrink: 0;
+  white-space: nowrap;
   font-size: var(--font-size-small);
   color: var(--text-secondary);
 }
@@ -4364,6 +4397,7 @@ body.compact-mode .todo-tag {
   flex: 1;
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 8px;
   min-width: 0;
   font-size: var(--font-size);
@@ -4601,6 +4635,10 @@ body.compact-mode .todo-tag {
 
 .todo-item.long-term .todo-title-text {
   color: var(--text-secondary);
+}
+
+.todo-item.long-term .todo-title-clip.truncated::after {
+  background: linear-gradient(to right, transparent, var(--card));
 }
 
 .todo-item.long-term .todo-date,
