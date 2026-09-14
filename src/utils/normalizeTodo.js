@@ -35,7 +35,7 @@ function normalizeProgress(p, index) {
     createdAt,
     status: p.status === 'completed' ? 'completed' : p.status === 'cancelled' ? 'cancelled' : 'active',
     completedAt: normalizeIso(p.completedAt),
-    kind: p.kind === 'cycle-done' ? 'cycle-done' : undefined,
+    kind: p.kind === 'cycle-done' ? 'cycle-done' : p.kind === 'cycle-skip' ? 'cycle-skip' : undefined,
     temporary: p.temporary === true,
     urgent: p.urgent === true,
     reminderTime: normalizeIso(p.reminderTime),

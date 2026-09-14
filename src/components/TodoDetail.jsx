@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatDateTime, isOverdue } from '../utils/dateParser';
-import { CYCLE_LABELS, WEEKDAY_LABELS, anchorLabel, hasCycleDoneThisCycle } from '../utils/repeat';
+import { describeCycle, hasCycleDoneThisCycle } from '../utils/repeat';
+import RepeatSelector from './RepeatSelector';
 import Countdown from './Countdown';
 import DateEdit from './DateEdit';
 import TagsEdit from './TagsEdit';
@@ -9,21 +10,6 @@ import { useTodoActions } from '../hooks/TodoContext';
 import { showNativeDatePicker } from '../utils/datePicker';
 import ModalShell from './ModalShell';
 import { highlightText } from '../utils/highlight';
-
-function describeCycle(rule, anchor) {
-  if (rule === 'daily') return '每天';
-  if (rule === 'weekly') {
-    return Number.isInteger(anchor) && anchor >= 1 && anchor <= 7
-      ? `每周${WEEKDAY_LABELS[anchor - 1]}`
-      : '每周';
-  }
-  if (rule === 'monthly') {
-    if (anchor === 'last') return '每月月末';
-    if (Number.isInteger(anchor) && anchor >= 1 && anchor <= 31) return `每月${anchor}号`;
-    return '每月';
-  }
-  return '';
-}
 
 export default function TodoDetail({ todo, onClose, highlight }) {
   const { updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, setPinStatus, setFabHidden } = useTodoActions();
@@ -206,74 +192,14 @@ export default function TodoDetail({ todo, onClose, highlight }) {
               {todo.dueDate && <Countdown dueDate={todo.dueDate} />}
             </span>
           </div>
-          <div className="add-row">
-            <span className="add-row-label">设为重复</span>
-            <span className="add-row-value">
-              <div className="repeat-selector">
-                {['daily', 'weekly', 'monthly'].map(rule => (
-                  <button
-                    key={rule}
-                    className={`repeat-opt ${todo.repeatRule === rule ? 'active' : ''}`}
-                    onClick={() => {
-                      if (todo.repeatRule === rule) {
-                        setRepeatRule(todo.id, null);
-                      } else {
-                        setRepeatRule(todo.id, rule, todo.repeatAnchor);
-                      }
-                      triggerAutoSave();
-                    }}
-                  >
-                    {CYCLE_LABELS[rule]}
-                  </button>
-                ))}
-              </div>
-              <span className="repeat-state-hint">{todo.repeatRule ? anchorLabel(todo.repeatRule, todo.repeatAnchor) : '不重复'}</span>
-            </span>
-          </div>
-          {todo.repeatRule === 'weekly' && (
-            <div className="repeat-anchor-row" style={{ marginLeft: 70 }}>
-              {WEEKDAY_LABELS.map((label, i) => (
-                <button
-                  key={i}
-                  className={`repeat-anchor-opt ${todo.repeatAnchor === i + 1 ? 'active' : ''}`}
-                  onClick={() => { setRepeatRule(todo.id, 'weekly', todo.repeatAnchor === i + 1 ? null : i + 1); triggerAutoSave(); }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-          {todo.repeatRule === 'monthly' && (
-            <div className="repeat-anchor-row" style={{ marginLeft: 70 }}>
-              <input
-                type="number"
-                min="1"
-                max="31"
-                className="repeat-anchor-input"
-                value={Number.isInteger(todo.repeatAnchor) ? todo.repeatAnchor : ''}
-                placeholder="号数"
-                onChange={e => {
-                  const raw = e.target.value;
-                  let anchor = null;
-                  if (raw !== '') {
-                    const v = Math.min(31, Math.max(1, Number(raw)));
-                    anchor = Number.isNaN(v) ? null : v;
-                  }
-                  setRepeatRule(todo.id, 'monthly', anchor);
-                  triggerAutoSave();
-                }}
-              />
-              <button
-                className={`repeat-anchor-opt ${todo.repeatAnchor === 'last' ? 'active' : ''}`}
-                onClick={() => {
-                  setRepeatRule(todo.id, 'monthly', todo.repeatAnchor === 'last' ? null : 'last');
-                  triggerAutoSave();
-                }}
-              >
-                月末
-              </button>
-            </div>
-          )}
+          <RepeatSelector
+            rule={todo.repeatRule}
+            anchor={todo.repeatAnchor}
+            onChange={(nextRule, nextAnchor) => {
+              setRepeatRule(todo.id, nextRule, nextAnchor);
+              triggerAutoSave();
+            }}
+          />
         </div>
 
         <div className="add-card">
@@ -323,7 +249,7 @@ export default function TodoDetail({ todo, onClose, highlight }) {
 
         <div className="add-card" style={{ marginBottom: 0 }}>
           <div className="add-card-title">进度记录</div>
-          <ProgressLog progress={todo.progress} todoId={todo.id} checklistMode={todo.checklistMode === true} repeatRule={todo.repeatRule} highlight={highlight} />
+          <ProgressLog progress={todo.progress} todoId={todo.id} checklistMode={todo.checklistMode === true} repeatRule={todo.repeatRule} dueDate={todo.dueDate} highlight={highlight} />
         </div>
       </ModalShell>
     </>

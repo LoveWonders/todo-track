@@ -8,6 +8,7 @@ import ProgressModal from './ProgressModal';
 import { getCycleStats } from '../utils/repeat';
 import { showNativeDatePicker } from '../utils/datePicker';
 import { highlightText } from '../utils/highlight';
+import { formatCompactDateTime } from '../utils/dateParser';
 
 const LONG_TEXT_WIDTH = 18;
 
@@ -36,20 +37,13 @@ function archiveDateRange(p) {
   return completed || recorded;
 }
 
-function formatDateTime(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
-}
-
 function isReminderDue(p) {
   if (!p.reminderTime) return false;
   const t = new Date(p.reminderTime).getTime();
   return !Number.isNaN(t) && t <= Date.now();
 }
 
-export default function ProgressLog({ progress, todoId, collapsed, checklistMode, repeatRule, highlight }) {
+export default function ProgressLog({ progress, todoId, collapsed, checklistMode, repeatRule, dueDate, highlight }) {
   const { toggleProgressStatus, completeTodo, deleteProgress, addProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, setFabHidden } = useTodoActions();
   const { batchMode } = useTodoView();
   
@@ -63,7 +57,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
 
   // 数据预处理（所有变量定义必须在条件 return 之前）
   const items = Array.isArray(progress) ? progress : [];
-  const cycleStats = getCycleStats({ repeatRule, progress: items });
+  const cycleStats = getCycleStats({ repeatRule, progress: items, dueDate });
   const progressCount = cycleStats.count;
   const inBatch = batchMode;
 
@@ -270,7 +264,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
               )}
               <span className="progress-date">{new Date(p.createdAt ?? p.time).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span>
               {p.urgent && <span className="progress-urgent-tag">急</span>}
-              {p.reminderTime && <span className="progress-reminder-tag">提醒 {formatDateTime(p.reminderTime)}</span>}
+              {p.reminderTime && <span className="progress-reminder-tag">提醒 {formatCompactDateTime(p.reminderTime)}</span>}
               {p.temporary && <span className="progress-temp-tag">临时</span>}
               <span className="progress-text">{highlightText(String(p.text), highlight)}</span>
             </div>

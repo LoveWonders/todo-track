@@ -1,17 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import ModalShell from './ModalShell';
 import { showNativeDatePicker } from '../utils/datePicker';
-
-function todayStr() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
+import { todayDateString } from '../utils/dateParser';
 
 export default function CompleteDateModal({ count, onConfirm, onCancel }) {
-  const [dateVal, setDateVal] = useState(todayStr());
+  const [dateVal, setDateVal] = useState(todayDateString());
   const [error, setError] = useState('');
   const dynamicInputRef = useRef(null);
 

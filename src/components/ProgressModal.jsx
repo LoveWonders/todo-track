@@ -1,11 +1,5 @@
 import ModalShell from './ModalShell';
-
-function formatDateTime(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
-}
+import { formatCompactDateTime } from '../utils/dateParser';
 
 export default function ProgressModal({ modal, onChange, onSave, onCancel, onSetReminder }) {
   const isAdd = modal.mode === 'add';
@@ -47,7 +41,7 @@ export default function ProgressModal({ modal, onChange, onSave, onCancel, onSet
       </div>
       <div className="progress-modal-row">
         <button className="progress-modal-reminder-btn" onClick={onSetReminder}>
-          {modal.reminderTime ? `提醒 ${formatDateTime(modal.reminderTime)}` : '设置提醒'}
+          {modal.reminderTime ? `提醒 ${formatCompactDateTime(modal.reminderTime)}` : '设置提醒'}
         </button>
         {modal.reminderTime && (
           <button className="progress-modal-reminder-clear" onClick={() => onChange({ reminderTime: null })}>清除</button>

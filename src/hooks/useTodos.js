@@ -3,7 +3,7 @@ import { loadData, saveData, migrateFromLocalStorage, readJSON } from '../utils/
 import { mergeAndArchive } from '../utils/autoArchive';
 import { normalizeImportedTodo } from '../utils/normalizeTodo';
 import { removeProgressCollapsed } from '../utils/progressViewState';
-import { getCycleKey, getWindowStart, isRepeatRule, isValidAnchor } from '../utils/repeat';
+import { getCycleKey, getWindowStart, getWindowEnd, isRepeatRule, isValidAnchor, advanceCycleDue, isCycleClosedForDue, repairRolledDue, formatLocalDueIso } from '../utils/repeat';
 import { scheduleReminder, cancelReminder, rescheduleAll, checkDueReminders, requestNotificationPermission, scheduleProgressReminder, cancelProgressReminder, cancelTodoProgressReminders, scheduleTodoReminder, cancelTodoReminder } from '../utils/notification';
 import { addLog } from '../utils/logger';
 import { parseReminderTime } from '../utils/reminder';
@@ -24,34 +24,95 @@ function toSafeIso(dateString) {
   return d.toISOString();
 }
 
+function closeCurrentCycle(t, kind, nowIso, allocateId) {
+  const currentDue = t.dueDate || (() => {
+    const end = getWindowEnd(t.repeatRule, t.repeatAnchor, new Date());
+    return end ? formatLocalDueIso(end, null) : null;
+  })();
+  const current = { ...t, dueDate: currentDue };
+  if (isCycleClosedForDue(current, currentDue)) return t;
+  const markDone = kind === 'cycle-done';
+  const closeStamp = currentDue || nowIso;
+  let progress = (t.progress || []).map(p =>
+    p.status === 'active'
+      ? { ...p, status: markDone ? 'completed' : 'cancelled', completedAt: closeStamp }
+      : p
+  );
+  progress = [...progress, {
+    id: allocateId(),
+    text: markDone ? '本期完成' : '本期作废',
+    createdAt: closeStamp,
+    status: markDone ? 'completed' : 'cancelled',
+    completedAt: closeStamp,
+    kind,
+  }];
+  const nextDue = advanceCycleDue({ ...current, progress });
+  if (t.checklistMode) {
+    const templates = [...new Set(
+      (t.progress || []).filter(p => p.status === 'completed' && p.kind !== 'cycle-done' && p.kind !== 'cycle-skip' && !p.temporary).map(p => p.text)
+    )];
+    if (templates.length > 0) {
+      const stamp = nextDue
+        ? getWindowStart(t.repeatRule, new Date(nextDue)).toISOString()
+        : nowIso;
+      progress = [...progress, ...templates.map(text => ({
+        id: allocateId(),
+        text,
+        createdAt: stamp,
+        status: 'active',
+      }))];
+    }
+  }
+  return {
+    ...t,
+    status: 'active',
+    completedAt: nowIso,
+    progress,
+    dueDate: nextDue || currentDue,
+  };
+}
+
 function applyRepeatTick(list, now, allocateId) {
   const nowIso = now.toISOString();
   let mutated = false;
   const next = list.map(t => {
     if (t.status !== 'active' || !isRepeatRule(t.repeatRule)) return t;
     const key = getCycleKey(t.repeatRule, now);
-    if (t.cycleKey === key) return t;
+    if (t.cycleKey === key) {
+      const repaired = repairRolledDue(t);
+      if (repaired !== t) mutated = true;
+      return repaired;
+    }
     mutated = true;
     if (!t.cycleKey) {
-      return { ...t, cycleKey: key };
+      return repairRolledDue({ ...t, cycleKey: key });
     }
-    let progress = (t.progress || []).map(p =>
-      p.status === 'active' ? { ...p, status: 'cancelled', completedAt: nowIso } : p
-    );
+    const newWs = getWindowStart(t.repeatRule, now).getTime();
+    let progress = (t.progress || []).map(p => {
+      if (p.status !== 'active') return p;
+      const created = new Date(p.createdAt ?? p.time).getTime();
+      if (created >= newWs) return p;
+      return { ...p, status: 'cancelled', completedAt: nowIso };
+    });
     if (t.checklistMode) {
-      const templates = [...new Set(
-        progress.filter(p => p.status === 'completed' && p.kind !== 'cycle-done' && !p.temporary).map(p => p.text)
-      )];
-      if (templates.length > 0) {
-        progress = [...progress, ...templates.map(text => ({
-          id: allocateId(),
-          text,
-          createdAt: nowIso,
-          status: 'active',
-        }))];
+      const hasNewActive = progress.some(p =>
+        p.status === 'active' && new Date(p.createdAt ?? p.time).getTime() >= newWs
+      );
+      if (!hasNewActive) {
+        const templates = [...new Set(
+          progress.filter(p => p.status === 'completed' && p.kind !== 'cycle-done' && p.kind !== 'cycle-skip' && !p.temporary).map(p => p.text)
+        )];
+        if (templates.length > 0) {
+          progress = [...progress, ...templates.map(text => ({
+            id: allocateId(),
+            text,
+            createdAt: nowIso,
+            status: 'active',
+          }))];
+        }
       }
     }
-    return { ...t, cycleKey: key, progress };
+    return repairRolledDue({ ...t, cycleKey: key, progress });
   });
   return mutated ? next : list;
 }
@@ -252,9 +313,15 @@ export function useTodos() {
     if (!entries || entries.length === 0) return;
     const nowIso = new Date().toISOString();
     const emap = new Map(entries.map(e => [e.id, e.newStatus]));
+    const skipped = [];
     setTodos(prev => prev.map(t => {
       const newStatus = emap.get(t.id);
       if (newStatus === undefined) return t;
+      if (t.status === 'active' && isRepeatRule(t.repeatRule) && (newStatus === 'completed' || newStatus === 'cancelled')) {
+        const next = closeCurrentCycle(t, newStatus === 'completed' ? 'cycle-done' : 'cycle-skip', nowIso, () => progressIdRef.current++);
+        if (next !== t) skipped.push({ id: t.id, title: t.title, kind: newStatus === 'completed' ? 'cycle-done' : 'cycle-skip' });
+        return next;
+      }
       const willBeArchived = t.status === 'active' && newStatus !== 'active';
       const willBeRestored = t.status !== 'active' && newStatus !== t.status;
       return {
@@ -266,13 +333,16 @@ export function useTodos() {
       };
     }));
     for (const { id, newStatus } of entries) {
-      const target = todosRef.current.find(t => t.id === id);
-      if (target?.repeatRule) {
-        if (target.status === 'active' && newStatus !== 'active') {
-          cancelReminder(id);
-        } else if (target.status !== 'active' && newStatus !== target.status) {
-          scheduleReminder(target);
-        }
+      const target = todosRef.current.find(x => x.id === id);
+      if (!target?.repeatRule) continue;
+      if (target.status === 'active' && isRepeatRule(target.repeatRule) && (newStatus === 'completed' || newStatus === 'cancelled')) {
+        if (target.reminderTime) scheduleReminder(target);
+        continue;
+      }
+      if (target.status === 'active' && newStatus !== 'active') {
+        cancelReminder(id);
+      } else if (target.status !== 'active' && newStatus !== target.status) {
+        scheduleReminder(target);
       }
     }
     const affected = entries
@@ -281,8 +351,11 @@ export function useTodos() {
         return t ? { id, title: t.title, oldStatus: t.status, newStatus } : null;
       })
       .filter(Boolean);
-    const archived = affected.filter(e => e.oldStatus === 'active' && e.newStatus !== 'active');
+    const archived = affected.filter(e => e.oldStatus === 'active' && e.newStatus !== 'active' && !skipped.some(s => s.id === e.id));
     const restored = affected.filter(e => e.oldStatus !== 'active' && e.newStatus !== e.oldStatus);
+    if (skipped.length > 0) {
+      addLog('data', '跳过本期', { count: skipped.length, titles: skipped.map(e => e.title).slice(0, 20), kinds: skipped.map(e => e.kind) });
+    }
     if (archived.length > 0) {
       addLog('data', '作废待办', { count: archived.length, titles: archived.map(e => e.title).slice(0, 20), target: archived[0].newStatus });
     }
@@ -322,27 +395,9 @@ export function useTodos() {
   const completeTodo = useCallback((id) => {
     setTodos(prev => prev.map(t => {
       if (t.id !== id) return t;
-      const now = new Date();
-      const nowIso = now.toISOString();
+      const nowIso = new Date().toISOString();
       if (isRepeatRule(t.repeatRule)) {
-        const ws = getWindowStart(t.repeatRule, now);
-        const hasCycleDone = (t.progress || []).some(p =>
-          p.kind === 'cycle-done' && new Date(p.completedAt ?? p.createdAt).getTime() >= ws.getTime()
-        );
-        let progress = (t.progress || []).map(p =>
-          p.status === 'active' ? { ...p, status: 'completed', completedAt: nowIso } : p
-        );
-        if (!hasCycleDone) {
-          progress = [...progress, {
-            id: progressIdRef.current++,
-            text: '✓ 本期完成',
-            createdAt: nowIso,
-            status: 'completed',
-            completedAt: nowIso,
-            kind: 'cycle-done',
-          }];
-        }
-        return { ...t, status: 'active', completedAt: nowIso, progress };
+        return closeCurrentCycle(t, 'cycle-done', nowIso, () => progressIdRef.current++);
       }
       const willBeArchived = t.status === 'active';
       return {

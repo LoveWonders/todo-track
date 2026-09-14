@@ -1,3 +1,7 @@
+export function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
 function endOfMonth(year, month) {
   return new Date(year, month + 1, 0);
 }
@@ -7,11 +11,11 @@ export function toISODateTime(date) {
   const d = new Date(date);
   if (isNaN(d.getTime())) return null;
   const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mi = String(d.getMinutes()).padStart(2, '0');
-  const ss = String(d.getSeconds()).padStart(2, '0');
+  const mm = pad2(d.getMonth() + 1);
+  const dd = pad2(d.getDate());
+  const hh = pad2(d.getHours());
+  const mi = pad2(d.getMinutes());
+  const ss = pad2(d.getSeconds());
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}`;
 }
 

@@ -7,6 +7,7 @@ import ConfirmDialog from './ConfirmDialog';
 import pkg from '../../package.json';
 import { clearAllData } from '../utils/storage';
 import { checkDataIntegrity } from '../utils/dataIntegrity';
+import { copyToClipboard } from '../utils/clipboard';
 
 const DEFAULT_TAG_NAMES = ['长期', '个人', '总结'];
 const APP_VERSION = pkg.version;
@@ -32,18 +33,7 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
   useEffect(() => () => clearTimeout(copyTimerRef.current), []);
 
   const copyVersion = async () => {
-    const text = `v${APP_VERSION}`;
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.cssText = 'position:fixed;top:-9999px;opacity:0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-    }
+    await copyToClipboard(`v${APP_VERSION}`);
     setCopied(true);
     clearTimeout(copyTimerRef.current);
     copyTimerRef.current = setTimeout(() => setCopied(false), 1500);

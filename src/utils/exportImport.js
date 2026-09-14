@@ -1,10 +1,9 @@
 import { addLog } from './logger';
 import { normalizeImportedTodo } from './normalizeTodo';
+import { formatFileStamp } from './dateParser';
 
 function getExportFilename() {
-  const now = new Date();
-  const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-  return `todotrack_${ts}.json`;
+  return `todotrack_${formatFileStamp()}.json`;
 }
 
 export function exportTodos(todos) {

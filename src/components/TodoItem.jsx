@@ -352,7 +352,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
       </div>
 
       {!isArchive && todo.status === 'active' && canCollapse && !collapsed && (
-        <ProgressLog progress={todo.progress} todoId={todo.id} collapsed={collapsed} checklistMode={checklistMode} repeatRule={todo.repeatRule} highlight={highlight} />
+        <ProgressLog progress={todo.progress} todoId={todo.id} collapsed={collapsed} checklistMode={checklistMode} repeatRule={todo.repeatRule} dueDate={todo.dueDate} highlight={highlight} />
       )}
 
       {isArchive && todo.progress && todo.progress.length > 0 && (

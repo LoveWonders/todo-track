@@ -1,4 +1,4 @@
-import { parseLocalDate } from './datePatterns';
+import { parseLocalDate, pad2 } from './datePatterns';
 import * as chrono from 'chrono-node';
 
 const CN_DATE_ALIASES = {
@@ -27,7 +27,7 @@ export function parseDateRangeText(text) {
     const month = typeof resolved.month === 'function' ? resolved.month() : resolved.month;
     const day = typeof resolved.day === 'function' ? resolved.day() : resolved.day;
     const year = now.getFullYear();
-    return { start: null, end: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T23:59:59` };
+    return { start: null, end: `${year}-${pad2(month)}-${pad2(day)}T23:59:59` };
   }
 
   // 处理"今年"前缀：chrono 无法识别"今年"，会把已过去的月份推到明年
@@ -97,9 +97,7 @@ export function formatDate(date) {
   const datePart = d.getFullYear() !== now.getFullYear() ? `${d.getFullYear()}.${mm}.${dd}` : `${mm}.${dd}`;
   const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
   if (hasTime) {
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mi = String(d.getMinutes()).padStart(2, '0');
-    return `${datePart} ${hh}:${mi}`;
+    return `${datePart} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
   }
   return datePart;
 }
@@ -109,11 +107,28 @@ export function formatDateTime(date) {
   const d = new Date(date);
   if (isNaN(d.getTime())) return '';
   const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mi = String(d.getMinutes()).padStart(2, '0');
+  const mm = pad2(d.getMonth() + 1);
+  const dd = pad2(d.getDate());
+  const hh = pad2(d.getHours());
+  const mi = pad2(d.getMinutes());
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+}
+
+export function formatCompactDateTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+export function formatFileStamp(date = new Date()) {
+  const d = new Date(date);
+  return `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}_${pad2(d.getHours())}${pad2(d.getMinutes())}`;
+}
+
+export function todayDateString(date = new Date()) {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
 export function formatDateOnly(date) {
@@ -137,12 +152,10 @@ function toDateString(date) {
   if (!date) return '';
   const d = new Date(date);
   const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = pad2(d.getMonth() + 1);
+  const dd = pad2(d.getDate());
   if (d.getHours() !== 0 || d.getMinutes() !== 0 || d.getSeconds() !== 0) {
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mi = String(d.getMinutes()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}T${hh}:${mi}:00`;
+    return `${yyyy}-${mm}-${dd}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:00`;
   }
   return `${yyyy}-${mm}-${dd}T23:59:59`;
 }

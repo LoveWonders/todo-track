@@ -1,4 +1,5 @@
-import { anchorDateInWindow, getWindowStart, isRepeatRule } from './repeat';
+import { pad2 } from './datePatterns';
+import { anchorDateInWindow, getWindowStart, isRepeatRule, nextCycleWindowStart } from './repeat';
 
 export function parseReminderTime(timeStr) {
   if (typeof timeStr !== 'string') return null;
@@ -8,10 +9,6 @@ export function parseReminderTime(timeStr) {
   const min = Number(m[2]);
   if (h > 23 || min > 59) return null;
   return { h, min };
-}
-
-function pad2(n) {
-  return String(n).padStart(2, '0');
 }
 
 export const DEFAULT_REMINDER_OFFSET = 60;
@@ -34,14 +31,6 @@ export function initReminderTime(deadline, globalOffset) {
   return `${pad2(Math.floor(total / 60))}:${pad2(total % 60)}`;
 }
 
-function nextWindowStart(rule, date) {
-  const d = new Date(date);
-  if (rule === 'daily') d.setDate(d.getDate() + 1);
-  else if (rule === 'weekly') d.setDate(d.getDate() + 7);
-  else if (rule === 'monthly') d.setMonth(d.getMonth() + 1);
-  return d;
-}
-
 export function nextReminderAt(rule, timeStr, anchor, from = new Date()) {
   const t = parseReminderTime(timeStr);
   if (!t || !isRepeatRule(rule)) return null;
@@ -50,7 +39,7 @@ export function nextReminderAt(rule, timeStr, anchor, from = new Date()) {
     const c = anchorDateInWindow(rule, anchor, start);
     c.setHours(t.h, t.min, 0, 0);
     if (c.getTime() > from.getTime()) return c;
-    start = nextWindowStart(rule, start);
+    start = nextCycleWindowStart(rule, start);
   }
   return null;
 }

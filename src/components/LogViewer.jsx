@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import ModalShell from './ModalShell';
 import { getLogs, clearLogs, deleteLogs, logTypeLabel, getSelectedLogsText } from '../utils/logger';
 import { copyToClipboard } from '../utils/clipboard';
+import { formatFileStamp } from '../utils/dateParser';
 
 export default function LogViewer({ open, onClose, onToast }) {
   const [logs, setLogs] = useState([]);
@@ -60,9 +61,7 @@ export default function LogViewer({ open, onClose, onToast }) {
 
     const text = getSelectedLogsText(logs, selectedIds);
 
-    const now = new Date();
-    const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-    const filename = `todotrack_debug_log_${ts}.txt`;
+    const filename = `todotrack_debug_log_${formatFileStamp()}.txt`;
 
     try {
       const { DownloadPlugin } = await import('../utils/downloadPlugin');

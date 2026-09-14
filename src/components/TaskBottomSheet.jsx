@@ -6,11 +6,11 @@ import { useTagLogic } from '../hooks/useTagLogic';
 import { useSettings, getDefaultReminderOffset } from '../hooks/useSettings';
 import { isSafeTagName, mergeSubmitTags } from '../utils/tagMeta';
 import { readJSON } from '../utils/storage';
-import { CYCLE_LABELS, WEEKDAY_LABELS, anchorLabel } from '../utils/repeat';
 import { parseReminderTime, extractDeadlineTime, initReminderTime } from '../utils/reminder';
 import { URGENT_TAG } from '../constants';
 import ModalShell from './ModalShell';
 import ToggleSwitch from './ToggleSwitch';
+import RepeatSelector from './RepeatSelector';
 
 const DEFAULT_PRESET_TAGS = ['工作', '长期', '个人'];
 const PRESET_TAGS_STORAGE_KEY = 'todo_preset_tags';
@@ -281,64 +281,15 @@ export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {
             <span className="detail-toggle-hint">{isChecklist ? '拆解勾选' : '流水账'}</span>
           </span>
         </div>
-        <div className="add-row">
-          <span className="add-row-label">设为重复</span>
-          <span className="add-row-value">
-            <div className="repeat-selector">
-              {['daily', 'weekly', 'monthly'].map(rule => (
-                <button
-                  key={rule}
-                  className={`repeat-opt ${repeatRule === rule ? 'active' : ''}`}
-                  onClick={() => {
-                    setRepeatRule(prev => (prev === rule ? null : rule));
-                    setRepeatAnchor(null);
-                  }}
-                >
-                  {CYCLE_LABELS[rule]}
-                </button>
-              ))}
-            </div>
-            <span className="repeat-state-hint">{repeatRule ? anchorLabel(repeatRule, repeatAnchor) : '不重复'}</span>
-          </span>
-        </div>
-        {repeatRule === 'weekly' && (
-          <div className="repeat-anchor-row" style={{ marginLeft: 70 }}>
-            {WEEKDAY_LABELS.map((label, i) => (
-              <button
-                key={i}
-                className={`repeat-anchor-opt ${repeatAnchor === i + 1 ? 'active' : ''}`}
-                onClick={() => setRepeatAnchor(repeatAnchor === i + 1 ? null : i + 1)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-        {repeatRule === 'monthly' && (
-          <div className="repeat-anchor-row" style={{ marginLeft: 70 }}>
-            <input
-              type="number"
-              min="1"
-              max="31"
-              className="repeat-anchor-input"
-              value={Number.isInteger(repeatAnchor) ? repeatAnchor : ''}
-              placeholder="号数"
-              onChange={e => {
-                const raw = e.target.value;
-                if (raw === '') { setRepeatAnchor(null); return; }
-                const v = Math.min(31, Math.max(1, Number(raw)));
-                setRepeatAnchor(Number.isNaN(v) ? null : v);
-              }}
-            />
-            <button
-              className={`repeat-anchor-opt ${repeatAnchor === 'last' ? 'active' : ''}`}
-              onClick={() => setRepeatAnchor(repeatAnchor === 'last' ? null : 'last')}
-            >
-              月末
-            </button>
-            <span className="detail-toggle-hint">不选则每月最后一天到期</span>
-          </div>
-        )}
+        <RepeatSelector
+          rule={repeatRule}
+          anchor={repeatAnchor}
+          showMonthlyHint
+          onChange={(nextRule, nextAnchor) => {
+            setRepeatRule(nextRule);
+            setRepeatAnchor(nextAnchor);
+          }}
+        />
         {reminderVisible && (
           <div className="add-row">
             <span className="add-row-label">周期提醒</span>
