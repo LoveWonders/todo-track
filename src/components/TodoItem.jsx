@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import { createPortal } from 'react-dom';
-import { isOverdue } from '../utils/dateParser';
+import { isOverdue, formatCompactDateTime } from '../utils/dateParser';
 import { getTaskTier } from '../utils/taskTier';
 import { loadProgressCollapsed, saveProgressCollapsed } from '../utils/progressViewState';
 import { URGENT_TAG } from '../constants';
@@ -19,13 +19,6 @@ function getStatusClass(todo) {
   if (todo.status === 'cancelled') return 'cancelled';
   if (isOverdue(todo.dueDate)) return 'overdue';
   return '';
-}
-
-function formatReminderAt(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 function isReminderAtDue(todo) {
@@ -261,7 +254,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
               <span className="progress-urgent-badge" title="含紧急/待提醒进度">急</span>
             )}
             {todo.reminderAt && (
-              <span className={`todo-reminder-tag ${reminderAtDue ? 'due' : ''}`}>提醒 {formatReminderAt(todo.reminderAt)}</span>
+              <span className={`todo-reminder-tag ${reminderAtDue ? 'due' : ''}`}>提醒 {formatCompactDateTime(todo.reminderAt)}</span>
             )}
             {checklistMode && progressCount > 0 && (
               <span

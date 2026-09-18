@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import { setAutoTrim } from '../utils/logger';
-import { readJSON } from '../utils/storage';
+import { readJSON, save } from '../utils/storage';
 import { DEFAULT_REMINDER_OFFSET } from '../utils/reminder';
 
 const SETTINGS_KEY = 'todo_app_settings';
@@ -29,9 +29,7 @@ function loadSettings() {
 }
 
 function saveSettings(settings) {
-  try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  } catch { /* ignore */ }
+  save(SETTINGS_KEY, settings);
 }
 
 const SettingsContext = createContext(null);

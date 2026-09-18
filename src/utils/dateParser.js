@@ -141,6 +141,12 @@ export function formatDateOnly(date) {
   return d.getFullYear() !== now.getFullYear() ? `${d.getFullYear()}.${mm}.${dd}` : `${mm}.${dd}`;
 }
 
+export function toSafeIso(dateString) {
+  const d = new Date(String(dateString) + 'T12:00:00');
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
 export function isOverdue(date) {
   if (!date) return false;
   const d = new Date(date);

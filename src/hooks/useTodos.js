@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { loadData, saveData, migrateFromLocalStorage, readJSON } from '../utils/storage';
+import { loadData, saveData, migrateFromLocalStorage, readJSON, load, write } from '../utils/storage';
 import { mergeAndArchive } from '../utils/autoArchive';
 import { normalizeImportedTodo } from '../utils/normalizeTodo';
 import { removeProgressCollapsed } from '../utils/progressViewState';
-import { getCycleKey, getWindowStart, getWindowEnd, isRepeatRule, isValidAnchor, advanceCycleDue, isCycleClosedForDue, repairRolledDue, formatLocalDueIso } from '../utils/repeat';
+import { getCycleKey, isRepeatRule, isValidAnchor } from '../utils/repeat';
+import { closeCurrentCycle, applyRepeatTick } from '../utils/cycleTodos';
+import { toSafeIso } from '../utils/dateParser';
 import { scheduleReminder, cancelReminder, rescheduleAll, checkDueReminders, requestNotificationPermission, scheduleProgressReminder, cancelProgressReminder, cancelTodoProgressReminders, scheduleTodoReminder, cancelTodoReminder } from '../utils/notification';
 import { addLog } from '../utils/logger';
 import { parseReminderTime } from '../utils/reminder';
@@ -18,116 +20,13 @@ function autoArchiveEnabled() {
   return settings && typeof settings === 'object' ? settings.autoArchive !== false : true;
 }
 
-function toSafeIso(dateString) {
-  const d = new Date(String(dateString) + 'T12:00:00');
-  if (isNaN(d.getTime())) return null;
-  return d.toISOString();
-}
-
-function closeCurrentCycle(t, kind, nowIso, allocateId) {
-  const currentDue = t.dueDate || (() => {
-    const end = getWindowEnd(t.repeatRule, t.repeatAnchor, new Date());
-    return end ? formatLocalDueIso(end, null) : null;
-  })();
-  const current = { ...t, dueDate: currentDue };
-  if (isCycleClosedForDue(current, currentDue)) return t;
-  const markDone = kind === 'cycle-done';
-  const closeStamp = currentDue || nowIso;
-  let progress = (t.progress || []).map(p =>
-    p.status === 'active'
-      ? { ...p, status: markDone ? 'completed' : 'cancelled', completedAt: closeStamp }
-      : p
-  );
-  progress = [...progress, {
-    id: allocateId(),
-    text: markDone ? '本期完成' : '本期作废',
-    createdAt: closeStamp,
-    status: markDone ? 'completed' : 'cancelled',
-    completedAt: closeStamp,
-    kind,
-  }];
-  const nextDue = advanceCycleDue({ ...current, progress });
-  if (t.checklistMode) {
-    const templates = [...new Set(
-      (t.progress || []).filter(p => p.status === 'completed' && p.kind !== 'cycle-done' && p.kind !== 'cycle-skip' && !p.temporary).map(p => p.text)
-    )];
-    if (templates.length > 0) {
-      const stamp = nextDue
-        ? getWindowStart(t.repeatRule, new Date(nextDue)).toISOString()
-        : nowIso;
-      progress = [...progress, ...templates.map(text => ({
-        id: allocateId(),
-        text,
-        createdAt: stamp,
-        status: 'active',
-      }))];
-    }
-  }
-  return {
-    ...t,
-    status: 'active',
-    completedAt: nowIso,
-    progress,
-    dueDate: nextDue || currentDue,
-  };
-}
-
-function applyRepeatTick(list, now, allocateId) {
-  const nowIso = now.toISOString();
-  let mutated = false;
-  const next = list.map(t => {
-    if (t.status !== 'active' || !isRepeatRule(t.repeatRule)) return t;
-    const key = getCycleKey(t.repeatRule, now);
-    if (t.cycleKey === key) {
-      const repaired = repairRolledDue(t);
-      if (repaired !== t) mutated = true;
-      return repaired;
-    }
-    mutated = true;
-    if (!t.cycleKey) {
-      return repairRolledDue({ ...t, cycleKey: key });
-    }
-    const newWs = getWindowStart(t.repeatRule, now).getTime();
-    let progress = (t.progress || []).map(p => {
-      if (p.status !== 'active') return p;
-      const created = new Date(p.createdAt ?? p.time).getTime();
-      if (created >= newWs) return p;
-      return { ...p, status: 'cancelled', completedAt: nowIso };
-    });
-    if (t.checklistMode) {
-      const hasNewActive = progress.some(p =>
-        p.status === 'active' && new Date(p.createdAt ?? p.time).getTime() >= newWs
-      );
-      if (!hasNewActive) {
-        const templates = [...new Set(
-          progress.filter(p => p.status === 'completed' && p.kind !== 'cycle-done' && p.kind !== 'cycle-skip' && !p.temporary).map(p => p.text)
-        )];
-        if (templates.length > 0) {
-          progress = [...progress, ...templates.map(text => ({
-            id: allocateId(),
-            text,
-            createdAt: nowIso,
-            status: 'active',
-          }))];
-        }
-      }
-    }
-    return repairRolledDue({ ...t, cycleKey: key, progress });
-  });
-  return mutated ? next : list;
-}
-
 export function useTodos() {
   const [todos, setTodos] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [sortMode, setSortModeState] = useState(() => {
-    try {
-      const stored = localStorage.getItem(SORT_MODE_KEY);
-      if (stored) return normalizeSortMode(stored);
-      return localStorage.getItem(MANUAL_SORT_KEY) === '1' ? SORT_MANUAL : SORT_CREATED;
-    } catch {
-      return SORT_CREATED;
-    }
+    const stored = load(SORT_MODE_KEY);
+    if (stored) return normalizeSortMode(stored);
+    return load(MANUAL_SORT_KEY) === '1' ? SORT_MANUAL : SORT_CREATED;
   });
   const saveTimerRef = useRef(null);
   const todoIdRef = useRef(Date.now());
@@ -207,10 +106,8 @@ export function useTodos() {
   }, [todos, loaded]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(SORT_MODE_KEY, sortMode);
-      localStorage.setItem(MANUAL_SORT_KEY, sortMode === SORT_MANUAL ? '1' : '0');
-    } catch { /* ignore */ }
+    write(SORT_MODE_KEY, sortMode);
+    write(MANUAL_SORT_KEY, sortMode === SORT_MANUAL ? '1' : '0');
   }, [sortMode]);
 
   const addTodo = useCallback(({ title, startDate, dueDate, tags, checklistMode, repeatRule, repeatAnchor, reminderTime }) => {

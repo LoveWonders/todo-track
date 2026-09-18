@@ -1,4 +1,4 @@
-import { readJSON } from './storage';
+import { readJSON, save } from './storage';
 
 const STORAGE_KEY = 'todo_progress_collapsed';
 const DEFAULT_COLLAPSED = true;
@@ -11,13 +11,13 @@ export function loadProgressCollapsed(id) {
 export function saveProgressCollapsed(id, collapsed) {
   const map = readJSON(STORAGE_KEY, {});
   map[id] = !!collapsed;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  save(STORAGE_KEY, map);
 }
 
 export function removeProgressCollapsed(id) {
   const map = readJSON(STORAGE_KEY, {});
   if (id in map) {
     delete map[id];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    save(STORAGE_KEY, map);
   }
 }

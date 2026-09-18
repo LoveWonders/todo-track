@@ -8,6 +8,8 @@
 - 新建页与详情页共用 RepeatSelector
 - 日期补零、文件时间戳、进度提醒展示收口到 dateParser
 - 设置页版本号复制走 clipboard 封装；周期提醒窗推进复用 nextCycleWindowStart
+- 周期滚期纯函数抽到 cycleTodos；localStorage 读写走 storage 封装
+- 恢复出厂补清排序/提醒 ack 等残留键；导入上限 5MB；去掉 FileProvider 全 cache 暴露
 
 ## v1.25.0 - 2026-09-11
 ### 新增

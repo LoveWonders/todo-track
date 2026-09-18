@@ -5,7 +5,7 @@ import { useSmartInput } from '../hooks/useSmartInput';
 import { useTagLogic } from '../hooks/useTagLogic';
 import { useSettings, getDefaultReminderOffset } from '../hooks/useSettings';
 import { isSafeTagName, mergeSubmitTags } from '../utils/tagMeta';
-import { readJSON } from '../utils/storage';
+import { readJSON, save } from '../utils/storage';
 import { parseReminderTime, extractDeadlineTime, initReminderTime } from '../utils/reminder';
 import { URGENT_TAG } from '../constants';
 import ModalShell from './ModalShell';
@@ -20,7 +20,7 @@ function loadPresetTags() {
 }
 
 function savePresetTags(tags) {
-  localStorage.setItem(PRESET_TAGS_STORAGE_KEY, JSON.stringify(tags));
+  save(PRESET_TAGS_STORAGE_KEY, tags);
 }
 
 export default function TaskBottomSheet({ isOpen, onClose, onAdd }) {

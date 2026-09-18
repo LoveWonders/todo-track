@@ -1,4 +1,4 @@
-import { readJSON } from './storage';
+import { readJSON, save } from './storage';
 import { URGENT_TAG } from '../constants';
 
 export function mergeSubmitTags(tags, parsedTags, isUrgent) {
@@ -46,9 +46,7 @@ export function loadTagMeta() {
 }
 
 export function saveTagMeta(meta) {
-  try {
-    localStorage.setItem(TAG_META_KEY, JSON.stringify(meta));
-  } catch { /* ignore */ }
+  save(TAG_META_KEY, meta);
 }
 
 export function normalizeTag(tag) {

@@ -1,4 +1,4 @@
-import { readJSON } from './storage';
+import { readJSON, save } from './storage';
 
 const MAX_LOGS = 200;
 const STORAGE_KEY = 'todotrack_debug_logs';
@@ -25,18 +25,14 @@ export function flushLogs() {
     clearTimeout(persistTimer);
     persistTimer = null;
   }
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-  } catch { /* ignore */ }
+  save(STORAGE_KEY, logs);
 }
 
 function persist() {
   if (persistTimer) return;
   persistTimer = setTimeout(() => {
     persistTimer = null;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-    } catch { /* ignore */ }
+    save(STORAGE_KEY, logs);
   }, 200);
 }
 

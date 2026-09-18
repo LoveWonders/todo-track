@@ -2,6 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { anchorDateInWindow, getWindowStart, getCycleKey, isRepeatRule, anchorLabel } from './repeat';
 import { nextReminderAt, parseReminderTime } from './reminder';
+import { readJSON, save } from './storage';
 
 const REMINDER_ACK_KEY = 'todo_reminder_ack';
 const PROGRESS_NOTIF_MAP = 'todo_progress_notif_ids';
@@ -52,19 +53,12 @@ export async function cancelReminder(todoId) {
 }
 
 function loadProgressNotifMap() {
-  try {
-    const raw = localStorage.getItem(PROGRESS_NOTIF_MAP);
-    const parsed = raw ? JSON.parse(raw) : {};
-    return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch {
-    return {};
-  }
+  const parsed = readJSON(PROGRESS_NOTIF_MAP, {});
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
 }
 
 function saveProgressNotifMap(map) {
-  try {
-    localStorage.setItem(PROGRESS_NOTIF_MAP, JSON.stringify(map));
-  } catch { /* ignore */ }
+  save(PROGRESS_NOTIF_MAP, map);
 }
 
 function progressNotifId(progressId) {
@@ -182,19 +176,12 @@ export async function rescheduleAll(todos) {
 }
 
 function loadAck() {
-  try {
-    const raw = localStorage.getItem(REMINDER_ACK_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
-    return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch {
-    return {};
-  }
+  const parsed = readJSON(REMINDER_ACK_KEY, {});
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
 }
 
 function saveAck(ack) {
-  try {
-    localStorage.setItem(REMINDER_ACK_KEY, JSON.stringify(ack));
-  } catch { /* ignore */ }
+  save(REMINDER_ACK_KEY, ack);
 }
 
 export function checkDueReminders(todos) {

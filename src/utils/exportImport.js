@@ -73,8 +73,14 @@ export async function shareExportedFile(fileUri) {
   });
 }
 
+const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
+
 export function parseImportFile(file) {
   return new Promise((resolve, reject) => {
+    if (file.size > MAX_IMPORT_BYTES) {
+      reject(new Error('文件过大：导入上限 5MB'));
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (e) => {
       let raw = e.target.result;

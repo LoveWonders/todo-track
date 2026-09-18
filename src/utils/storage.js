@@ -207,11 +207,15 @@ export async function clearAllData() {
   }
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem('todo_manual_sort');
+  localStorage.removeItem('todo_sort_mode');
   localStorage.removeItem('todo_tag_meta');
   localStorage.removeItem('todo_app_settings');
   localStorage.removeItem('todo_preset_tags');
   localStorage.removeItem('todo_filter_slots');
   localStorage.removeItem('todo_archive_data');
+  localStorage.removeItem('todo_progress_collapsed');
+  localStorage.removeItem('todo_reminder_ack');
+  localStorage.removeItem('todo_progress_notif_ids');
   clearLogs();
   addLog('info', '[清除] localStorage 已清空');
 }
@@ -239,5 +243,11 @@ export function readJSON(key, fallback) {
 export function save(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
+  } catch { /* ignore */ }
+}
+
+export function write(key, value) {
+  try {
+    localStorage.setItem(key, value);
   } catch { /* ignore */ }
 }
