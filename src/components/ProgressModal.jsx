@@ -1,8 +1,10 @@
 import ModalShell from './ModalShell';
 import { formatCompactDateTime } from '../utils/dateParser';
+import { isMarkerKind } from '../utils/repeat';
 
-export default function ProgressModal({ modal, onChange, onSave, onCancel, onSetReminder }) {
+export default function ProgressModal({ modal, onChange, onSave, onCancel, onSetReminder, onSetDue, onPromote }) {
   const isAdd = modal.mode === 'add';
+  const canPromote = !isAdd && modal.progress?.status === 'active' && !isMarkerKind(modal.progress?.kind);
   return (
     <ModalShell
       title={isAdd ? '添加进度' : '编辑进度'}
@@ -47,6 +49,19 @@ export default function ProgressModal({ modal, onChange, onSave, onCancel, onSet
           <button className="progress-modal-reminder-clear" onClick={() => onChange({ reminderTime: null })}>清除</button>
         )}
       </div>
+      <div className="progress-modal-row">
+        <button className="progress-modal-reminder-btn" onClick={onSetDue}>
+          {modal.dueDate ? `截止 ${formatCompactDateTime(modal.dueDate)}` : '设置截止'}
+        </button>
+        {modal.dueDate && (
+          <button className="progress-modal-reminder-clear" onClick={() => onChange({ dueDate: null })}>清除</button>
+        )}
+      </div>
+      {canPromote && (
+        <div className="progress-modal-row">
+          <button className="progress-modal-promote-btn" onClick={onPromote}>升为主待办</button>
+        </div>
+      )}
     </ModalShell>
   );
 }

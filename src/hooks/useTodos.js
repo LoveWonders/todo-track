@@ -6,6 +6,7 @@ import { removeProgressCollapsed } from '../utils/progressViewState';
 import { getCycleKey, isRepeatRule, isValidAnchor } from '../utils/repeat';
 import { closeCurrentCycle, applyRepeatTick } from '../utils/cycleTodos';
 import { toSafeIso } from '../utils/dateParser';
+import { promoteProgressItem } from '../utils/promoteProgress';
 import { scheduleReminder, cancelReminder, rescheduleAll, checkDueReminders, requestNotificationPermission, scheduleProgressReminder, cancelProgressReminder, cancelTodoProgressReminders, scheduleTodoReminder, cancelTodoReminder } from '../utils/notification';
 import { addLog } from '../utils/logger';
 import { parseReminderTime } from '../utils/reminder';
@@ -397,6 +398,7 @@ export function useTodos() {
           temporary: temporary === true,
           urgent: opts.urgent === true,
           reminderTime: opts.reminderTime || null,
+          dueDate: opts.dueDate || null,
         }]
       } : t
     ));
@@ -428,6 +430,7 @@ export function useTodos() {
         ...t,
         progress: (t.progress || []).map(p => {
           if (p.id !== progressId) return p;
+          if (p.kind === 'promoted') return p;
           const willBeArchived = p.status === 'active' && newStatus !== 'active';
           const willBeRestored = p.status !== 'active' && newStatus !== p.status;
           return {
@@ -501,6 +504,54 @@ export function useTodos() {
         )
       } : t
     ));
+  }, []);
+
+  const setProgressDue = useCallback((todoId, progressId, iso) => {
+    setTodos(prev => prev.map(t =>
+      t.id === todoId ? {
+        ...t,
+        progress: (t.progress || []).map(p =>
+          p.id === progressId ? { ...p, dueDate: iso || null } : p
+        )
+      } : t
+    ));
+  }, []);
+
+  const promoteProgress = useCallback((todoId, progressId, patch) => {
+    const nowIso = new Date().toISOString();
+    const newTodoId = todoIdRef.current++;
+    let created = null;
+    setTodos(prev => {
+      let list = prev;
+      if (patch && typeof patch === 'object') {
+        list = prev.map(t => t.id === todoId ? {
+          ...t,
+          progress: (t.progress || []).map(p => p.id === progressId ? { ...p, ...patch } : p),
+        } : t);
+      }
+      const result = promoteProgressItem(list, todoId, progressId, {
+        nowIso,
+        newTodoId,
+        sortMode: sortModeRef.current,
+      });
+      if (!result) return prev;
+      created = result.newTodo;
+      return result.todos;
+    });
+    if (!created) {
+      todoIdRef.current = newTodoId;
+      return;
+    }
+    cancelProgressReminder(progressId);
+    if (created.reminderAt) {
+      scheduleTodoReminder(created);
+    }
+    addLog('data', '子项升为主待办', {
+      todoId,
+      progressId,
+      newTodoId: created.id,
+      title: created.title,
+    });
   }, []);
 
   const setProgressReminder = useCallback(async (todoId, progressId, timeStr) => {
@@ -592,5 +643,5 @@ export function useTodos() {
   const archivedTodos = useMemo(() => todos.filter(t => t.status !== 'active'), [todos]);
   const allTags = useMemo(() => [...new Set(todos.flatMap(t => t.tags))].sort(), [todos]);
 
-  return { todos, activeTodos, archivedTodos, loaded, sortMode, setSortMode, resetSortMode, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, updateCompletedAt, batchUpdateCompletedAt, importTodos, allTags };
+  return { todos, activeTodos, archivedTodos, loaded, sortMode, setSortMode, resetSortMode, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, setProgressDue, promoteProgress, updateProgressCompletedAt, updateCompletedAt, batchUpdateCompletedAt, importTodos, allTags };
 }

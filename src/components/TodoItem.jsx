@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import { createPortal } from 'react-dom';
-import { isOverdue, formatCompactDateTime } from '../utils/dateParser';
-import { getTaskTier } from '../utils/taskTier';
+import { formatCompactDateTime } from '../utils/dateParser';
+import { getTaskTier, getEffectiveDue } from '../utils/taskTier';
 import { loadProgressCollapsed, saveProgressCollapsed } from '../utils/progressViewState';
 import { URGENT_TAG } from '../constants';
 import { useTodoActions, useTodoView } from '../hooks/TodoContext';
@@ -14,10 +14,10 @@ import { highlightText } from '../utils/highlight';
 import { SORT_MANUAL } from '../utils/sortTodos';
 import TodoDetail from './TodoDetail';
 
-function getStatusClass(todo) {
+function getStatusClass(todo, dueTime) {
   if (todo.status === 'completed') return 'completed';
   if (todo.status === 'cancelled') return 'cancelled';
-  if (isOverdue(todo.dueDate)) return 'overdue';
+  if (dueTime != null && dueTime < Date.now()) return 'overdue';
   return '';
 }
 
@@ -30,7 +30,8 @@ function isReminderAtDue(todo) {
 const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragListeners, highlight }) {
   const { toggleStatus, completeTodo, updateTodo, handleBatchToggle, setPinStatus } = useTodoActions();
   const { batchMode, isArchive, devMode, openMenuId, setOpenMenuId, sortMode } = useTodoView();
-  const statusClass = getStatusClass(todo);
+  const effectiveDue = getEffectiveDue(todo);
+  const statusClass = getStatusClass(todo, effectiveDue.time);
   const tier = getTaskTier(todo);
   const moreOpen = openMenuId === todo.id;
 
@@ -284,15 +285,20 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
             </button>
           )}
           <div className="todo-meta">
-            <DateEdit
-              value={todo.dueDate}
-              onSave={(val) => updateTodo(todo.id, { dueDate: val })}
-              overdue={false}
-              inBatch={batchMode}
-              interactive={false}
-            />
-            {todo.status === 'active' && todo.dueDate && (
-              <Countdown dueDate={todo.dueDate} />
+            {effectiveDue.iso && (
+              <DateEdit
+                value={effectiveDue.iso}
+                onSave={(val) => updateTodo(todo.id, { dueDate: val })}
+                overdue={false}
+                inBatch={batchMode}
+                interactive={false}
+              />
+            )}
+            {effectiveDue.source === 'child' && (
+              <span className="todo-date-hint">最早子项</span>
+            )}
+            {todo.status === 'active' && effectiveDue.iso && (
+              <Countdown dueDate={effectiveDue.iso} />
             )}
             <TagsEdit
               tags={todo.tags}

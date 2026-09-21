@@ -10,6 +10,10 @@ export function isRepeatRule(v) {
   return v === 'daily' || v === 'weekly' || v === 'monthly';
 }
 
+export function isMarkerKind(kind) {
+  return kind === 'cycle-done' || kind === 'cycle-skip' || kind === 'promoted';
+}
+
 export const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
 export function isValidAnchor(rule, anchor) {
@@ -210,11 +214,11 @@ export function getRepeatDue(todo, now = new Date()) {
 
 export function currentCycleProgress(todo, now = new Date()) {
   const all = Array.isArray(todo?.progress) ? todo.progress : [];
-  if (!isRepeatRule(todo?.repeatRule)) return all;
+  const untagged = all.filter(p => !isMarkerKind(p.kind));
+  if (!isRepeatRule(todo?.repeatRule)) return untagged;
   const ref = cycleRefDate(todo, now);
   const ws = getWindowStart(todo.repeatRule, ref).getTime();
-  return all.filter(p =>
-    p.kind !== 'cycle-done' && p.kind !== 'cycle-skip' &&
+  return untagged.filter(p =>
     new Date(p.createdAt ?? p.time).getTime() >= ws
   );
 }

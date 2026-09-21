@@ -29,17 +29,26 @@ function normalizeDueIso(value) {
 function normalizeProgress(p, index) {
   if (!p || typeof p !== 'object') return null;
   const createdAt = normalizeIso(p.createdAt) || normalizeIso(p.time) || new Date().toISOString();
-  return {
+  const result = {
     id: Number.isFinite(p.id) ? p.id : Date.now() + index,
     text: typeof p.text === 'string' ? p.text.slice(0, MAX_PROGRESS_TEXT_LEN) : '',
     createdAt,
     status: p.status === 'completed' ? 'completed' : p.status === 'cancelled' ? 'cancelled' : 'active',
     completedAt: normalizeIso(p.completedAt),
-    kind: p.kind === 'cycle-done' ? 'cycle-done' : p.kind === 'cycle-skip' ? 'cycle-skip' : undefined,
+    kind: p.kind === 'cycle-done' ? 'cycle-done'
+      : p.kind === 'cycle-skip' ? 'cycle-skip'
+      : p.kind === 'promoted' ? 'promoted'
+      : undefined,
     temporary: p.temporary === true,
     urgent: p.urgent === true,
     reminderTime: normalizeIso(p.reminderTime),
+    dueDate: normalizeDueIso(p.dueDate),
   };
+  if (result.kind === 'promoted') {
+    result.status = 'cancelled';
+    if (!result.completedAt) result.completedAt = createdAt;
+  }
+  return result;
 }
 
 export function normalizeImportedTodo(t) {

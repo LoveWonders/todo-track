@@ -7,16 +7,13 @@ import {
   isCycleClosedForDue,
   repairRolledDue,
   formatLocalDueIso,
+  isMarkerKind,
 } from './repeat';
-
-function isCycleMarker(kind) {
-  return kind === 'cycle-done' || kind === 'cycle-skip';
-}
 
 function checklistTemplates(progress) {
   return [...new Set(
     (progress || [])
-      .filter(p => p.status === 'completed' && !isCycleMarker(p.kind) && !p.temporary)
+      .filter(p => p.status === 'completed' && !isMarkerKind(p.kind) && !p.temporary)
       .map(p => p.text)
   )];
 }

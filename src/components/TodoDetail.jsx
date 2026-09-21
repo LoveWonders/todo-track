@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatDateTime, isOverdue } from '../utils/dateParser';
+import { getEffectiveDue } from '../utils/taskTier';
 import { describeCycle, hasCycleDoneThisCycle } from '../utils/repeat';
 import RepeatSelector from './RepeatSelector';
 import Countdown from './Countdown';
@@ -190,6 +191,9 @@ export default function TodoDetail({ todo, onClose, highlight }) {
                 overdue={isOverdue(todo.dueDate)}
               />
               {todo.dueDate && <Countdown dueDate={todo.dueDate} />}
+              {getEffectiveDue(todo).source === 'child' && (
+                <span className="todo-date-hint">列表按最早子项着色</span>
+              )}
             </span>
           </div>
           <RepeatSelector

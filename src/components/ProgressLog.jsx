@@ -5,10 +5,10 @@ import CompleteDateModal from './CompleteDateModal';
 import ProgressManageBar from './ProgressManageBar';
 import ProgressDefaultBar from './ProgressDefaultBar';
 import ProgressModal from './ProgressModal';
-import { getCycleStats } from '../utils/repeat';
+import { getCycleStats, isMarkerKind } from '../utils/repeat';
 import { showNativeDatePicker } from '../utils/datePicker';
 import { highlightText } from '../utils/highlight';
-import { formatCompactDateTime } from '../utils/dateParser';
+import { formatCompactDateTime, isOverdue } from '../utils/dateParser';
 
 const LONG_TEXT_WIDTH = 18;
 
@@ -44,7 +44,7 @@ function isReminderDue(p) {
 }
 
 export default function ProgressLog({ progress, todoId, collapsed, checklistMode, repeatRule, dueDate, highlight }) {
-  const { toggleProgressStatus, completeTodo, deleteProgress, addProgress, updateProgress, setProgressUrgent, setProgressReminder, updateProgressCompletedAt, setFabHidden } = useTodoActions();
+  const { toggleProgressStatus, completeTodo, deleteProgress, addProgress, updateProgress, setProgressUrgent, setProgressReminder, setProgressDue, promoteProgress, updateProgressCompletedAt, setFabHidden } = useTodoActions();
   const { batchMode } = useTodoView();
   
   // 状态定义
@@ -71,7 +71,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
 
   const openAddModal = useCallback(() => {
     setFabHidden(true);
-    setProgressModal({ mode: 'add', text: '', temporary: false, urgent: false, reminderTime: null });
+    setProgressModal({ mode: 'add', text: '', temporary: false, urgent: false, reminderTime: null, dueDate: null });
   }, [setFabHidden]);
 
   const handleOpenEdit = useCallback((p) => {
@@ -83,6 +83,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
       temporary: p.temporary === true,
       urgent: p.urgent === true,
       reminderTime: p.reminderTime || null,
+      dueDate: p.dueDate || null,
     });
   }, [setFabHidden]);
 
@@ -107,6 +108,35 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
     });
   }, [progressModal]);
 
+  const handleModalSetDue = useCallback(() => {
+    showNativeDatePicker({
+      type: 'datetime-local',
+      value: progressModal?.dueDate ? progressModal.dueDate.slice(0, 16) : '',
+      onPick: (picked) => {
+        if (picked) {
+          const iso = picked.length === 16 ? `${picked}:00` : `${picked}T23:59:59`;
+          setProgressModal(prev => (prev ? { ...prev, dueDate: iso } : prev));
+        }
+      },
+    });
+  }, [progressModal]);
+
+  const handlePromote = useCallback(() => {
+    if (!progressModal || progressModal.mode !== 'edit') return;
+    const p = progressModal.progress;
+    if (!p || p.status !== 'active' || isMarkerKind(p.kind)) return;
+    if (!window.confirm('把这条子项抽成独立待办？父清单会留下「已抽出」记录。')) return;
+    promoteProgress(todoId, p.id, {
+      text: progressModal.text.trim() || p.text,
+      temporary: progressModal.temporary === true,
+      urgent: progressModal.urgent === true,
+      reminderTime: progressModal.reminderTime || null,
+      dueDate: progressModal.dueDate || null,
+    });
+    setProgressModal(null);
+    setFabHidden(false);
+  }, [progressModal, todoId, promoteProgress, setFabHidden]);
+
   const handleSaveModal = useCallback(() => {
     if (!progressModal) return;
     const text = progressModal.text.trim();
@@ -115,6 +145,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
       addProgress(todoId, text, progressModal.temporary, {
         urgent: progressModal.urgent === true,
         reminderTime: progressModal.reminderTime || null,
+        dueDate: progressModal.dueDate || null,
       });
     } else {
       const p = progressModal.progress;
@@ -129,10 +160,13 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
       if ((progressModal.reminderTime || null) !== (p.reminderTime || null)) {
         setProgressReminder(todoId, p.id, progressModal.reminderTime || null);
       }
+      if ((progressModal.dueDate || null) !== (p.dueDate || null)) {
+        setProgressDue(todoId, p.id, progressModal.dueDate || null);
+      }
     }
     setProgressModal(null);
     setFabHidden(false);
-  }, [progressModal, todoId, addProgress, updateProgress, setProgressUrgent, setProgressReminder, setFabHidden]);
+  }, [progressModal, todoId, addProgress, updateProgress, setProgressUrgent, setProgressReminder, setProgressDue, setFabHidden]);
 
   const toggleSelect = useCallback((pid) => {
     setSelectedPIds(prev => {
@@ -185,6 +219,8 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
       onSave={handleSaveModal}
       onCancel={handleModalCancel}
       onSetReminder={handleModalSetReminder}
+      onSetDue={handleModalSetDue}
+      onPromote={handlePromote}
     />,
     document.body
   ) : null;
@@ -205,8 +241,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
     return null;
   }
 
-  // 安全渲染：无进度时显示添加界面（与有进度时相同的布局结构）
-  if (progressCount === 0) {
+  if (items.length === 0) {
     return (
       <div className="progress-section">
         {!inBatch && (
@@ -250,7 +285,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
         <div className="progress-active-row">
           {activeProgress.map(p => (
             <div key={p.id}
-              className={`progress-entry active progress-card ${isLongProgressText(p.text) ? 'progress-long' : 'progress-short'} ${manageMode ? 'progress-manage' : 'progress-clickable'} ${selectedPIds.has(p.id) ? 'progress-selected' : ''} ${p.urgent ? 'progress-urgent' : ''} ${isReminderDue(p) ? 'progress-reminder-due' : ''}`}
+              className={`progress-entry active progress-card ${isLongProgressText(p.text) ? 'progress-long' : 'progress-short'} ${manageMode ? 'progress-manage' : 'progress-clickable'} ${selectedPIds.has(p.id) ? 'progress-selected' : ''} ${p.urgent ? 'progress-urgent' : ''} ${isReminderDue(p) ? 'progress-reminder-due' : ''} ${isOverdue(p.dueDate) ? 'progress-overdue' : ''}`}
               onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenEdit(p)}>
               {!inBatch && !manageMode && (
                 <span className="progress-actions">
@@ -264,6 +299,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
               )}
               <span className="progress-date">{new Date(p.createdAt ?? p.time).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}</span>
               {p.urgent && <span className="progress-urgent-tag">急</span>}
+              {p.dueDate && <span className={`progress-due-tag ${isOverdue(p.dueDate) ? 'overdue' : ''}`}>截止 {formatCompactDateTime(p.dueDate)}</span>}
               {p.reminderTime && <span className="progress-reminder-tag">提醒 {formatCompactDateTime(p.reminderTime)}</span>}
               {p.temporary && <span className="progress-temp-tag">临时</span>}
               <span className="progress-text">{highlightText(String(p.text), highlight)}</span>
@@ -284,7 +320,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
             />
           ) : (
             <ProgressDefaultBar
-              allCount={progressCount}
+              allCount={items.length}
               onShowInput={openAddModal}
               onManage={() => { setManageMode(true); setConfirmDelete(false); }}
             />
@@ -304,7 +340,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
                 <div key={p.id}
                   className={`progress-entry ${p.status} ${manageMode ? 'progress-manage' : 'progress-clickable'} ${selectedPIds.has(p.id) ? 'progress-selected' : ''}`}
                   onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenEdit(p)}>
-                  {!inBatch && !manageMode && (
+                  {!inBatch && !manageMode && p.kind !== 'promoted' && (
                     <span className="progress-actions">
                       <button className="p-action undo" onClick={(e) => { e.stopPropagation(); toggleProgressStatus(todoId, p.id, p.status); }} title="恢复">&#x21A9;</button>
                     </span>
@@ -314,7 +350,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
                       {selectedPIds.has(p.id) ? '\u2713' : ''}
                     </span>
                   )}
-                  <span className="progress-status-tag">{p.status === 'completed' ? '已完成' : '已作废'}</span>
+                  <span className="progress-status-tag">{p.kind === 'promoted' ? '已抽出' : p.status === 'completed' ? '已完成' : '已作废'}</span>
                   <span className="progress-date">{archiveDateRange(p)}</span>
                   {p.temporary && <span className="progress-temp-tag">临时</span>}
                   {highlightText(String(p.text), highlight)}

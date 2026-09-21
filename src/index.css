@@ -4831,6 +4831,42 @@ body.compact-mode .todo-tag {
   margin-right: 4px;
 }
 
+.progress-due-tag {
+  font-size: 10px;
+  padding: 0 4px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  line-height: 1.5;
+  margin-right: 4px;
+}
+
+.progress-due-tag.overdue {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.progress-active-row .progress-entry.active.progress-overdue {
+  border-color: var(--danger);
+}
+
+.todo-date-hint {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.progress-modal-promote-btn {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  background: transparent;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
 .progress-active-row .progress-entry.active.progress-urgent {
   border-color: var(--danger);
   background: rgba(231, 76, 60, 0.05);

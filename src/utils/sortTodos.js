@@ -1,4 +1,4 @@
-import { isRepeatRule, getRepeatDue } from './repeat';
+import { getEffectiveDue } from './taskTier';
 
 export const SORT_CREATED = 'created';
 export const SORT_DUE = 'due';
@@ -14,11 +14,8 @@ const TOP = 'top';
 const BOTTOM = 'bottom';
 
 function todoDueTime(t, now) {
-  if (isRepeatRule(t.repeatRule)) {
-    const due = getRepeatDue(t, now);
-    return due != null ? due : Infinity;
-  }
-  return t.dueDate ? new Date(t.dueDate).getTime() : Infinity;
+  const { time } = getEffectiveDue(t, now);
+  return time != null ? time : Infinity;
 }
 
 function todoCreatedTime(t) {
