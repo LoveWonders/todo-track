@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import ModalShell from './ModalShell';
 import { showNativeDatePicker } from '../utils/datePicker';
 import { todayDateString } from '../utils/dateParser';
@@ -6,17 +6,6 @@ import { todayDateString } from '../utils/dateParser';
 export default function CompleteDateModal({ count, onConfirm, onCancel }) {
   const [dateVal, setDateVal] = useState(todayDateString());
   const [error, setError] = useState('');
-  const dynamicInputRef = useRef(null);
-
-  useEffect(() => {
-    return () => {
-      const input = dynamicInputRef.current;
-      if (input && document.body.contains(input)) {
-        document.body.removeChild(input);
-      }
-      dynamicInputRef.current = null;
-    };
-  }, []);
 
   const handleConfirm = () => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
@@ -28,17 +17,11 @@ export default function CompleteDateModal({ count, onConfirm, onCancel }) {
   };
 
   const openCalendar = useCallback(() => {
-    const prev = dynamicInputRef.current;
-    if (prev && document.body.contains(prev)) {
-      document.body.removeChild(prev);
-    }
-
-    const input = showNativeDatePicker({
+    showNativeDatePicker({
       type: 'date',
-      value: /^\d{4}-\d{2}-\d{2}$/.test(dateVal) ? dateVal : todayStr(),
+      value: /^\d{4}-\d{2}-\d{2}$/.test(dateVal) ? dateVal : todayDateString(),
       onPick: (picked) => setDateVal(picked),
     });
-    dynamicInputRef.current = input;
   }, [dateVal]);
 
   return (

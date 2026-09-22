@@ -1,4 +1,10 @@
-export function showNativeDatePicker({ type = 'date', value = '', onPick }) {
+let openCalendar = null;
+
+export function bindCalendarHost(fn) {
+  openCalendar = typeof fn === 'function' ? fn : null;
+}
+
+function showHiddenInput({ type, value, onPick }) {
   const input = document.createElement('input');
   input.type = type;
   if (value) input.value = value;
@@ -26,4 +32,12 @@ export function showNativeDatePicker({ type = 'date', value = '', onPick }) {
   });
 
   return input;
+}
+
+export function showNativeDatePicker({ type = 'date', value = '', onPick }) {
+  if (type === 'time' || !openCalendar) {
+    return showHiddenInput({ type, value, onPick });
+  }
+  openCalendar({ type, value, onPick });
+  return null;
 }

@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { parseDateText } from '../utils/dateParser';
+import { showNativeDatePicker } from '../utils/datePicker';
 
 export default function BatchBar({ count, onCancel, onDelete, onComplete, onCancelItems, onSetDate, onSetTags, onAddProgress, onOpenCompleteDateModal, onSelectAll, onInvertSelection }) {
   const [activeAction, setActiveAction] = useState(null);
   const [inputText, setInputText] = useState('');
   const [dateText, setDateText] = useState('');
-  const pickerRef = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -21,22 +21,16 @@ export default function BatchBar({ count, onCancel, onDelete, onComplete, onCanc
   }, [activeAction]);
 
   const openCalendar = () => {
-    if (pickerRef.current) {
-      if (typeof pickerRef.current.showPicker === 'function') {
-        pickerRef.current.showPicker();
-      } else {
-        pickerRef.current.focus();
-        pickerRef.current.click();
-      }
-    }
-  };
-
-  const handleCalendarPick = (e) => {
-    const picked = e.target.value;
-    if (picked) {
-      onSetDate(picked);
-      setActiveAction(null);
-    }
+    showNativeDatePicker({
+      type: 'date',
+      value: dateText,
+      onPick: (picked) => {
+        if (picked) {
+          onSetDate(picked);
+          setActiveAction(null);
+        }
+      },
+    });
   };
 
   const handleDateSubmit = () => {
@@ -96,7 +90,6 @@ export default function BatchBar({ count, onCancel, onDelete, onComplete, onCanc
                 onKeyDown={handleKeyDown}
               />
               <button className="calendar-btn" onClick={openCalendar}>&#x1F4C5;</button>
-              <input ref={pickerRef} type="date" style={{ display: 'none' }} onChange={handleCalendarPick} />
               <button className="btn-mini btn-mini-save" onClick={handleDateSubmit}>确认</button>
             </div>
           )}

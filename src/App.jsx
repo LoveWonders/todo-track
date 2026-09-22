@@ -14,6 +14,7 @@ import TodoListItem from './components/TodoListItem';
 import TagFilterBar from './components/TagFilterBar';
 import WeeklyReport from './components/WeeklyReport';
 import CompleteDateModal from './components/CompleteDateModal';
+import CalendarHost from './components/CalendarHost';
 import DataMenu from './components/DataMenu';
 import BatchBar from './components/BatchBar';
 import PerformanceTester from './components/PerformanceTester';
@@ -376,6 +377,8 @@ export default function App() {
         onClose={() => setBottomSheetOpen(false)}
         onAdd={addTodo}
       />
+
+      <CalendarHost />
 
       {showCompleteDateModal && (
         <CompleteDateModal
