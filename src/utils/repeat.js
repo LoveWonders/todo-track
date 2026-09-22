@@ -154,17 +154,43 @@ export function repairRolledDue(todo) {
   return dueDate !== original ? { ...todo, dueDate } : todo;
 }
 
-export function hasCycleDoneThisCycle(todo, now = new Date()) {
-  if (!isRepeatRule(todo?.repeatRule)) return false;
-  const ref = cycleRefDate(todo, now);
-  const ws = getWindowStart(todo.repeatRule, ref).getTime();
-  const we = getWindowEnd(todo.repeatRule, todo.repeatAnchor, ref);
-  const weTime = we ? we.getTime() : Infinity;
-  return (Array.isArray(todo.progress) ? todo.progress : []).some(p => {
-    if (p.kind !== 'cycle-done') return false;
+function getCalendarWindowEnd(rule, date = new Date()) {
+  if (rule === 'daily') {
+    const e = startOfDay(date);
+    e.setHours(23, 59, 59, 999);
+    return e;
+  }
+  if (rule === 'weekly') {
+    const e = getWindowStart('weekly', date);
+    e.setDate(e.getDate() + 6);
+    e.setHours(23, 59, 59, 999);
+    return e;
+  }
+  const ws = getWindowStart('monthly', date);
+  const e = new Date(ws.getFullYear(), ws.getMonth() + 1, 0);
+  e.setHours(23, 59, 59, 999);
+  return e;
+}
+
+export function getCycleMarkerThisCycle(todo, now = new Date()) {
+  if (!isRepeatRule(todo?.repeatRule)) return null;
+  const ws = getWindowStart(todo.repeatRule, now).getTime();
+  const weTime = getCalendarWindowEnd(todo.repeatRule, now).getTime();
+  let found = null;
+  for (const p of Array.isArray(todo.progress) ? todo.progress : []) {
+    if (p.kind !== 'cycle-done' && p.kind !== 'cycle-skip') continue;
     const ts = progressTime(p);
-    return ts >= ws && ts <= weTime;
-  });
+    if (ts >= ws && ts <= weTime) found = p;
+  }
+  return found;
+}
+
+export function hasCycleDoneThisCycle(todo, now = new Date()) {
+  return getCycleMarkerThisCycle(todo, now)?.kind === 'cycle-done';
+}
+
+export function hasCycleClosedThisCycle(todo, now = new Date()) {
+  return getCycleMarkerThisCycle(todo, now) != null;
 }
 
 export function getWindowEnd(rule, anchor, date = new Date()) {
@@ -238,6 +264,7 @@ export function getCycleStats(todo, now = new Date()) {
     count: items.length,
     allDone: items.length > 0 && completed === items.length,
     cycleDone: hasCycleDoneThisCycle(todo, now),
+    cycleClosed: hasCycleClosedThisCycle(todo, now),
   };
 }
 

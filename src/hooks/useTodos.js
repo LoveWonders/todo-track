@@ -4,7 +4,7 @@ import { mergeAndArchive } from '../utils/autoArchive';
 import { normalizeImportedTodo } from '../utils/normalizeTodo';
 import { removeProgressCollapsed } from '../utils/progressViewState';
 import { getCycleKey, isRepeatRule, isValidAnchor } from '../utils/repeat';
-import { closeCurrentCycle, applyRepeatTick } from '../utils/cycleTodos';
+import { closeCurrentCycle, reopenCurrentCycle, applyRepeatTick } from '../utils/cycleTodos';
 import { toSafeIso } from '../utils/dateParser';
 import { promoteProgressItem } from '../utils/promoteProgress';
 import { scheduleReminder, cancelReminder, rescheduleAll, checkDueReminders, requestNotificationPermission, scheduleProgressReminder, cancelProgressReminder, cancelTodoProgressReminders, scheduleTodoReminder, cancelTodoReminder } from '../utils/notification';
@@ -290,6 +290,21 @@ export function useTodos() {
     addLog('data', '批量删除待办', { count: deleted.length, titles: deleted.map(t => t.title).slice(0, 20) });
   }, []);
 
+  const reopenCycle = useCallback((id) => {
+    let reopened = false;
+    setTodos(prev => prev.map(t => {
+      if (t.id !== id) return t;
+      const next = reopenCurrentCycle(t);
+      if (next !== t) reopened = true;
+      return next;
+    }));
+    const target = todosRef.current.find(t => t.id === id);
+    if (reopened && target) {
+      if (target.reminderTime) scheduleReminder(target);
+      addLog('data', '撤销本期', { id, title: target.title, repeatRule: target.repeatRule || null });
+    }
+  }, []);
+
   const completeTodo = useCallback((id) => {
     setTodos(prev => prev.map(t => {
       if (t.id !== id) return t;
@@ -425,8 +440,13 @@ export function useTodos() {
   }, []);
 
   const toggleProgressStatus = useCallback((todoId, progressId, newStatus) => {
-    setTodos(prev => prev.map(t =>
-      t.id === todoId ? {
+    setTodos(prev => prev.map(t => {
+      if (t.id !== todoId) return t;
+      const targetProgress = (t.progress || []).find(p => p.id === progressId);
+      if (targetProgress && (targetProgress.kind === 'cycle-done' || targetProgress.kind === 'cycle-skip') && targetProgress.status !== 'active') {
+        return reopenCurrentCycle(t);
+      }
+      return {
         ...t,
         progress: (t.progress || []).map(p => {
           if (p.id !== progressId) return p;
@@ -441,8 +461,8 @@ export function useTodos() {
               : p.completedAt,
           };
         })
-      } : t
-    ));
+      };
+    }));
     const target = todosRef.current.find(t => t.id === todoId);
     if (target) {
       const p = (target.progress || []).find(x => x.id === progressId);
@@ -643,5 +663,5 @@ export function useTodos() {
   const archivedTodos = useMemo(() => todos.filter(t => t.status !== 'active'), [todos]);
   const allTags = useMemo(() => [...new Set(todos.flatMap(t => t.tags))].sort(), [todos]);
 
-  return { todos, activeTodos, archivedTodos, loaded, sortMode, setSortMode, resetSortMode, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, setProgressDue, promoteProgress, updateProgressCompletedAt, updateCompletedAt, batchUpdateCompletedAt, importTodos, allTags };
+  return { todos, activeTodos, archivedTodos, loaded, sortMode, setSortMode, resetSortMode, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, reopenCycle, setRepeatRule, setReminderTime, setReminderAt, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, setProgressDue, promoteProgress, updateProgressCompletedAt, updateCompletedAt, batchUpdateCompletedAt, importTodos, allTags };
 }

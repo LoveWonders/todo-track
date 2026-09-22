@@ -5,7 +5,7 @@ import CompleteDateModal from './CompleteDateModal';
 import ProgressManageBar from './ProgressManageBar';
 import ProgressDefaultBar from './ProgressDefaultBar';
 import ProgressModal from './ProgressModal';
-import { getCycleStats, isMarkerKind } from '../utils/repeat';
+import { getCycleStats, getCycleMarkerThisCycle, isMarkerKind } from '../utils/repeat';
 import { showNativeDatePicker } from '../utils/datePicker';
 import { highlightText } from '../utils/highlight';
 import { formatCompactDateTime, isOverdue } from '../utils/dateParser';
@@ -43,8 +43,8 @@ function isReminderDue(p) {
   return !Number.isNaN(t) && t <= Date.now();
 }
 
-export default function ProgressLog({ progress, todoId, collapsed, checklistMode, repeatRule, dueDate, highlight }) {
-  const { toggleProgressStatus, completeTodo, deleteProgress, addProgress, updateProgress, setProgressUrgent, setProgressReminder, setProgressDue, promoteProgress, updateProgressCompletedAt, setFabHidden } = useTodoActions();
+export default function ProgressLog({ progress, todoId, collapsed, checklistMode, repeatRule, repeatAnchor, dueDate, highlight }) {
+  const { toggleProgressStatus, completeTodo, reopenCycle, deleteProgress, addProgress, updateProgress, setProgressUrgent, setProgressReminder, setProgressDue, promoteProgress, updateProgressCompletedAt, setFabHidden } = useTodoActions();
   const { batchMode } = useTodoView();
   
   // 状态定义
@@ -57,7 +57,8 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
 
   // 数据预处理（所有变量定义必须在条件 return 之前）
   const items = Array.isArray(progress) ? progress : [];
-  const cycleStats = getCycleStats({ repeatRule, progress: items, dueDate });
+  const cycleStats = getCycleStats({ repeatRule, repeatAnchor, progress: items, dueDate });
+  const cycleMarker = getCycleMarkerThisCycle({ repeatRule, repeatAnchor, progress: items, dueDate });
   const progressCount = cycleStats.count;
   const inBatch = batchMode;
 
@@ -198,14 +199,19 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
 
   const hasSelection = selectedPIds.size > 0;
 
-  const { activeProgress, archivedProgress } = useMemo(() => {
+  const { activeProgress, archivedProgress, cycleMarkerItem } = useMemo(() => {
     const active = [];
     const archived = [];
+    let cycleMarkerItem = null;
     for (const p of items) {
+      if (cycleMarker && p.id === cycleMarker.id) {
+        cycleMarkerItem = p;
+        continue;
+      }
       (p.status === 'active' ? active : archived).push(p);
     }
-    return { activeProgress: active, archivedProgress: archived };
-  }, [items]);
+    return { activeProgress: active, archivedProgress: archived, cycleMarkerItem };
+  }, [items, cycleMarker]);
 
   const completedCount = cycleStats.completed;
   const allCompleted = cycleStats.allDone;
@@ -328,6 +334,27 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
         </div>
       )}
 
+      {cycleMarkerItem && (
+        <div className="progress-cycle-marker">
+          <div className={`progress-entry ${cycleMarkerItem.status}`}>
+            {!inBatch && (
+              <span className="progress-actions">
+                <button
+                  className="p-action undo"
+                  onClick={(e) => { e.stopPropagation(); reopenCycle(todoId); }}
+                  title="撤销本期"
+                >
+                  &#x21A9;
+                </button>
+              </span>
+            )}
+            <span className="progress-status-tag">{cycleMarkerItem.kind === 'cycle-done' ? '本期完成' : '本期作废'}</span>
+            <span className="progress-date">{archiveDateRange(cycleMarkerItem)}</span>
+            <span className="progress-text">{cycleMarkerItem.text}</span>
+          </div>
+        </div>
+      )}
+
       {archivedProgress.length > 0 && (
         <div className="progress-archive">
           <div className="archive-toggle" onClick={() => setShowArchived(v => !v)}>
@@ -340,7 +367,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
                 <div key={p.id}
                   className={`progress-entry ${p.status} ${manageMode ? 'progress-manage' : 'progress-clickable'} ${selectedPIds.has(p.id) ? 'progress-selected' : ''}`}
                   onClick={manageMode ? () => toggleSelect(p.id) : () => handleOpenEdit(p)}>
-                  {!inBatch && !manageMode && p.kind !== 'promoted' && (
+                  {!inBatch && !manageMode && !isMarkerKind(p.kind) && (
                     <span className="progress-actions">
                       <button className="p-action undo" onClick={(e) => { e.stopPropagation(); toggleProgressStatus(todoId, p.id, p.status); }} title="恢复">&#x21A9;</button>
                     </span>

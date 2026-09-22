@@ -8,6 +8,7 @@ import {
   repairRolledDue,
   formatLocalDueIso,
   isMarkerKind,
+  getCycleMarkerThisCycle,
 } from './repeat';
 
 function checklistTemplates(progress) {
@@ -29,6 +30,7 @@ function seedChecklist(templates, allocateId, createdAt) {
 }
 
 export function closeCurrentCycle(t, kind, nowIso, allocateId) {
+  if (getCycleMarkerThisCycle(t)) return t;
   const currentDue = t.dueDate || (() => {
     const end = getWindowEnd(t.repeatRule, t.repeatAnchor, new Date());
     return end ? formatLocalDueIso(end, null) : null;
@@ -63,6 +65,36 @@ export function closeCurrentCycle(t, kind, nowIso, allocateId) {
     completedAt: nowIso,
     progress,
     dueDate: nextDue || currentDue,
+  };
+}
+
+export function reopenCurrentCycle(t, now = new Date()) {
+  if (!isRepeatRule(t.repeatRule)) return t;
+  const marker = getCycleMarkerThisCycle(t, now);
+  if (!marker) return t;
+  const restoredDue = marker.createdAt || marker.completedAt || t.dueDate;
+  const closeStamp = marker.completedAt || marker.createdAt;
+  let progress = (t.progress || []).filter(p => p.id !== marker.id);
+  progress = progress.map(p => {
+    if (isMarkerKind(p.kind) || p.status === 'active') return p;
+    if (closeStamp && p.completedAt === closeStamp) {
+      return { ...p, status: 'active', completedAt: null };
+    }
+    return p;
+  });
+  if (t.checklistMode && t.dueDate) {
+    const seedStamp = getWindowStart(t.repeatRule, new Date(t.dueDate)).toISOString();
+    progress = progress.filter(p => {
+      if (p.status !== 'active' || isMarkerKind(p.kind)) return true;
+      return (p.createdAt ?? p.time) !== seedStamp;
+    });
+  }
+  return {
+    ...t,
+    status: 'active',
+    completedAt: null,
+    progress,
+    dueDate: restoredDue,
   };
 }
 

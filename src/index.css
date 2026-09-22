@@ -4962,6 +4962,15 @@ body.compact-mode .todo-tag {
   padding: 4px 0;
 }
 
+.progress-cycle-marker {
+  margin-top: 8px;
+}
+
+.progress-cycle-marker .progress-entry {
+  background: var(--primary-light);
+  border: 1px solid var(--accent);
+}
+
 .btn-primary-lg:disabled {
   opacity: 0.55;
   cursor: default;

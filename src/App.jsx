@@ -28,7 +28,7 @@ import { formatDate } from './utils/dateParser';
 import { SORT_MANUAL } from './utils/sortTodos';
 
 export default function App() {
-  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, setProgressDue, promoteProgress, updateProgressCompletedAt, batchUpdateCompletedAt, importTodos, allTags, sortMode, setSortMode, resetSortMode } = useTodos();
+  const { todos, activeTodos, archivedTodos, addTodo, updateTodo, batchUpdateTodos, batchDeleteTodos, deleteTodo, commitReorder, setPinStatus, toggleStatus, batchToggleStatus, completeTodo, reopenCycle, setRepeatRule, setReminderTime, setReminderAt, addProgress, toggleProgressStatus, deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, setProgressDue, promoteProgress, updateProgressCompletedAt, batchUpdateCompletedAt, importTodos, allTags, sortMode, setSortMode, resetSortMode } = useTodos();
   const [filterConfig, setFilterConfig] = useState({ includeTags: [], excludeTags: [] });
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -128,11 +128,11 @@ export default function App() {
   }, [importTodos]);
 
   const actionsValue = useMemo(() => ({
-    updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt,
+    updateTodo, toggleStatus, completeTodo, reopenCycle, setRepeatRule, setReminderTime, setReminderAt,
     addProgress, toggleProgressStatus,
     deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, setProgressDue, promoteProgress, updateProgressCompletedAt,
     handleBatchToggle, setPinStatus, setFabHidden,
-  }), [updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt,
+  }), [updateTodo, toggleStatus, completeTodo, reopenCycle, setRepeatRule, setReminderTime, setReminderAt,
     addProgress, toggleProgressStatus,
     deleteProgress, updateProgress, setProgressUrgent, setProgressReminder, setProgressDue, promoteProgress, updateProgressCompletedAt,
     handleBatchToggle, setPinStatus, setFabHidden]);
