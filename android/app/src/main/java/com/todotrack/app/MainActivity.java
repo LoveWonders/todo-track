@@ -9,4 +9,15 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(DownloadPlugin.class);
         super.onCreate(savedInstanceState);
     }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        lockTextZoom();
+    }
+
+    private void lockTextZoom() {
+        if (getBridge() == null || getBridge().getWebView() == null) return;
+        getBridge().getWebView().getSettings().setTextZoom(100);
+    }
 }

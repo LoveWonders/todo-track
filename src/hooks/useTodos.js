@@ -5,6 +5,7 @@ import { normalizeImportedTodo } from '../utils/normalizeTodo';
 import { removeProgressCollapsed } from '../utils/progressViewState';
 import { getCycleKey, isRepeatRule, isValidAnchor } from '../utils/repeat';
 import { closeCurrentCycle, reopenCurrentCycle, applyRepeatTick } from '../utils/cycleTodos';
+import { appendProgress, toggleProgressItem, patchProgressItem, removeProgressItem } from '../utils/progressTodos';
 import { toSafeIso } from '../utils/dateParser';
 import { promoteProgressItem } from '../utils/promoteProgress';
 import { scheduleReminder, cancelReminder, rescheduleAll, checkDueReminders, requestNotificationPermission, scheduleProgressReminder, cancelProgressReminder, cancelTodoProgressReminders, scheduleTodoReminder, cancelTodoReminder } from '../utils/notification';
@@ -19,6 +20,21 @@ const SETTINGS_KEY = 'todo_app_settings';
 function autoArchiveEnabled() {
   const settings = readJSON(SETTINGS_KEY, null);
   return settings && typeof settings === 'object' ? settings.autoArchive !== false : true;
+}
+
+function seedManualOrder(list) {
+  const order = new Map();
+  const groups = [
+    list.filter(t => t.status === 'active'),
+    list.filter(t => t.status !== 'active'),
+  ];
+  for (const group of groups) {
+    let i = 0;
+    for (const t of group) {
+      if (!t.pinStatus) order.set(t.id, i++);
+    }
+  }
+  return list.map(t => (order.has(t.id) ? { ...t, manualOrder: order.get(t.id) } : t));
 }
 
 export function useTodos() {
@@ -45,21 +61,7 @@ export function useTodos() {
       await migrateFromLocalStorage();
       const data = await loadData();
       if (cancelled) return;
-      const migrated = data.map(normalizeImportedTodo).filter(Boolean).map(t => {
-        let dueDate = t.dueDate;
-        if (dueDate && /^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
-          dueDate = dueDate + 'T23:59:59';
-        }
-        let startDate = t.startDate;
-        if (startDate == null && dueDate) {
-          startDate = dueDate;
-        }
-        return {
-          ...t,
-          dueDate,
-          startDate,
-        };
-      });
+      const migrated = data.map(normalizeImportedTodo).filter(Boolean);
       const afterArchive = autoArchiveEnabled() ? mergeAndArchive(migrated) : migrated;
       if (afterArchive.length > 0) {
         todoIdRef.current = Math.max(...afterArchive.map(t => t.id), todoIdRef.current) + 1;
@@ -68,18 +70,7 @@ export function useTodos() {
       }
       let afterTick = applyRepeatTick(afterArchive, new Date(), () => progressIdRef.current++);
       if (sortModeRef.current === SORT_MANUAL && !afterTick.some(t => Number.isFinite(t.manualOrder))) {
-        const order = new Map();
-        const groups = [
-          afterTick.filter(t => t.status === 'active'),
-          afterTick.filter(t => t.status !== 'active'),
-        ];
-        for (const group of groups) {
-          let i = 0;
-          for (const t of group) {
-            if (!t.pinStatus) order.set(t.id, i++);
-          }
-        }
-        afterTick = afterTick.map(t => (order.has(t.id) ? { ...t, manualOrder: order.get(t.id) } : t));
+        afterTick = seedManualOrder(afterTick);
       }
       setTodos(afterTick);
       rescheduleAll(afterTick);
@@ -399,30 +390,28 @@ export function useTodos() {
   }, []);
 
   const addProgress = useCallback((id, text, temporary, options) => {
-    if (!text.trim()) return;
+    const trimmed = typeof text === 'string' ? text.trim() : '';
+    if (!trimmed) return;
     const opts = options || {};
     const newId = progressIdRef.current++;
+    const createdAt = new Date().toISOString();
     setTodos(prev => prev.map(t =>
-      t.id === id ? {
-        ...t,
-        progress: [...(t.progress || []), {
-          id: newId,
-          text: text.trim(),
-          createdAt: new Date().toISOString(),
-          status: 'active',
-          temporary: temporary === true,
-          urgent: opts.urgent === true,
-          reminderTime: opts.reminderTime || null,
-          dueDate: opts.dueDate || null,
-        }]
-      } : t
+      t.id === id ? appendProgress(t, {
+        id: newId,
+        text: trimmed,
+        createdAt,
+        temporary,
+        urgent: opts.urgent,
+        reminderTime: opts.reminderTime,
+        dueDate: opts.dueDate,
+      }) : t
     ));
     if (opts.reminderTime) {
       const target = todosRef.current.find(t => t.id === id);
       if (target) {
         scheduleProgressReminder({ ...target }, {
           id: newId,
-          text: text.trim(),
+          text: trimmed,
           status: 'active',
           reminderTime: opts.reminderTime,
         });
@@ -433,36 +422,17 @@ export function useTodos() {
       todoId: id,
       todoTitle: targetTodo ? targetTodo.title : String(id),
       progressId: newId,
-      text: text.trim(),
+      text: trimmed,
       temporary: temporary === true,
       urgent: opts.urgent === true,
     });
   }, []);
 
   const toggleProgressStatus = useCallback((todoId, progressId, newStatus) => {
-    setTodos(prev => prev.map(t => {
-      if (t.id !== todoId) return t;
-      const targetProgress = (t.progress || []).find(p => p.id === progressId);
-      if (targetProgress && (targetProgress.kind === 'cycle-done' || targetProgress.kind === 'cycle-skip') && targetProgress.status !== 'active') {
-        return reopenCurrentCycle(t);
-      }
-      return {
-        ...t,
-        progress: (t.progress || []).map(p => {
-          if (p.id !== progressId) return p;
-          if (p.kind === 'promoted') return p;
-          const willBeArchived = p.status === 'active' && newStatus !== 'active';
-          const willBeRestored = p.status !== 'active' && newStatus !== p.status;
-          return {
-            ...p,
-            status: p.status === newStatus ? 'active' : newStatus,
-            completedAt: willBeArchived ? new Date().toISOString()
-              : willBeRestored ? null
-              : p.completedAt,
-          };
-        })
-      };
-    }));
+    const nowIso = new Date().toISOString();
+    setTodos(prev => prev.map(t =>
+      t.id === todoId ? toggleProgressItem(t, progressId, newStatus, nowIso) : t
+    ));
     const target = todosRef.current.find(t => t.id === todoId);
     if (target) {
       const p = (target.progress || []).find(x => x.id === progressId);
@@ -491,10 +461,7 @@ export function useTodos() {
     const target = todosRef.current.find(t => t.id === todoId);
     const p = target ? (target.progress || []).find(x => x.id === progressId) : null;
     setTodos(prev => prev.map(t =>
-      t.id === todoId ? {
-        ...t,
-        progress: (t.progress || []).filter(p => p.id !== progressId)
-      } : t
+      t.id === todoId ? removeProgressItem(t, progressId) : t
     ));
     addLog('data', '删除进度记录', {
       todoId,
@@ -505,35 +472,22 @@ export function useTodos() {
   }, []);
 
   const updateProgress = useCallback((todoId, progressId, text, temporary) => {
+    const patch = { text: text.trim() };
+    if (temporary !== undefined) patch.temporary = temporary === true;
     setTodos(prev => prev.map(t =>
-      t.id === todoId ? {
-        ...t,
-        progress: (t.progress || []).map(p =>
-          p.id === progressId ? { ...p, text: text.trim(), temporary: temporary !== undefined ? temporary === true : p.temporary } : p
-        )
-      } : t
+      t.id === todoId ? patchProgressItem(t, progressId, patch) : t
     ));
   }, []);
 
   const setProgressUrgent = useCallback((todoId, progressId, urgent) => {
     setTodos(prev => prev.map(t =>
-      t.id === todoId ? {
-        ...t,
-        progress: (t.progress || []).map(p =>
-          p.id === progressId ? { ...p, urgent: urgent === true } : p
-        )
-      } : t
+      t.id === todoId ? patchProgressItem(t, progressId, { urgent: urgent === true }) : t
     ));
   }, []);
 
   const setProgressDue = useCallback((todoId, progressId, iso) => {
     setTodos(prev => prev.map(t =>
-      t.id === todoId ? {
-        ...t,
-        progress: (t.progress || []).map(p =>
-          p.id === progressId ? { ...p, dueDate: iso || null } : p
-        )
-      } : t
+      t.id === todoId ? patchProgressItem(t, progressId, { dueDate: iso || null }) : t
     ));
   }, []);
 
@@ -544,10 +498,7 @@ export function useTodos() {
     setTodos(prev => {
       let list = prev;
       if (patch && typeof patch === 'object') {
-        list = prev.map(t => t.id === todoId ? {
-          ...t,
-          progress: (t.progress || []).map(p => p.id === progressId ? { ...p, ...patch } : p),
-        } : t);
+        list = prev.map(t => t.id === todoId ? patchProgressItem(t, progressId, patch) : t);
       }
       const result = promoteProgressItem(list, todoId, progressId, {
         nowIso,
@@ -577,12 +528,7 @@ export function useTodos() {
   const setProgressReminder = useCallback(async (todoId, progressId, timeStr) => {
     const normalized = timeStr ? String(timeStr) : null;
     setTodos(prev => prev.map(t =>
-      t.id === todoId ? {
-        ...t,
-        progress: (t.progress || []).map(p =>
-          p.id === progressId ? { ...p, reminderTime: normalized } : p
-        )
-      } : t
+      t.id === todoId ? patchProgressItem(t, progressId, { reminderTime: normalized }) : t
     ));
     const target = todosRef.current.find(t => t.id === todoId);
     if (!target) return;
@@ -602,12 +548,7 @@ export function useTodos() {
     const isoString = toSafeIso(dateString);
     if (!isoString) return;
     setTodos(prev => prev.map(t =>
-      t.id === todoId ? {
-        ...t,
-        progress: (t.progress || []).map(p =>
-          p.id === progressId ? { ...p, status: 'completed', completedAt: isoString } : p
-        )
-      } : t
+      t.id === todoId ? patchProgressItem(t, progressId, { status: 'completed', completedAt: isoString }) : t
     ));
     const target = todosRef.current.find(t => t.id === todoId);
     const p = target ? (target.progress || []).find(x => x.id === progressId) : null;

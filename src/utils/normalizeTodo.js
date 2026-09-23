@@ -58,7 +58,7 @@ export function normalizeImportedTodo(t) {
   return {
     id,
     title: typeof t.title === 'string' ? t.title.slice(0, MAX_TITLE_LEN) : '',
-    startDate: normalizeDueIso(t.startDate),
+    startDate: normalizeDueIso(t.startDate) || normalizeDueIso(t.dueDate),
     dueDate: normalizeDueIso(t.dueDate),
     tags: Array.isArray(t.tags)
       ? [...new Set(t.tags.filter(x => typeof x === 'string' && isSafeTagName(x)).slice(0, MAX_TAGS))]
