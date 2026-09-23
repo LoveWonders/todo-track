@@ -4990,10 +4990,18 @@ body.compact-mode .todo-tag {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 6px;
   margin-bottom: 12px;
 }
 
+.cal-nav-btns {
+  display: flex;
+  gap: 4px;
+}
+
 .cal-nav-title {
+  flex: 1;
+  text-align: center;
   font-size: 15px;
   font-weight: 600;
 }
@@ -5078,4 +5086,13 @@ body.compact-mode .todo-tag {
   font-size: 14px;
   background: var(--bg);
   color: var(--text);
+}
+
+.modal-full-footer.cal-footer {
+  justify-content: space-between;
+}
+
+.cal-footer-actions {
+  display: flex;
+  gap: 8px;
 }

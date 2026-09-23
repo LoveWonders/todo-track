@@ -57,9 +57,20 @@ export default function CalendarSheet({ type, value, onPick, onClose }) {
     setCursor(prev => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
   };
 
+  const shiftYear = (delta) => {
+    setCursor(prev => new Date(prev.getFullYear() + delta, prev.getMonth(), 1));
+  };
+
   const pickDay = (d) => {
     setSelected(d);
     if (!withTime) onPick(toDateValue(d));
+  };
+
+  const goToday = () => {
+    const now = new Date();
+    const day = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    setCursor(new Date(now.getFullYear(), now.getMonth(), 1));
+    pickDay(day);
   };
 
   const confirmDateTime = () => {
@@ -72,17 +83,29 @@ export default function CalendarSheet({ type, value, onPick, onClose }) {
       title="选择日期"
       onClose={onClose}
       overlayClassName="calendar-overlay"
-      footer={withTime ? (
+      footerClassName="cal-footer"
+      footer={(
         <>
-          <button className="btn-secondary" onClick={onClose}>取消</button>
-          <button className="btn-primary" onClick={confirmDateTime} disabled={!selected}>确认</button>
+          <button type="button" className="btn-secondary" onClick={goToday}>今天</button>
+          {withTime ? (
+            <span className="cal-footer-actions">
+              <button type="button" className="btn-secondary" onClick={onClose}>取消</button>
+              <button type="button" className="btn-primary" onClick={confirmDateTime} disabled={!selected}>确认</button>
+            </span>
+          ) : <span />}
         </>
-      ) : null}
+      )}
     >
       <div className="cal-nav">
-        <button type="button" className="cal-nav-btn" onClick={() => shiftMonth(-1)}>&#x2039;</button>
+        <div className="cal-nav-btns">
+          <button type="button" className="cal-nav-btn" onClick={() => shiftYear(-1)} aria-label="上一年">&#x00AB;</button>
+          <button type="button" className="cal-nav-btn" onClick={() => shiftMonth(-1)} aria-label="上一月">&#x2039;</button>
+        </div>
         <span className="cal-nav-title">{cursor.getFullYear()}年{cursor.getMonth() + 1}月</span>
-        <button type="button" className="cal-nav-btn" onClick={() => shiftMonth(1)}>&#x203A;</button>
+        <div className="cal-nav-btns">
+          <button type="button" className="cal-nav-btn" onClick={() => shiftMonth(1)} aria-label="下一月">&#x203A;</button>
+          <button type="button" className="cal-nav-btn" onClick={() => shiftYear(1)} aria-label="下一年">&#x00BB;</button>
+        </div>
       </div>
       <div className="cal-grid">
         {WEEKDAY_SHORT.map(label => (
