@@ -16,6 +16,12 @@ public class MainActivity extends BridgeActivity {
         lockTextZoom();
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        lockTextZoom();
+    }
+
     private void lockTextZoom() {
         if (getBridge() == null || getBridge().getWebView() == null) return;
         getBridge().getWebView().getSettings().setTextZoom(100);

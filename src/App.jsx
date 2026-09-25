@@ -90,7 +90,12 @@ export default function App() {
     batchSetTags, batchAddProgress, batchCompleteAt, selectAll, invertSelection,
   } = useBatchActions(filteredTodos, source, batchUpdateTodos, batchDeleteTodos, batchToggleStatus, addProgress, batchUpdateCompletedAt);
 
-  const exitPrompt = useBackButton({ view, setView, batchMode, exitBatch });
+  const closeSettings = useCallback(() => {
+    setSettingsOpen(false);
+    setFabHidden(false);
+  }, []);
+
+  const exitPrompt = useBackButton({ view, setView, batchMode, exitBatch, settingsOpen, closeSettings });
   const { showCompleteDateModal, openCompleteDateModal, closeCompleteDateModal } = useModalManager();
 
   const sensors = useSensors(
@@ -410,7 +415,7 @@ export default function App() {
 
       {settingsOpen && (
         <SettingsModal
-          onClose={() => { setSettingsOpen(false); setFabHidden(false); }}
+          onClose={closeSettings}
           todos={todos}
           onRenameTag={(oldName, newName) => replaceTagInTodos(oldName, newName)}
           onDeleteTag={(tag, removeFromTodos) => { if (removeFromTodos) removeTagFromTodos(tag); }}

@@ -1,16 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { getIsNative } from '../utils/storage';
 
-export function useBackButton({ view, setView, batchMode, exitBatch }) {
+export function useBackButton({ view, setView, batchMode, exitBatch, settingsOpen, closeSettings }) {
   const [exitPrompt, setExitPrompt] = useState(false);
   const exitTimerRef = useRef(null);
 
   const viewRef = useRef(view);
   const batchModeRef = useRef(batchMode);
+  const settingsOpenRef = useRef(settingsOpen);
   const exitPromptRef = useRef(false);
 
   viewRef.current = view;
   batchModeRef.current = batchMode;
+  settingsOpenRef.current = settingsOpen;
   exitPromptRef.current = exitPrompt;
 
   useEffect(() => {
@@ -21,6 +23,11 @@ export function useBackButton({ view, setView, batchMode, exitBatch }) {
     const setup = async () => {
       const { App } = await import('@capacitor/app');
       listenerHandle = await App.addListener('backButton', () => {
+        if (settingsOpenRef.current) {
+          closeSettings();
+          return;
+        }
+
         if (batchModeRef.current) {
           exitBatch();
           return;
@@ -51,7 +58,7 @@ export function useBackButton({ view, setView, batchMode, exitBatch }) {
         clearTimeout(exitTimerRef.current);
       }
     };
-  }, [exitBatch, setView]);
+  }, [exitBatch, setView, closeSettings]);
 
   return exitPrompt;
 }

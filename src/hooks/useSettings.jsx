@@ -5,13 +5,25 @@ import { DEFAULT_REMINDER_OFFSET } from '../utils/reminder';
 
 const SETTINGS_KEY = 'todo_app_settings';
 
+export const TEXT_SCALES = ['small', 'medium', 'large'];
+
 const defaultSettings = {
   presetTags: undefined,
   compactMode: false,
+  textScale: 'medium',
   autoArchive: true,
   autoClearLogs: true,
   defaultReminderOffset: DEFAULT_REMINDER_OFFSET,
 };
+
+export function normalizeTextScale(value) {
+  return TEXT_SCALES.includes(value) ? value : 'medium';
+}
+
+export function applyAppearance({ compactMode, textScale }) {
+  document.body.classList.toggle('compact-mode', !!compactMode);
+  document.documentElement.dataset.textScale = normalizeTextScale(textScale);
+}
 
 export function getDefaultReminderOffset(settings) {
   const raw = settings?.defaultReminderOffset;
@@ -42,8 +54,8 @@ export function SettingsProvider({ children }) {
   }, [settings]);
 
   useEffect(() => {
-    document.body.classList.toggle('compact-mode', !!settings.compactMode);
-  }, [settings.compactMode]);
+    applyAppearance(settings);
+  }, [settings]);
 
   useEffect(() => {
     setAutoTrim(settings.autoClearLogs !== false);

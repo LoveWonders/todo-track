@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSettings, getDefaultReminderOffset } from '../hooks/useSettings';
+import { useSettings, getDefaultReminderOffset, normalizeTextScale } from '../hooks/useSettings';
 import TagManager from './TagManager';
 import ModalShell from './ModalShell';
 import SegmentedControl from './SegmentedControl';
@@ -17,6 +17,7 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
   const [presetTags, setPresetTags] = useState(Array.isArray(settings.presetTags) ? settings.presetTags : DEFAULT_TAG_NAMES);
   const [newTag, setNewTag] = useState('');
   const [compactDraft, setCompactDraft] = useState(!!settings.compactMode);
+  const [textScaleDraft, setTextScaleDraft] = useState(normalizeTextScale(settings.textScale));
   const [autoArchiveDraft, setAutoArchiveDraft] = useState(settings.autoArchive !== false);
   const [autoClearLogsDraft, setAutoClearLogsDraft] = useState(settings.autoClearLogs !== false);
   const [offsetDraft, setOffsetDraft] = useState(String(getDefaultReminderOffset(settings)));
@@ -41,7 +42,6 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
 
   const handleSave = () => {
     updateSetting('presetTags', presetTags.filter(t => t.trim()));
-    updateSetting('compactMode', compactDraft);
     updateSetting('autoArchive', autoArchiveDraft);
     updateSetting('autoClearLogs', autoClearLogsDraft);
     updateSetting('defaultReminderOffset', Number(offsetDraft) || 60);
@@ -56,6 +56,21 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
     setFactoryResetConfirm(false);
     await clearAllData();
     window.location.reload();
+  };
+
+  const handleCancel = () => {
+    onClose();
+  };
+
+  const handleTextScale = (value) => {
+    setTextScaleDraft(value);
+    updateSetting('textScale', value);
+  };
+
+  const handleCompact = (value) => {
+    const compact = value === 'compact';
+    setCompactDraft(compact);
+    updateSetting('compactMode', compact);
   };
 
   const handleAddTag = () => {
@@ -77,17 +92,19 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
       } else {
         handleSave();
       }
-    } else if (e.key === 'Escape') onClose();
+    } else if (e.key === 'Escape') {
+      handleCancel();
+    }
   };
 
   return (
     <ModalShell
       title="设置"
-      onClose={onClose}
+      onClose={handleCancel}
       bodyClassName="settings-scroll"
       footer={
         <>
-          <button className="btn-secondary" onClick={onClose}>取消</button>
+          <button className="btn-secondary" onClick={handleCancel}>取消</button>
           <button className="btn-primary" onClick={handleSave}>保存</button>
         </>
       }
@@ -129,17 +146,30 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
           <div className="settings-section-title">个性化外观</div>
           <div className="settings-group">
             <div className="settings-row">
-              <span className="settings-row-label">界面紧凑度</span>
+              <span className="settings-row-label">文字大小</span>
+              <SegmentedControl
+                value={textScaleDraft}
+                options={[
+                  { value: 'small', label: '小' },
+                  { value: 'medium', label: '标准' },
+                  { value: 'large', label: '大' },
+                ]}
+                onChange={handleTextScale}
+              />
+            </div>
+            <p className="settings-desc">列表标题、元信息和设置页随档位缩放，点选即保存。</p>
+            <div className="settings-row">
+              <span className="settings-row-label">界面间距</span>
               <SegmentedControl
                 value={compactDraft ? 'compact' : 'standard'}
                 options={[
                   { value: 'standard', label: '标准' },
                   { value: 'compact', label: '紧凑' },
                 ]}
-                onChange={(v) => setCompactDraft(v === 'compact')}
+                onChange={handleCompact}
               />
             </div>
-            <p className="settings-desc">紧凑模式缩小待办条目间距与字号，单屏可容纳更多任务。</p>
+            <p className="settings-desc">紧凑只压缩卡片内边距和条目间距，字号走上方档位。</p>
           </div>
 
           <div className="settings-section-title">提醒与通知</div>

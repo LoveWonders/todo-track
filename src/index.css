@@ -23,10 +23,26 @@
   --sheet-max-width: 480px;
   --font-size: 14px;
   --font-size-small: 12px;
+  --font-size-tiny: 10px;
+  --font-size-title: 22px;
   --bottom-h: 56px;
   --log-selected: #ebf5fb;
   --divider: #e8e8e8;
   --primary-light: #d6eaf8;
+}
+
+html[data-text-scale="small"] {
+  --font-size: 12px;
+  --font-size-small: 10px;
+  --font-size-tiny: 9px;
+  --font-size-title: 18px;
+}
+
+html[data-text-scale="large"] {
+  --font-size: 17px;
+  --font-size-small: 14px;
+  --font-size-tiny: 12px;
+  --font-size-title: 26px;
 }
 
 html,
@@ -74,7 +90,7 @@ body {
 }
 
 .app-header h1 {
-  font-size: 22px;
+  font-size: var(--font-size-title);
   font-weight: 700;
   color: var(--text);
 }
@@ -1238,7 +1254,7 @@ body {
 .todo-tag {
   padding: 1px 6px;
   border-radius: 10px;
-  font-size: 10px;
+  font-size: var(--font-size-tiny);
   background: #e8f4fd;
   color: var(--accent);
   max-width: 80px;
@@ -2400,8 +2416,8 @@ body {
 }
 
 .settings-seg-item {
-  padding: 5px 14px;
-  font-size: 12px;
+  padding: 5px 10px;
+  font-size: var(--font-size-small);
   color: var(--text-secondary);
   background: transparent;
   border: none;
@@ -2706,29 +2722,27 @@ body {
 
 /* ---------- Compact Mode ---------- */
 body.compact-mode .todo-list {
-  gap: 3px;
+  gap: 2px;
 }
 
 body.compact-mode .todo-item {
-  padding: 4px 8px;
+  padding: 3px 8px;
 }
 
 body.compact-mode .todo-title-text {
-  font-size: 13px;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 body.compact-mode .todo-meta {
-  margin-top: 2px;
+  margin-top: 0;
 }
 
 body.compact-mode .todo-tags {
-  gap: 3px;
+  gap: 2px;
 }
 
 body.compact-mode .todo-tag {
-  font-size: 9px;
-  padding: 0 5px;
+  padding: 0 4px;
   border-radius: 8px;
 }
 
@@ -2980,6 +2994,7 @@ body.compact-mode .todo-tag {
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
+  font-size: var(--font-size);
   line-height: 1.4;
 }
 
