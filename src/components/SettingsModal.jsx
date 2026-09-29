@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSettings, getDefaultReminderOffset, normalizeTextScale } from '../hooks/useSettings';
+import { useSettings, getDefaultReminderOffset, normalizeTextScale, getArchiveMaxAgeDays, getMaxLogs, DEFAULT_ARCHIVE_DAYS, DEFAULT_MAX_LOGS } from '../hooks/useSettings';
 import TagManager from './TagManager';
 import ModalShell from './ModalShell';
 import SegmentedControl from './SegmentedControl';
@@ -19,7 +19,9 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
   const [compactDraft, setCompactDraft] = useState(!!settings.compactMode);
   const [textScaleDraft, setTextScaleDraft] = useState(normalizeTextScale(settings.textScale));
   const [autoArchiveDraft, setAutoArchiveDraft] = useState(settings.autoArchive !== false);
+  const [archiveDaysDraft, setArchiveDaysDraft] = useState(String(getArchiveMaxAgeDays(settings)));
   const [autoClearLogsDraft, setAutoClearLogsDraft] = useState(settings.autoClearLogs !== false);
+  const [maxLogsDraft, setMaxLogsDraft] = useState(String(getMaxLogs(settings)));
   const [offsetDraft, setOffsetDraft] = useState(String(getDefaultReminderOffset(settings)));
   const [showTagManager, setShowTagManager] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -43,7 +45,9 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
   const handleSave = () => {
     updateSetting('presetTags', presetTags.filter(t => t.trim()));
     updateSetting('autoArchive', autoArchiveDraft);
+    updateSetting('archiveMaxAgeDays', getArchiveMaxAgeDays({ archiveMaxAgeDays: archiveDaysDraft }));
     updateSetting('autoClearLogs', autoClearLogsDraft);
+    updateSetting('maxLogs', getMaxLogs({ maxLogs: maxLogsDraft }));
     updateSetting('defaultReminderOffset', Number(offsetDraft) || 60);
     onClose();
   };
@@ -179,15 +183,15 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
               <span className="settings-row-status">已上线</span>
             </div>
             <p className="settings-desc">为重复任务设置提醒时间后，Android 端到期自动推送本地通知；网页端打开应用时到点补发浏览器通知。</p>
-            <div className="settings-row">
+            <div className="settings-row settings-row-stack">
               <span className="settings-row-label">默认提前提醒</span>
               <SegmentedControl
                 value={offsetDraft}
                 options={[
-                  { value: '15', label: '15 分钟' },
-                  { value: '30', label: '30 分钟' },
-                  { value: '60', label: '1 小时' },
-                  { value: '120', label: '2 小时' },
+                  { value: '15', label: '15分' },
+                  { value: '30', label: '30分' },
+                  { value: '60', label: '1小时' },
+                  { value: '120', label: '2小时' },
                 ]}
                 onChange={setOffsetDraft}
               />
@@ -212,7 +216,25 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
                 onChange={(v) => setAutoArchiveDraft(v === 'on')}
               />
             </div>
-            <p className="settings-desc">开启后，完成超过 30 天的待办在下次启动时自动移入归档。关闭则全部保留。</p>
+            {autoArchiveDraft && (
+              <div className="settings-row">
+                <span className="settings-row-label">超过天数</span>
+                <label className="settings-num-wrap">
+                  <input
+                    type="number"
+                    min="1"
+                    max="3650"
+                    inputMode="numeric"
+                    className="settings-input settings-input-num"
+                    value={archiveDaysDraft}
+                    onChange={(e) => setArchiveDaysDraft(e.target.value)}
+                    onBlur={() => setArchiveDaysDraft(String(getArchiveMaxAgeDays({ archiveMaxAgeDays: archiveDaysDraft })))}
+                  />
+                  <span className="settings-num-unit">天</span>
+                </label>
+              </div>
+            )}
+            <p className="settings-desc">开启后，完成超过该天数的待办在下次启动时自动移入归档。关闭则全部保留。默认 {DEFAULT_ARCHIVE_DAYS} 天。</p>
 
             <div className="settings-row">
               <span className="settings-row-label">日志自动清理</span>
@@ -225,7 +247,25 @@ export default function SettingsModal({ onClose, todos, onRenameTag, onDeleteTag
                 onChange={(v) => setAutoClearLogsDraft(v === 'on')}
               />
             </div>
-            <p className="settings-desc">开启后调试日志最多保留 200 条，自动清理最旧记录。关闭则不限制数量。</p>
+            {autoClearLogsDraft && (
+              <div className="settings-row">
+                <span className="settings-row-label">最多保留</span>
+                <label className="settings-num-wrap">
+                  <input
+                    type="number"
+                    min="20"
+                    max="5000"
+                    inputMode="numeric"
+                    className="settings-input settings-input-num"
+                    value={maxLogsDraft}
+                    onChange={(e) => setMaxLogsDraft(e.target.value)}
+                    onBlur={() => setMaxLogsDraft(String(getMaxLogs({ maxLogs: maxLogsDraft })))}
+                  />
+                  <span className="settings-num-unit">条</span>
+                </label>
+              </div>
+            )}
+            <p className="settings-desc">开启后，加载/保存等例行日志最多保留该条数，超出时清理最旧的例行记录。待办增删调整类日志不受此限。关闭则不限制数量。默认 {DEFAULT_MAX_LOGS} 条。</p>
           </div>
 
           <div className="settings-section-title">数据管理</div>

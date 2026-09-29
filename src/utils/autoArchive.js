@@ -45,7 +45,7 @@ export function mergeAndArchive(todos, maxAgeDays = 30) {
     addLog('data', '自动归档完成待办', {
       count: newlyArchived.length,
       titles: newlyArchived.map(t => t.title).slice(0, 20),
-      reason: '完成超过 30 天，已移入归档存储',
+      reason: `完成超过 ${maxAgeDays} 天，已移入归档存储`,
     });
   }
 

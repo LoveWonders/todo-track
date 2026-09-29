@@ -1,23 +1,41 @@
 import { readJSON, save } from './storage';
+import { applyLogTrim } from './logTrim';
 
-const MAX_LOGS = 200;
+const DEFAULT_MAX_LOGS = 200;
 const STORAGE_KEY = 'todotrack_debug_logs';
 
 let logs = [];
 let autoTrim = true;
+let maxLogs = DEFAULT_MAX_LOGS;
 let persistTimer = null;
 
 (function init() {
   const settings = readJSON('todo_app_settings', null);
   if (settings && typeof settings === 'object') {
     autoTrim = settings.autoClearLogs !== false;
+    const n = Number(settings.maxLogs);
+    if (Number.isFinite(n)) maxLogs = Math.min(5000, Math.max(20, Math.round(n)));
   }
   const parsedLogs = readJSON(STORAGE_KEY, null);
   if (Array.isArray(parsedLogs)) logs = parsedLogs;
+  trimLogs();
 })();
+
+function trimLogs() {
+  logs = applyLogTrim(logs, maxLogs, autoTrim);
+}
 
 export function setAutoTrim(enabled) {
   autoTrim = !!enabled;
+  trimLogs();
+  persist();
+}
+
+export function setMaxLogs(value) {
+  const n = Number(value);
+  maxLogs = Number.isFinite(n) ? Math.min(5000, Math.max(20, Math.round(n))) : DEFAULT_MAX_LOGS;
+  trimLogs();
+  persist();
 }
 
 export function flushLogs() {
@@ -45,9 +63,7 @@ export function addLog(type, message, detail) {
     detail: detail !== undefined ? detail : null,
   };
   logs.unshift(entry);
-  if (autoTrim && logs.length > MAX_LOGS) {
-    logs.length = MAX_LOGS;
-  }
+  trimLogs();
   persist();
   return entry;
 }

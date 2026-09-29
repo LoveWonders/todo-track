@@ -17,9 +17,16 @@ const SORT_MODE_KEY = 'todo_sort_mode';
 const MANUAL_SORT_KEY = 'todo_manual_sort';
 const SETTINGS_KEY = 'todo_app_settings';
 
-function autoArchiveEnabled() {
+function readArchiveOptions() {
   const settings = readJSON(SETTINGS_KEY, null);
-  return settings && typeof settings === 'object' ? settings.autoArchive !== false : true;
+  if (!settings || typeof settings !== 'object') {
+    return { enabled: true, maxAgeDays: 30 };
+  }
+  const n = Number(settings.archiveMaxAgeDays);
+  return {
+    enabled: settings.autoArchive !== false,
+    maxAgeDays: Number.isFinite(n) ? Math.min(3650, Math.max(1, Math.round(n))) : 30,
+  };
 }
 
 function seedManualOrder(list) {
@@ -62,7 +69,8 @@ export function useTodos() {
       const data = await loadData();
       if (cancelled) return;
       const migrated = data.map(normalizeImportedTodo).filter(Boolean);
-      const afterArchive = autoArchiveEnabled() ? mergeAndArchive(migrated) : migrated;
+      const archiveOpts = readArchiveOptions();
+      const afterArchive = archiveOpts.enabled ? mergeAndArchive(migrated, archiveOpts.maxAgeDays) : migrated;
       if (afterArchive.length > 0) {
         todoIdRef.current = Math.max(...afterArchive.map(t => t.id), todoIdRef.current) + 1;
         const maxProgressId = Math.max(...afterArchive.flatMap(t => (t.progress || []).map(p => p.id)), 0);
