@@ -28,7 +28,7 @@ function isReminderAtDue(todo) {
 }
 
 const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragListeners, highlight }) {
-  const { toggleStatus, completeTodo, reopenCycle, updateTodo, handleBatchToggle, setPinStatus } = useTodoActions();
+  const { toggleStatus, completeTodo, updateTodo, handleBatchToggle, setPinStatus } = useTodoActions();
   const { batchMode, isArchive, devMode, openMenuId, setOpenMenuId, sortMode } = useTodoView();
   const effectiveDue = getEffectiveDue(todo);
   const statusClass = getStatusClass(todo, effectiveDue.time);
@@ -150,11 +150,6 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
     toggleStatus(todo.id, todo.status);
   };
 
-  const handleReopenCycle = (e) => {
-    e.stopPropagation();
-    reopenCycle(todo.id);
-  };
-
   const handlePinTop = (e) => {
     e.stopPropagation();
     setPinStatus(todo.id, todo.pinStatus === 'top' ? null : 'top');
@@ -264,18 +259,18 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
               <span className={`todo-reminder-tag ${reminderAtDue ? 'due' : ''}`}>提醒 {formatCompactDateTime(todo.reminderAt)}</span>
             )}
             {cycleClosed && !checklistMode && (
-              <span className={`progress-badge cycle-done`} title={cycleDone ? '本期已完成，点击可撤销' : '本期已作废，点击可撤销'} onClick={handleReopenCycle}>
+              <span className={`progress-badge cycle-done`} title={cycleDone ? '本期已完成' : '本期已作废'}>
                 {cycleDone ? '本期完成' : '本期作废'}
               </span>
             )}
             {checklistMode && progressCount > 0 && (
               <span
                 className={`progress-badge ${progressAllDone ? 'all-done' : ''} ${cycleDone ? 'cycle-done' : ''}`}
-                title={cycleClosed ? (cycleDone ? '本期已完成，点击可撤销' : '本期已作废，点击可撤销') : progressAllDone ? '全部子项已完成，点击完成待办' : `子项进度 ${completedCount}/${progressCount}`}
+                title={cycleClosed ? (cycleDone ? '本期已完成' : '本期已作废') : progressAllDone ? '全部子项已完成，点击完成待办' : `子项进度 ${completedCount}/${progressCount}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (cycleClosed) reopenCycle(todo.id);
-                  else if (progressAllDone && !cycleDone) completeTodo(todo.id);
+                  if (cycleClosed) return;
+                  if (progressAllDone && !cycleDone) completeTodo(todo.id);
                 }}
               >
                 {completedCount}/{progressCount}
@@ -324,15 +319,9 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
         <div className="todo-actions">
           {!batchMode && todo.status === 'active' && (
             <div className="actions-grid">
-              {cycleClosed ? (
-                <button className="btn-action undo" onClick={handleReopenCycle} title="撤销本期">
-                  &#x21A9;
-                </button>
-              ) : (
-                <button className="btn-action done" onClick={handleComplete} title="完成">
-                  &#x2713;
-                </button>
-              )}
+              <button className="btn-action done" onClick={handleComplete} title="完成">
+                &#x2713;
+              </button>
               <button className="btn-action cancel" onClick={handleCancel} title="作废">
                 &#x2717;
               </button>
@@ -368,7 +357,7 @@ const TodoItem = memo(function TodoItem({ todo, isDragging, isSelected, dragList
 
       </div>
 
-      {!isArchive && todo.status === 'active' && canCollapse && !collapsed && (
+      {!isArchive && todo.status === 'active' && (
         <ProgressLog progress={todo.progress} todoId={todo.id} collapsed={collapsed} checklistMode={checklistMode} repeatRule={todo.repeatRule} repeatAnchor={todo.repeatAnchor} dueDate={todo.dueDate} highlight={highlight} />
       )}
 

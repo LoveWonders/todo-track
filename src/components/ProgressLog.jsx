@@ -242,9 +242,34 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
     return [...completed, ...cancelled];
   }, [archivedProgress]);
 
-  // 安全渲染：折叠时不渲染
+  const cycleMarkerNode = cycleMarkerItem && (
+    <div className="progress-cycle-marker">
+      <div className={`progress-entry ${cycleMarkerItem.status}`}>
+        {!inBatch && (
+          <span className="progress-actions">
+            <button
+              className="p-action undo"
+              onClick={(e) => { e.stopPropagation(); reopenCycle(todoId); }}
+              title="撤销本期"
+            >
+              &#x21A9;
+            </button>
+          </span>
+        )}
+        <span className="progress-status-tag">{cycleMarkerItem.kind === 'cycle-done' ? '本期完成' : '本期作废'}</span>
+        <span className="progress-date">{archiveDateRange(cycleMarkerItem)}</span>
+        <span className="progress-text">{cycleMarkerItem.text}</span>
+      </div>
+    </div>
+  );
+
   if (collapsed) {
-    return null;
+    if (!cycleMarkerNode) return null;
+    return (
+      <div className="progress-section" onClick={inBatch ? e => e.stopPropagation() : undefined}>
+        {cycleMarkerNode}
+      </div>
+    );
   }
 
   if (items.length === 0) {
@@ -334,26 +359,7 @@ export default function ProgressLog({ progress, todoId, collapsed, checklistMode
         </div>
       )}
 
-      {cycleMarkerItem && (
-        <div className="progress-cycle-marker">
-          <div className={`progress-entry ${cycleMarkerItem.status}`}>
-            {!inBatch && (
-              <span className="progress-actions">
-                <button
-                  className="p-action undo"
-                  onClick={(e) => { e.stopPropagation(); reopenCycle(todoId); }}
-                  title="撤销本期"
-                >
-                  &#x21A9;
-                </button>
-              </span>
-            )}
-            <span className="progress-status-tag">{cycleMarkerItem.kind === 'cycle-done' ? '本期完成' : '本期作废'}</span>
-            <span className="progress-date">{archiveDateRange(cycleMarkerItem)}</span>
-            <span className="progress-text">{cycleMarkerItem.text}</span>
-          </div>
-        </div>
-      )}
+      {cycleMarkerNode}
 
       {archivedProgress.length > 0 && (
         <div className="progress-archive">

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatDateTime, isOverdue } from '../utils/dateParser';
 import { getEffectiveDue } from '../utils/taskTier';
-import { describeCycle, hasCycleClosedThisCycle, hasCycleDoneThisCycle } from '../utils/repeat';
+import { describeCycle } from '../utils/repeat';
 import RepeatSelector from './RepeatSelector';
 import Countdown from './Countdown';
 import DateEdit from './DateEdit';
@@ -13,7 +13,7 @@ import ModalShell from './ModalShell';
 import { highlightText } from '../utils/highlight';
 
 export default function TodoDetail({ todo, onClose, highlight }) {
-  const { updateTodo, toggleStatus, completeTodo, reopenCycle, setRepeatRule, setReminderTime, setReminderAt, setPinStatus, setFabHidden } = useTodoActions();
+  const { updateTodo, toggleStatus, completeTodo, setRepeatRule, setReminderTime, setReminderAt, setPinStatus, setFabHidden } = useTodoActions();
   const [editTitle, setEditTitle] = useState(false);
   const [title, setTitle] = useState(todo.title);
   const [showPinActions, setShowPinActions] = useState(false);
@@ -81,15 +81,9 @@ export default function TodoDetail({ todo, onClose, highlight }) {
           <>
             {todo.status === 'active' ? (
               <>
-                {hasCycleClosedThisCycle(todo) ? (
-                  <button className="btn-primary-lg" onClick={() => { reopenCycle(todo.id); }} title="撤销本期，截止回到本期">
-                    {hasCycleDoneThisCycle(todo) ? '撤销本期完成' : '撤销本期作废'}
-                  </button>
-                ) : (
-                  <button className="btn-primary-lg" onClick={() => { completeTodo(todo.id); onClose(); }}>
-                    标记完成
-                  </button>
-                )}
+                <button className="btn-primary-lg" onClick={() => { completeTodo(todo.id); onClose(); }}>
+                  标记完成
+                </button>
                 <button className="btn-danger-lg" onClick={() => { toggleStatus(todo.id, 'cancelled'); onClose(); }}>
                   作废
                 </button>
